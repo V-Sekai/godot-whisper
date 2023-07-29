@@ -80,43 +80,17 @@ SpeechToText::InputPacket *SpeechToText::get_next_valid_input_packet() {
 }
 
 void SpeechToText::speech_processed(SpeechToTextProcessor::SpeechInput *p_mic_input) {
-	// Copy the raw PCM data from the SpeechInput packet to the input byte array
 	PackedByteArray *mic_input_byte_array = p_mic_input->pcm_byte_array;
 	memcpy(input_byte_array.ptrw(), mic_input_byte_array->ptr(),
 			SpeechToTextProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
 
-	// Copy the raw PCM data from the SpeechInput packet to the input byte array
 	PackedVector2Array write_vec2_array;
 	bool ok = SpeechToTextProcessor::_16_pcm_mono_to_real_stereo(&input_byte_array, &write_vec2_array);
 	ERR_FAIL_COND(!ok);
 	{
 		MutexLock mutex_lock(audio_mutex);
 
-		whisper_params params;
-		std::vector<whisper_token> prompt_tokens;
-		whisper_context *ctx;
-
-		params.n_threads = std::min(4, (int32_t)std::thread::hardware_concurrency());
-		params.step_ms = 3000;
-		params.keep_ms = 200;
-		params.capture_id = -1;
-		params.max_tokens = 32;
-		params.audio_ctx = 0;
-		params.vad_thold = 0.6f;
-		params.freq_thold = 100.0f;
-		params.speed_up = false;
-		params.translate = false;
-		params.no_fallback = false;
-		params.print_special = false;
-		params.no_context = true;
-		params.no_timestamps = false;
-		params.language = "en";
-		params.model = "models/ggml-base.en.bin";
-
-		ctx = whisper_init_from_file(params.model.c_str());
-
-		if (!ctx) {
-			ERR_PRINT("Failed to initialize Whisper context");
+		if (!whisper_context) {
 			return;
 		}
 
@@ -140,14 +114,14 @@ void SpeechToText::speech_processed(SpeechToTextProcessor::SpeechInput *p_mic_in
 			float_array.push_back(vector.x);
 			float_array.push_back(vector.y);
 		}
-		if (whisper_full(ctx, wparams, float_array.ptr(), float_array.size()) != 0) {
+		if (whisper_full(whisper_context, wparams, float_array.ptr(), float_array.size()) != 0) {
 			ERR_PRINT("Failed to process audio");
 			return;
 		}
 
-		const int n_segments = whisper_full_n_segments(ctx);
+		const int n_segments = whisper_full_n_segments(whisper_context);
 		for (int i = 0; i < n_segments; ++i) {
-			const char *text = whisper_full_get_segment_text(ctx, i);
+			const char *text = whisper_full_get_segment_text(whisper_context, i);
 			print_line(vformat("%s", text));
 			add_text(text);
 		}
@@ -543,6 +517,25 @@ Dictionary SpeechToText::get_stats() {
 SpeechToText::SpeechToText() {
 	speech_processor = memnew(SpeechToTextProcessor);
 	preallocate_buffers();
+
+	params.n_threads = std::min(4, (int32_t)std::thread::hardware_concurrency());
+	params.step_ms = 3000;
+	params.keep_ms = 200;
+	params.capture_id = -1;
+	params.max_tokens = 32;
+	params.audio_ctx = 0;
+	params.vad_thold = 0.6f;
+	params.freq_thold = 100.0f;
+	params.speed_up = false;
+	params.translate = false;
+	params.no_fallback = false;
+	params.print_special = false;
+	params.no_context = true;
+	params.no_timestamps = false;
+	params.language = "en";
+	params.model = "models/ggml-base.en.bin";
+
+	whisper_context = whisper_init_from_file(params.model.c_str());
 }
 
 SpeechToText::~SpeechToText() {
