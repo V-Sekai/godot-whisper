@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/ggerganov/whisper.cpp.git
+	branch = master
+	commit = a792c4079ce61358134da4c9bc589c15a03b04ad
+	parent = ea362c3c4da9ebe54aa0ae1c3c1d474618686b77
+	method = merge
+	cmdver = 0.4.6
