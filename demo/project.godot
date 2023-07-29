@@ -12,7 +12,7 @@ config_version=5
 
 config/name="Speech Voip Demo"
 run/main_scene="res://vsk_speech/scenes/entry_point.tscn"
-config/features=PackedStringArray("4.0", "Double Precision")
+config/features=PackedStringArray("4.2", "Double Precision")
 config/icon="res://icon.png"
 
 [audio]

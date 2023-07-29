@@ -176,8 +176,12 @@ elif env["arch"] == "x86_64" and env["platform"] != "ios":
     ]
 
 env_thirdparty.Prepend(CPPPATH=["#thirdparty/libogg"])
-env_thirdparty.Append(CPPDEFINES=["HAVE_CONFIG_H"])
 
 env_thirdparty.add_source_files(env.modules_sources, Glob("thirdparty/libsamplerate/src/*.c"))
+
+module_env.Append(CPPPATH=['thirdparty/whisper.cpp'])
+module_env.Append(CPPDEFINES=['WHISPER_SHARED', 'GGML_SHARED'])
+
+module_env.add_source_files(env.modules_sources,  ['thirdparty/whisper.cpp/ggml.c', 'thirdparty/whisper.cpp/whisper.cpp'])
 
 module_env.add_source_files(env.modules_sources, "*.cpp")

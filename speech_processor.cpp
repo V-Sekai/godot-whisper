@@ -45,8 +45,6 @@
 void SpeechToTextProcessor::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("start"), &SpeechToTextProcessor::start);
 	ClassDB::bind_method(D_METHOD("stop"), &SpeechToTextProcessor::stop);
-	ClassDB::bind_method(D_METHOD("compress_buffer", "pcm_byte_array", "output_buffer"),
-			&SpeechToTextProcessor::compress_buffer);
 	ClassDB::bind_method(D_METHOD("set_streaming_bus", "name"),
 			&SpeechToTextProcessor::set_streaming_bus);
 	ClassDB::bind_method(D_METHOD("set_error_cancellation_bus", "name"),

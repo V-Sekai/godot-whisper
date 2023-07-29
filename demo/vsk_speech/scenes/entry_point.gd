@@ -141,28 +141,6 @@ func remove_player_audio(p_id) -> void:
 	audio_stream_player.queue_free()
 	audio_players.erase(p_id)
 
-func setup_connections() -> void:
-	if network_layer.connect("connection_failed", self._on_connection_failed) != OK:
-		printerr("connection_failed could not be connected!")
-	if network_layer.connect("connection_succeeded", self._on_connection_success) != OK:
-		printerr("connection_succeeded could not be connected!")
-	if network_layer.connect("player_list_changed", self._player_list_changed) != OK:
-		printerr("player_list_changed could not be connected!")
-	if network_layer.connect("game_ended", self._on_game_ended) != OK:
-		printerr("game_ended could not be connected!")
-	if network_layer.connect("game_error", self._on_game_error) != OK:
-		printerr("game_error could not be connected!")
-	if network_layer.connect("received_audio_packet", self._on_received_audio_packet) != OK:
-		printerr("received_audio_packet could not be connected!")
-	if network_layer.connect("peer_connected", self.add_player_audio):
-		printerr("peer_connected could not be connected!")
-	if network_layer.connect("peer_disconnected", self.remove_player_audio):
-		printerr("peer_disconnected could not be connected!")
-	if not lobby_scene:
-		return
-	if lobby_scene.connect("host_requested", self.host) != OK:
-		printerr("audio_packet_processed could not be connected!")
-
 
 func process_input_audio(_delta : float) -> void:
 	if not godot_speech:
@@ -217,5 +195,4 @@ func _ready() -> void:
 	godot_speech.set_audio_input_stream_player(microphone_stream)
 	godot_speech.set_streaming_bus(MIC_BUS_NAME)
 	godot_speech.set_error_cancellation_bus(AEC_BUS_NAME)
-	setup_connections()
 	set_process(true)

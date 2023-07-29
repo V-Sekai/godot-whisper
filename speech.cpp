@@ -28,6 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/error/error_macros.h"
+#include "core/string/print_string.h"
+#include "core/variant/variant.h"
 #include "scene/2d/audio_stream_player_2d.h"
 #include "scene/3d/audio_stream_player_3d.h"
 
@@ -82,26 +85,72 @@ void SpeechToText::speech_processed(SpeechToTextProcessor::SpeechInput *p_mic_in
 	memcpy(input_byte_array.ptrw(), mic_input_byte_array->ptr(),
 			SpeechToTextProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
 
-	// Create a new SpeechToTextProcessor::CompressedBufferInput to be passed into the
-	// compressor and assign it the compressed_byte_array from the input packet
-	SpeechToTextProcessor::CompressedSpeechBuffer compressed_buffer_input;
-	compressed_buffer_input.compressed_byte_array =
-			&compression_output_byte_array;
+	// Copy the raw PCM data from the SpeechInput packet to the input byte array
+	PackedVector2Array write_vec2_array;
+	bool ok = SpeechToTextProcessor::_16_pcm_mono_to_real_stereo(&input_byte_array, &write_vec2_array);
+	ERR_FAIL_COND(!ok);
 	{
-		// Lock
 		MutexLock mutex_lock(audio_mutex);
 
-		int64_t size = compressed_buffer_input.buffer_size;
-		ERR_FAIL_COND(size > SpeechToTextProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
-		// Find the next valid input packet in the queue
-		InputPacket *input_packet = get_next_valid_input_packet();
-		// Copy the buffer size from the compressed_buffer_input back into the
-		// input packet
-		memcpy(input_packet->compressed_byte_array.ptrw(),
-				compressed_buffer_input.compressed_byte_array->ptr(), size);
+		whisper_params params;
+		std::vector<whisper_token> prompt_tokens;
+		whisper_context *ctx;
 
-		input_packet->buffer_size = size;
-		input_packet->loudness = p_mic_input->volume;
+		params.n_threads = std::min(4, (int32_t)std::thread::hardware_concurrency());
+		params.step_ms = 3000;
+		params.keep_ms = 200;
+		params.capture_id = -1;
+		params.max_tokens = 32;
+		params.audio_ctx = 0;
+		params.vad_thold = 0.6f;
+		params.freq_thold = 100.0f;
+		params.speed_up = false;
+		params.translate = false;
+		params.no_fallback = false;
+		params.print_special = false;
+		params.no_context = true;
+		params.no_timestamps = false;
+		params.language = "en";
+		params.model = "models/ggml-base.en.bin";
+
+		ctx = whisper_init_from_file(params.model.c_str());
+
+		if (!ctx) {
+			ERR_PRINT("Failed to initialize Whisper context");
+			return;
+		}
+
+		whisper_full_params wparams = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+		wparams.print_progress = false;
+		wparams.print_special = params.print_special;
+		wparams.print_realtime = false;
+		wparams.print_timestamps = !params.no_timestamps;
+		wparams.translate = params.translate;
+		wparams.single_segment = true;
+		wparams.max_tokens = params.max_tokens;
+		wparams.language = params.language.c_str();
+		wparams.n_threads = params.n_threads;
+		wparams.audio_ctx = params.audio_ctx;
+		wparams.speed_up = params.speed_up;
+		wparams.prompt_tokens = params.no_context ? nullptr : prompt_tokens.data();
+		wparams.prompt_n_tokens = params.no_context ? 0 : prompt_tokens.size();
+
+		PackedFloat32Array float_array;
+		for (const Vector2 &vector : write_vec2_array) {
+			float_array.push_back(vector.x);
+			float_array.push_back(vector.y);
+		}
+		if (whisper_full(ctx, wparams, float_array.ptr(), float_array.size()) != 0) {
+			ERR_PRINT("Failed to process audio");
+			return;
+		}
+
+		const int n_segments = whisper_full_n_segments(ctx);
+		for (int i = 0; i < n_segments; ++i) {
+			const char *text = whisper_full_get_segment_text(ctx, i);
+			print_line(vformat("%s", text));
+			add_text(text);
+		}
 	}
 }
 
