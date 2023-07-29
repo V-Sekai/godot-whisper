@@ -2,4 +2,182 @@ Import("env")
 
 module_env = env.Clone()
 
+if not env.msvc:
+    module_env.Append(CCFLAGS=["-Wno-error=non-virtual-dtor"])
+    module_env.Append(CCFLAGS=["-Wno-error=ctor-dtor-privacy"])
+
+module_env.Append(
+    CPPDEFINES=[
+        "HAVE_CONFIG_H",
+        "PACKAGE=",
+        "VERSION=",
+        "CPU_CLIPS_POSITIVE=0",
+        "CPU_CLIPS_NEGATIVE=0",
+        "WEBRTC_APM_DEBUG_DUMP=0",
+    ]
+)
+
+enable_webrtc_logging = env["target"] == "debug"
+
+if not enable_webrtc_logging:
+    module_env.Append(CPPDEFINES=["RTC_DISABLE_LOGGING", "RTC_DISABLE_METRICS"])
+
+if env["platform"] == "windows" or env["platform"] == "uwp":
+    module_env.Append(CPPDEFINES=["WEBRTC_WIN"])
+elif env["platform"] == "ios":
+    module_env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_IOS"])
+elif env["platform"] == "macos":
+    module_env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_MAC"])
+elif env["platform"] == "linuxbsd":
+    module_env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_LINUX"])
+elif env["platform"] == "android":
+    module_env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_ANDROID"])
+else:  # including if env["platform"] == "javascript":
+    module_env.Append(CPPDEFINES=["WEBRTC_POSIX"])
+
+module_env.Prepend(CPPPATH=["thirdparty/libsamplerate/src"])
+module_env.Prepend(CPPPATH=["include"])
+module_env.Prepend(CPPPATH=["thirdparty/AEC3"])
+module_env.Prepend(CPPPATH=["thirdparty/AEC3/base"])
+module_env.Prepend(CPPPATH=["thirdparty/AEC3/base/abseil"])
+module_env.Prepend(CPPPATH=["thirdparty/AEC3/audio_processing"])
+module_env.Prepend(CPPPATH=["thirdparty/AEC3/audio_processing/aec3"])
+module_env.Prepend(CPPPATH=["thirdparty/AEC3/audio_processing/include"])
+module_env.Prepend(CPPPATH=["thirdparty/AEC3/audio_processing/logging"])
+module_env.Prepend(CPPPATH=["thirdparty/AEC3/audio_processing/resampler"])
+module_env.Prepend(CPPPATH=["thirdparty/AEC3/audio_processing/utility"])
+module_env.Prepend(CPPPATH=["thirdparty/AEC3/base/jsoncpp/include"])
+
+env_thirdparty = module_env.Clone()
+env_thirdparty.disable_warnings()
+aec3_sources = [
+    "AEC3/audio_processing/aec3/adaptive_fir_filter.cc",
+    "AEC3/audio_processing/aec3/adaptive_fir_filter_erl.cc",
+    "AEC3/audio_processing/aec3/aec3_common.cc",
+    "AEC3/audio_processing/aec3/aec3_fft.cc",
+    "AEC3/audio_processing/aec3/aec_state.cc",
+    "AEC3/audio_processing/aec3/alignment_mixer.cc",
+    "AEC3/audio_processing/aec3/api_call_jitter_metrics.cc",
+    "AEC3/audio_processing/aec3/block_buffer.cc",
+    "AEC3/audio_processing/aec3/block_delay_buffer.cc",
+    "AEC3/audio_processing/aec3/block_framer.cc",
+    "AEC3/audio_processing/aec3/block_processor.cc",
+    "AEC3/audio_processing/aec3/block_processor_metrics.cc",
+    "AEC3/audio_processing/aec3/clockdrift_detector.cc",
+    "AEC3/audio_processing/aec3/comfort_noise_generator.cc",
+    "AEC3/audio_processing/aec3/decimator.cc",
+    "AEC3/audio_processing/aec3/dominant_nearend_detector.cc",
+    "AEC3/audio_processing/aec3/downsampled_render_buffer.cc",
+    "AEC3/audio_processing/aec3/echo_audibility.cc",
+    "AEC3/audio_processing/aec3/echo_canceller3.cc",
+    "AEC3/audio_processing/aec3/echo_path_delay_estimator.cc",
+    "AEC3/audio_processing/aec3/echo_path_variability.cc",
+    "AEC3/audio_processing/aec3/echo_remover.cc",
+    "AEC3/audio_processing/aec3/echo_remover_metrics.cc",
+    "AEC3/audio_processing/aec3/erle_estimator.cc",
+    "AEC3/audio_processing/aec3/erl_estimator.cc",
+    "AEC3/audio_processing/aec3/fft_buffer.cc",
+    "AEC3/audio_processing/aec3/filter_analyzer.cc",
+    "AEC3/audio_processing/aec3/frame_blocker.cc",
+    "AEC3/audio_processing/aec3/fullband_erle_estimator.cc",
+    "AEC3/audio_processing/aec3/main_filter_update_gain.cc",
+    "AEC3/audio_processing/aec3/matched_filter.cc",
+    "AEC3/audio_processing/aec3/matched_filter_lag_aggregator.cc",
+    "AEC3/audio_processing/aec3/moving_average.cc",
+    "AEC3/audio_processing/aec3/render_buffer.cc",
+    "AEC3/audio_processing/aec3/render_delay_buffer.cc",
+    "AEC3/audio_processing/aec3/render_delay_controller.cc",
+    "AEC3/audio_processing/aec3/render_delay_controller_metrics.cc",
+    "AEC3/audio_processing/aec3/render_signal_analyzer.cc",
+    "AEC3/audio_processing/aec3/residual_echo_estimator.cc",
+    "AEC3/audio_processing/aec3/reverb_decay_estimator.cc",
+    "AEC3/audio_processing/aec3/reverb_frequency_response.cc",
+    "AEC3/audio_processing/aec3/reverb_model.cc",
+    "AEC3/audio_processing/aec3/reverb_model_estimator.cc",
+    "AEC3/audio_processing/aec3/shadow_filter_update_gain.cc",
+    "AEC3/audio_processing/aec3/signal_dependent_erle_estimator.cc",
+    "AEC3/audio_processing/aec3/spectrum_buffer.cc",
+    "AEC3/audio_processing/aec3/stationarity_estimator.cc",
+    "AEC3/audio_processing/aec3/subband_erle_estimator.cc",
+    "AEC3/audio_processing/aec3/subband_nearend_detector.cc",
+    "AEC3/audio_processing/aec3/subtractor.cc",
+    "AEC3/audio_processing/aec3/subtractor_output.cc",
+    "AEC3/audio_processing/aec3/subtractor_output_analyzer.cc",
+    "AEC3/audio_processing/aec3/suppression_filter.cc",
+    "AEC3/audio_processing/aec3/suppression_gain.cc",
+    "AEC3/audio_processing/audio_buffer.cc",
+    "AEC3/audio_processing/audio_frame.cc",
+    "AEC3/audio_processing/channel_buffer.cc",
+    "AEC3/audio_processing/channel_layout.cc",
+    "AEC3/audio_processing/high_pass_filter.cc",
+    "AEC3/audio_processing/logging/apm_data_dumper.cc",
+    "AEC3/audio_processing/logging/wav_file.cc",
+    "AEC3/audio_processing/logging/wav_header.cc",
+    "AEC3/audio_processing/resampler/push_sinc_resampler.cc",
+    "AEC3/audio_processing/resampler/sinc_resampler.cc",
+    "AEC3/audio_processing/sparse_fir_filter.cc",
+    "AEC3/audio_processing/splitting_filter_c.c",
+    "AEC3/audio_processing/splitting_filter.cc",
+    "AEC3/audio_processing/three_band_filter_bank.cc",
+    "AEC3/audio_processing/utility/cascaded_biquad_filter.cc",
+    "AEC3/audio_processing/utility/ooura_fft.cc",
+    "AEC3/api/echo_canceller3_config.cc",
+    "AEC3/api/echo_canceller3_config_json.cc",
+    "AEC3/api/echo_canceller3_factory.cc",
+    "AEC3/base/system_wrappers/source/cpu_features.cc",
+    "AEC3/base/system_wrappers/source/field_trial.cc",
+    "AEC3/base/abseil/absl/base/internal/throw_delegate.cc",
+    "AEC3/base/abseil/absl/strings/ascii.cc",
+    "AEC3/base/abseil/absl/strings/charconv.cc",
+    "AEC3/base/abseil/absl/strings/escaping.cc",
+    "AEC3/base/abseil/absl/strings/internal/charconv_bigint.cc",
+    "AEC3/base/abseil/absl/strings/internal/charconv_parse.cc",
+    "AEC3/base/abseil/absl/strings/internal/memutil.cc",
+    "AEC3/base/abseil/absl/strings/match.cc",
+    "AEC3/base/abseil/absl/strings/numbers.cc",
+    "AEC3/base/abseil/absl/strings/string_view.cc",
+    "AEC3/base/abseil/absl/strings/str_cat.cc",
+    "AEC3/base/abseil/absl/strings/str_replace.cc",
+    "AEC3/base/abseil/absl/strings/str_split.cc",
+    "AEC3/base/abseil/absl/strings/substitute.cc",
+    "AEC3/base/abseil/absl/types/bad_optional_access.cc",
+    # "AEC3/base/jsoncpp/src/lib_json/json_reader.cpp",
+    # "AEC3/base/jsoncpp/src/lib_json/json_value.cpp",
+    # "AEC3/base/jsoncpp/src/lib_json/json_writer.cpp",
+    "AEC3/base/rtc_base/checks.cc",
+    "AEC3/base/rtc_base/memory/aligned_malloc.cc",
+    "AEC3/base/rtc_base/platform_thread_types.cc",
+    "AEC3/base/rtc_base/race_checker.cc",
+    "AEC3/base/rtc_base/strings/json.cc",
+    "AEC3/base/rtc_base/strings/string_builder.cc",
+    "AEC3/base/rtc_base/string_encode.cc",
+    "AEC3/base/rtc_base/string_to_number.cc",
+    "AEC3/base/rtc_base/string_utils.cc",
+    "AEC3/base/rtc_base/system/file_wrapper.cc",
+    "AEC3/base/rtc_base/time_utils.cc",
+]
+if enable_webrtc_logging:
+    aec3_sources += [
+        "AEC3/base/system_wrappers/source/metrics.cc",
+        "AEC3/base/rtc_base/critical_section.cc",
+        "AEC3/base/rtc_base/logging.cc",
+    ]
+if env["arch"] == "arm64":
+    aec3_sources += [
+        "AEC3/audio_processing/utility/ooura_fft_neon.cc",
+        "AEC3/audio_processing/resampler/sinc_resampler_neon.cc",
+    ]
+elif env["arch"] == "mips64":  # Check if supported.
+    aec3_sources += ["AEC3/audio_processing/resampler/ooura_fft_mips.cc"]
+elif env["arch"] == "x86_64" and env["platform"] != "ios":
+    aec3_sources += [
+        "AEC3/audio_processing/utility/ooura_fft_sse2.cc",
+        "AEC3/audio_processing/resampler/sinc_resampler_sse.cc",
+    ]
+
+env_thirdparty.Prepend(CPPPATH=["#thirdparty/libogg"])
+env_thirdparty.Append(CPPDEFINES=["HAVE_CONFIG_H"])
+
+env_thirdparty.add_source_files(env.modules_sources, Glob("thirdparty/libsamplerate/src/*.c"))
+
 module_env.add_source_files(env.modules_sources, "*.cpp")

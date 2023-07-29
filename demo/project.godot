@@ -1,0 +1,40 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Speech Voip Demo"
+run/main_scene="res://vsk_speech/scenes/entry_point.tscn"
+config/features=PackedStringArray("4.0", "Double Precision")
+config/icon="res://icon.png"
+
+[audio]
+
+driver/enable_input=true
+driver/mix_rate=48000
+enable_audio_input=true
+mix_rate=48000
+
+[autoload]
+
+network_layer="*res://vsk_speech/scenes/network_layer.gd"
+
+[editor_plugins]
+
+enabled=PackedStringArray()
+
+[gdnative]
+
+singletons=[]
+singletons_disabled=[]
+
+[rendering]
+
+quality/filters/msaa=4

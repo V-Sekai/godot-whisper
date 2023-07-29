@@ -30,11 +30,18 @@
 
 #include "register_types.h"
 
+#include "core/object/class_db.h"
+#include "speech.h"
+
+#include "speech_processor.h"
 
 void initialize_whisper_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
+	GDREGISTER_CLASS(SpeechToTextPlaybackStats);
+	GDREGISTER_CLASS(SpeechToTextProcessor);
+	GDREGISTER_CLASS(SpeechToText);
 }
 
 void uninitialize_whisper_module(ModuleInitializationLevel p_level) {

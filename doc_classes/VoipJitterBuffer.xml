@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="VoipJitterBuffer" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		A jitter buffer class for managing Voice over IP (VoIP) audio packets.
+	</brief_description>
+	<description>
+		The VoipJitterBuffer class is designed to handle variations in packet arrival times and ensure smooth audio playback in VoIP applications. It provides methods for initializing, controlling, and updating the jitter buffer, as well as inserting and retrieving packets.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="jitter_buffer_destroy">
+			<return type="void" />
+			<param index="0" name="jitter" type="JitterBuffer" />
+			<description>
+				Destroys the jitter buffer and frees up resources.
+			</description>
+		</method>
+		<method name="jitter_buffer_get">
+			<return type="Array" />
+			<param index="0" name="jitter" type="JitterBuffer" />
+			<param index="1" name="packet" type="JitterBufferPacket" />
+			<param index="2" name="desired_span" type="int" />
+			<description>
+				Retrieves a packet from the jitter buffer based on the desired span.
+			</description>
+		</method>
+		<method name="jitter_buffer_get_another">
+			<return type="int" />
+			<param index="0" name="jitter" type="JitterBuffer" />
+			<param index="1" name="packet" type="JitterBufferPacket" />
+			<description>
+				Retrieves another packet from the jitter buffer.
+			</description>
+		</method>
+		<method name="jitter_buffer_get_pointer_timestamp">
+			<return type="int" />
+			<param index="0" name="jitter" type="JitterBuffer" />
+			<description>
+				Returns the pointer timestamp of the jitter buffer.
+			</description>
+		</method>
+		<method name="jitter_buffer_init">
+			<return type="JitterBuffer" />
+			<param index="0" name="step_size" type="int" />
+			<description>
+				Initializes the jitter buffer with a given step size.
+			</description>
+		</method>
+		<method name="jitter_buffer_put">
+			<return type="void" />
+			<param index="0" name="jitter" type="JitterBuffer" />
+			<param index="1" name="packet" type="JitterBufferPacket" />
+			<description>
+				Inserts a packet into the jitter buffer.
+			</description>
+		</method>
+		<method name="jitter_buffer_remaining_span">
+			<return type="void" />
+			<param index="0" name="jitter" type="JitterBuffer" />
+			<param index="1" name="rem" type="int" />
+			<description>
+				Calculates the remaining span in the jitter buffer.
+			</description>
+		</method>
+		<method name="jitter_buffer_reset">
+			<return type="void" />
+			<param index="0" name="jitter" type="JitterBuffer" />
+			<description>
+				Resets the jitter buffer to its initial state.
+			</description>
+		</method>
+		<method name="jitter_buffer_tick">
+			<return type="void" />
+			<param index="0" name="jitter" type="JitterBuffer" />
+			<description>
+				Advances the internal state of the jitter buffer.
+			</description>
+		</method>
+		<method name="jitter_buffer_update_delay">
+			<return type="int" />
+			<param index="0" name="jitter" type="JitterBuffer" />
+			<param index="1" name="packet" type="JitterBufferPacket" />
+			<description>
+				Updates the buffering delay based on network conditions.
+			</description>
+		</method>
+	</methods>
+</class>

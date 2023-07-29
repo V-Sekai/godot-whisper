@@ -1,5 +1,5 @@
 def can_build(env, platform):
-    return True
+    return platform != "web" and platform != "android"
 
 
 def configure(env):
@@ -8,6 +8,9 @@ def configure(env):
 
 def get_doc_classes():
     return [
+        "Speech",
+        "SpeechProcessor",
+        "PlaybackStats",
     ]
 
 

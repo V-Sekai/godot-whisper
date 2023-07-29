@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SpeechProcessor" inherits="Node" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="compress_buffer">
+			<return type="Dictionary" />
+			<param index="0" name="pcm_byte_array" type="PackedByteArray" />
+			<param index="1" name="output_buffer" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="decompress_buffer">
+			<return type="PackedVector2Array" />
+			<param index="0" name="speech_decoder" type="SpeechDecoder" />
+			<param index="1" name="read_byte_buffer" type="PackedByteArray" />
+			<param index="2" name="read_size" type="int" />
+			<param index="3" name="write_vec2_array" type="PackedVector2Array" />
+			<description>
+			</description>
+		</method>
+		<method name="set_audio_input_stream_player">
+			<return type="bool" />
+			<param index="0" name="stream_player" type="Node" />
+			<description>
+			</description>
+		</method>
+		<method name="set_error_cancellation_bus">
+			<return type="void" />
+			<param index="0" name="name" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="set_streaming_bus">
+			<return type="void" />
+			<param index="0" name="name" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="start">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="stop">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<signals>
+		<signal name="speech_processed">
+			<param index="0" name="packet" type="Dictionary" />
+			<description>
+			</description>
+		</signal>
+	</signals>
+	<constants>
+		<constant name="SPEECH_SETTING_CHANNEL_COUNT" value="1">
+		</constant>
+		<constant name="SPEECH_SETTING_MILLISECONDS_PER_PACKET" value="100">
+		</constant>
+		<constant name="SPEECH_SETTING_BUFFER_BYTE_COUNT" value="2">
+		</constant>
+		<constant name="SPEECH_SETTING_SAMPLE_RATE" value="48000">
+		</constant>
+		<constant name="SPEECH_SETTING_APPLICATION" value="2048">
+		</constant>
+		<constant name="SPEECH_SETTING_BUFFER_FRAME_COUNT" value="480">
+		</constant>
+		<constant name="SPEECH_SETTING_INTERNAL_BUFFER_SIZE" value="95700">
+		</constant>
+		<constant name="SPEECH_SETTING_VOICE_SAMPLE_RATE" value="48000">
+		</constant>
+		<constant name="SPEECH_SETTING_VOICE_BUFFER_FRAME_COUNT" value="480">
+		</constant>
+		<constant name="SPEECH_SETTING_PCM_BUFFER_SIZE" value="960">
+		</constant>
+		<constant name="SPEECH_SETTING_MILLISECONDS_PER_SECOND" value="1000">
+		</constant>
+		<constant name="SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE" value="48000">
+		</constant>
+		<constant name="SPEECH_SETTING_PACKET_DELTA_TIME" value="0">
+		</constant>
+	</constants>
+</class>

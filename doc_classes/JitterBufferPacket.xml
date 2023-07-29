@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="JitterBufferPacket" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		A packet class for use with the VoipJitterBuffer.
+	</brief_description>
+	<description>
+		The JitterBufferPacket class represents a single audio packet used in conjunction with the VoipJitterBuffer class. It contains information such as data, sequence number, span, timestamp, and user data.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="data" type="PackedByteArray" setter="set_data" getter="get_data" default="PackedByteArray()">
+			The audio data contained within the packet.
+		</member>
+		<member name="sequence" type="int" setter="set_sequence" getter="get_sequence" default="0">
+			The sequence number of the packet, used to order packets correctly.
+		</member>
+		<member name="span" type="int" setter="set_span" getter="get_span" default="0">
+			The span of the packet, representing the duration of the audio data.
+		</member>
+		<member name="timestamp" type="int" setter="set_timestamp" getter="get_timestamp" default="0">
+			The timestamp of the packet, used to synchronize audio playback.
+		</member>
+		<member name="user_data" type="int" setter="set_user_data" getter="get_user_data" default="0">
+			Optional user data associated with the packet.
+		</member>
+	</members>
+</class>

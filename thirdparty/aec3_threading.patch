@@ -1,0 +1,125 @@
+commit e7e3198c246dbc52ada6bab60f0a9bf6bdfc5d01
+Author: K. S. Ernest (iFire) Lee <ernest.lee@chibifire.com>
+Date:   Tue Jul 5 16:30:51 2022 -0700
+
+    WIP webrtc AEC3.
+
+diff --git a/thirdparty/AEC3/base/rtc_base/platform_thread_types.cc b/thirdparty/AEC3/base/rtc_base/platform_thread_types.cc
+index ed4a228..5de1d10 100644
+--- a/thirdparty/AEC3/base/rtc_base/platform_thread_types.cc
++++ b/thirdparty/AEC3/base/rtc_base/platform_thread_types.cc
+@@ -57,7 +57,8 @@ bool IsThreadRefEqual(const PlatformThreadRef& a, const PlatformThreadRef& b) {
+ }
+ 
+ void SetCurrentThreadName(const char* name) {
+-#if defined(WEBRTC_WIN)
++// TODO: GODOT ENGINE // V-Sekai fire 2022-07-05 HACK  
++#if false && defined(WEBRTC_WIN)
+   // For details see:
+   // https://docs.microsoft.com/en-us/visualstudio/debugger/how-to-set-a-thread-name-in-native-code
+ #pragma pack(push, 8)
+diff --git a/thirdparty/AEC3/base/rtc_base/atomic_ops.h b/thirdparty/AEC3/base/rtc_base/atomic_ops.h
+index 18a24a8..146566f 100644
+--- a/thirdparty/AEC3/base/rtc_base/atomic_ops.h
++++ b/thirdparty/AEC3/base/rtc_base/atomic_ops.h
+@@ -15,11 +15,9 @@
+ // clang-format off
+ // clang formating would change include order.
+ 
+-// Include winsock2.h before including <windows.h> to maintain consistency with
+-// win32.h. To include win32.h directly, it must be broken out into its own
+-// build target.
+-#include <winsock2.h>
++#define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
++#undef WIN32_LEAN_AND_MEAN
+ // clang-format on
+ #endif  // defined(WEBRTC_WIN)
+ 
+diff --git a/thirdparty/AEC3/base/rtc_base/critical_section.h b/thirdparty/AEC3/base/rtc_base/critical_section.h
+index cf10463..381eca3 100644
+--- a/thirdparty/AEC3/base/rtc_base/critical_section.h
++++ b/thirdparty/AEC3/base/rtc_base/critical_section.h
+@@ -20,12 +20,9 @@
+ #if defined(WEBRTC_WIN)
+ // clang-format off
+ // clang formating would change include order.
+-
+-// Include winsock2.h before including <windows.h> to maintain consistency with
+-// win32.h. To include win32.h directly, it must be broken out into its own
+-// build target.
+-#include <winsock2.h>
++#define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
++#undef WIN32_LEAN_AND_MEAN
+ #include <sal.h>  // must come after windows headers.
+ // clang-format on
+ #endif  // defined(WEBRTC_WIN)
+diff --git a/thirdparty/AEC3/base/rtc_base/platform_thread_types.h b/thirdparty/AEC3/base/rtc_base/platform_thread_types.h
+index 6b9101e..4825c06 100644
+--- a/thirdparty/AEC3/base/rtc_base/platform_thread_types.h
++++ b/thirdparty/AEC3/base/rtc_base/platform_thread_types.h
+@@ -14,11 +14,9 @@
+ // clang-format off
+ // clang formating would change include order.
+ #if defined(WEBRTC_WIN)
+-// Include winsock2.h before including <windows.h> to maintain consistency with
+-// win32.h. To include win32.h directly, it must be broken out into its own
+-// build target.
+-#include <winsock2.h>
++#define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
++#undef WIN32_LEAN_AND_MEAN
+ #elif defined(WEBRTC_FUCHSIA)
+ #include <zircon/types.h>
+ #include <zircon/process.h>
+diff --git a/thirdparty/AEC3/base/rtc_base/system/file_wrapper.cc b/thirdparty/AEC3/base/rtc_base/system/file_wrapper.cc
+index 5409d74..cd0dc18 100644
+--- a/thirdparty/AEC3/base/rtc_base/system/file_wrapper.cc
++++ b/thirdparty/AEC3/base/rtc_base/system/file_wrapper.cc
+@@ -14,7 +14,7 @@
+ #include <cerrno>
+ 
+ #ifdef _WIN32
+-#include <Windows.h>
++#include <windows.h>
+ #else
+ #include <string.h>
+ #endif
+diff --git a/thirdparty/AEC3/audio_processing/aec3/reverb_model_estimator.h b/thirdparty/AEC3/audio_processing/aec3/reverb_model_estimator.h
+index b6c02bc..105f17a 100644
+--- a/thirdparty/AEC3/audio_processing/aec3/reverb_model_estimator.h
++++ b/thirdparty/AEC3/audio_processing/aec3/reverb_model_estimator.h
+@@ -13,6 +13,7 @@
+ 
+ #include <array>
+ #include <vector>
++#include <memory>
+ 
+ #include "absl/types/optional.h"
+ #include "rtc_base/array_view.h"
+diff --git a/thirdparty/AEC3/audio_processing/splitting_filter_c.c b/thirdparty/AEC3/audio_processing/splitting_filter_c.c
+index 1c48aa4..0744cf9 100644
+--- a/thirdparty/AEC3/audio_processing/splitting_filter_c.c
++++ b/thirdparty/AEC3/audio_processing/splitting_filter_c.c
+@@ -14,6 +14,7 @@
+  */
+ 
+ #include "rtc_base/checks.h"
++#include <stddef.h>
+ #include <stdint.h>
+ 
+ // Maximum number of samples in a low/high-band frame.
+diff --git a/thirdparty/AEC3/audio_processing/aec3/clockdrift_detector.h b/thirdparty/AEC3/audio_processing/aec3/clockdrift_detector.h
+index 22528c9..7af1969 100644
+--- a/thirdparty/AEC3/audio_processing/aec3/clockdrift_detector.h
++++ b/thirdparty/AEC3/audio_processing/aec3/clockdrift_detector.h
+@@ -31,7 +31,7 @@ class ClockdriftDetector {
+  private:
+   std::array<int, 3> delay_history_;
+   Level level_;
+-  size_t stability_counter_;
++  std::size_t stability_counter_;
+ };
+ }  // namespace webrtc
+ 

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="Speech" inherits="Node" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="add_player_audio">
+			<return type="void" />
+			<param index="0" name="player_id" type="int" />
+			<param index="1" name="audio_stream_player" type="Node" />
+			<description>
+			</description>
+		</method>
+		<method name="attempt_to_feed_stream">
+			<return type="void" />
+			<param index="0" name="skip_count" type="int" />
+			<param index="1" name="decoder" type="SpeechDecoder" />
+			<param index="2" name="audio_stream_player" type="Node" />
+			<param index="3" name="jitter_buffer" type="Array" />
+			<param index="4" name="playback_stats" type="PlaybackStats" />
+			<param index="5" name="player_dict" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="calc_playback_ring_buffer_length">
+			<return type="int" />
+			<param index="0" name="generator" type="AudioStreamGenerator" />
+			<description>
+			</description>
+		</method>
+		<method name="clear_all_player_audio">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="clear_skipped_audio_packets">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="copy_and_clear_buffers">
+			<return type="Array" />
+			<description>
+			</description>
+		</method>
+		<method name="decompress_buffer">
+			<return type="PackedVector2Array" />
+			<param index="0" name="decoder" type="SpeechDecoder" />
+			<param index="1" name="read_array" type="PackedByteArray" />
+			<param index="2" name="read_size" type="int" />
+			<param index="3" name="write_array" type="PackedVector2Array" />
+			<description>
+			</description>
+		</method>
+		<method name="end_recording">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="get_playback_stats">
+			<return type="Dictionary" />
+			<param index="0" name="speech_stat" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="get_skipped_audio_packets">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_speech_decoder">
+			<return type="SpeechDecoder" />
+			<description>
+			</description>
+		</method>
+		<method name="get_stats">
+			<return type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="on_received_audio_packet">
+			<return type="void" />
+			<param index="0" name="peer_id" type="int" />
+			<param index="1" name="sequence_id" type="int" />
+			<param index="2" name="packet" type="PackedByteArray" />
+			<description>
+			</description>
+		</method>
+		<method name="remove_player_audio">
+			<return type="void" />
+			<param index="0" name="player_id" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="set_audio_input_stream_player">
+			<return type="bool" />
+			<param index="0" name="player" type="Node" />
+			<description>
+			</description>
+		</method>
+		<method name="set_error_cancellation_bus">
+			<return type="void" />
+			<param index="0" name="name" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="set_streaming_bus">
+			<return type="void" />
+			<param index="0" name="bus" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="start_recording">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="BUFFER_DELAY_THRESHOLD" type="float" setter="set_buffer_delay_threshold" getter="get_buffer_delay_threshold" default="0.1">
+		</member>
+		<member name="DEBUG" type="bool" setter="set_debug" getter="get_debug" default="false">
+		</member>
+		<member name="JITTER_BUFFER_SLOWDOWN" type="int" setter="set_jitter_buffer_slowdown" getter="get_jitter_buffer_slowdown" default="6">
+		</member>
+		<member name="JITTER_BUFFER_SPEEDUP" type="int" setter="set_jitter_buffer_speedup" getter="get_jitter_buffer_speedup" default="12">
+		</member>
+		<member name="MAX_JITTER_BUFFER_SIZE" type="int" setter="set_max_jitter_buffer_size" getter="get_max_jitter_buffer_size" default="16">
+		</member>
+		<member name="STREAM_SPEEDUP_PITCH" type="float" setter="set_stream_speedup_pitch" getter="get_stream_speedup_pitch" default="1.0">
+		</member>
+		<member name="STREAM_STANDARD_PITCH" type="float" setter="set_stream_standard_pitch" getter="get_stream_standard_pitch" default="1.0">
+		</member>
+		<member name="blank_packet" type="PackedVector2Array" setter="set_blank_packet" getter="get_blank_packet">
+		</member>
+		<member name="packets_received_this_frame" type="int" setter="set_packets_received_this_frame" getter="get_packets_received_this_frame" default="0">
+		</member>
+		<member name="playback_ring_buffer_length" type="int" setter="set_playback_ring_buffer_length" getter="get_playback_ring_buffer_length" default="0">
+		</member>
+		<member name="player_audio" type="Dictionary" setter="set_player_audio" getter="get_player_audio">
+		</member>
+		<member name="uncompressed_audio" type="PackedVector2Array" setter="set_uncompressed_audio" getter="get_uncompressed_audio">
+		</member>
+		<member name="use_sample_stretching" type="bool" setter="set_use_sample_stretching" getter="get_use_sample_stretching" default="true">
+		</member>
+	</members>
+</class>
