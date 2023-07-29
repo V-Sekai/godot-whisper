@@ -1,1 +1,1 @@
-# godot-whisper-stt
+# v-sekai.whisper
