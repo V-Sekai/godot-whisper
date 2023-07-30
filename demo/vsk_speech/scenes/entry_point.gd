@@ -1,12 +1,11 @@
 extends Node
 
-const lobby_scene_const = preload("lobby.tscn")
 const PACKET_TICK_TIMESLICE = 10
 const MIC_BUS_NAME = "Mic"
 const AEC_BUS_NAME = "Master"
 var lobby_scene : Node = null
 var debug_output : Label = null
-@onready var godot_speech : Node = get_node("GodotSpeech")
+@onready var godot_speech : SpeechToText = get_node("SpeechLobby/GodotSpeech")
 var is_connected : bool = false
 var audio_players : Dictionary
 var audio_mutex : Mutex = Mutex.new()
@@ -69,26 +68,13 @@ func ended() -> void:
 	voice_recording_started = false
 
 
-func host(p_player_name : String, p_port : int, p_server_only : bool) -> void:
-	if network_layer.host_game(p_player_name, p_port, p_server_only):
-		if lobby_scene:
-			if network_layer.is_active_player():
-				started()
-			lobby_scene.refresh_lobby(network_layer.get_full_player_list())
-		confirm_connection()
-
-
 func confirm_connection() -> void:
 	is_connected = true
 	voice_id = 0
 
 
 func _on_connection_success() -> void:
-	if network_layer.is_active_player():
-		started()
-	if lobby_scene:
-		lobby_scene.on_connection_success()
-		lobby_scene.refresh_lobby(network_layer.get_full_player_list())
+	started()
 	confirm_connection()
 
 
@@ -116,11 +102,6 @@ func _on_game_error(p_errtxt : String) -> void:
 	lobby_scene.on_game_error(p_errtxt)
 
 
-func _on_received_audio_packet(p_id : int, p_index : int, p_packet : PackedByteArray) -> void:
-	if network_layer.is_active_player():
-		godot_speech.on_received_audio_packet(p_id, p_index, p_packet)
-
-
 func get_ticks_since_recording_started() -> int:
 	return (Time.get_ticks_msec() - audio_start_tick)
 
@@ -132,6 +113,7 @@ func add_player_audio(p_id) -> void:
 	add_child(audio_stream_player, true)
 	audio_stream_player.owner = owner
 	godot_speech.add_player_audio(p_id, audio_stream_player)
+
 
 func remove_player_audio(p_id) -> void:
 	if not godot_speech.get_property_list().has("voice_controller"):
@@ -178,7 +160,7 @@ func _process(p_delta) -> void:
 	var index : int = get_current_voice_id()
 	var buffers: Array = get_voice_buffers()
 	for buffer in buffers:
-		network_layer.send_audio_packet(index, buffer["byte_array"].slice(0, buffer["buffer_size"]))
+		godot_speech.on_received_audio_packet(index, index, buffer);
 		index += 1
 	var speech_stat_dict : Dictionary = godot_speech.get_stats()
 	var stat_dict : Dictionary = godot_speech.get_playback_stats(speech_stat_dict)
@@ -187,12 +169,21 @@ func _process(p_delta) -> void:
 
 
 func _ready() -> void:
-	lobby_scene = lobby_scene_const.instantiate()
-	add_child(lobby_scene, true)
-	debug_output = lobby_scene.get_node("debug_output")
+	debug_output = get_node("SpeechLobby/debug_output")
 	debug_output.set_text("Ready.")
-	var microphone_stream : AudioStreamPlayer = get_node("MicrophoneStreamAudio")
+	var microphone_stream : AudioStreamPlayer = $MicrophoneStreamAudio
 	godot_speech.set_audio_input_stream_player(microphone_stream)
 	godot_speech.set_streaming_bus(MIC_BUS_NAME)
 	godot_speech.set_error_cancellation_bus(AEC_BUS_NAME)
 	set_process(true)
+	microphone_stream.play()
+	godot_speech.add_player_audio(get_current_voice_id(), microphone_stream)
+	started()
+	confirm_connection()
+	var speech_process: SpeechToTextProcessor = godot_speech.get_node(godot_speech.get_speech_processor())
+	var on_packet: Callable = Callable(self, "process_on_received_audio_packet")
+	speech_process.speech_processed.connect(on_packet)
+
+
+func process_on_received_audio_packet(packet: Dictionary):
+	godot_speech.on_received_audio_packet(get_current_voice_id(), get_current_voice_id(), packet["buffer"])

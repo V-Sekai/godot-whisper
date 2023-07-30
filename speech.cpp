@@ -81,50 +81,44 @@ SpeechToText::InputPacket *SpeechToText::get_next_valid_input_packet() {
 
 void SpeechToText::speech_processed(SpeechToTextProcessor::SpeechInput *p_mic_input) {
 	PackedByteArray *mic_input_byte_array = p_mic_input->pcm_byte_array;
+	if (!mic_input_byte_array) {
+		return;
+	}
 	memcpy(input_byte_array.ptrw(), mic_input_byte_array->ptr(),
 			SpeechToTextProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
-
-	PackedVector2Array write_vec2_array;
-	bool ok = SpeechToTextProcessor::_16_pcm_mono_to_real_stereo(&input_byte_array, &write_vec2_array);
+	if (!input_byte_array.size()) {
+		return;
+	}
+	bool ok = SpeechToTextProcessor::_16_pcm_mono_to_real_mono(&input_byte_array, &uncompressed_audio);
 	ERR_FAIL_COND(!ok);
-	{
-		MutexLock mutex_lock(audio_mutex);
+	if (!whisper_context) {
+		return;
+	}
 
-		if (!whisper_context) {
-			return;
-		}
+	whisper_full_params whispher_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+	whispher_params.print_progress = false;
+	whispher_params.print_special = params.print_special;
+	whispher_params.print_realtime = false;
+	whispher_params.print_timestamps = !params.no_timestamps;
+	whispher_params.translate = params.translate;
+	whispher_params.single_segment = true;
+	whispher_params.max_tokens = params.max_tokens;
+	whispher_params.language = params.language.c_str();
+	whispher_params.n_threads = params.n_threads;
+	whispher_params.audio_ctx = params.audio_ctx;
+	whispher_params.speed_up = params.speed_up;
+	whispher_params.prompt_tokens = params.no_context ? nullptr : prompt_tokens.data();
+	whispher_params.prompt_n_tokens = params.no_context ? 0 : prompt_tokens.size();
 
-		whisper_full_params wparams = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
-		wparams.print_progress = false;
-		wparams.print_special = params.print_special;
-		wparams.print_realtime = false;
-		wparams.print_timestamps = !params.no_timestamps;
-		wparams.translate = params.translate;
-		wparams.single_segment = true;
-		wparams.max_tokens = params.max_tokens;
-		wparams.language = params.language.c_str();
-		wparams.n_threads = params.n_threads;
-		wparams.audio_ctx = params.audio_ctx;
-		wparams.speed_up = params.speed_up;
-		wparams.prompt_tokens = params.no_context ? nullptr : prompt_tokens.data();
-		wparams.prompt_n_tokens = params.no_context ? 0 : prompt_tokens.size();
+	if (whisper_full(whisper_context, whispher_params, uncompressed_audio.ptr(), SpeechToTextProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT) != 0) {
+		ERR_PRINT("Failed to process audio");
+		return;
+	}
 
-		PackedFloat32Array float_array;
-		for (const Vector2 &vector : write_vec2_array) {
-			float_array.push_back(vector.x);
-			float_array.push_back(vector.y);
-		}
-		if (whisper_full(whisper_context, wparams, float_array.ptr(), float_array.size()) != 0) {
-			ERR_PRINT("Failed to process audio");
-			return;
-		}
-
-		const int n_segments = whisper_full_n_segments(whisper_context);
-		for (int i = 0; i < n_segments; ++i) {
-			const char *text = whisper_full_get_segment_text(whisper_context, i);
-			print_line(vformat("%s", text));
-			add_text(text);
-		}
+	const int n_segments = whisper_full_n_segments(whisper_context);
+	for (int i = 0; i < n_segments; ++i) {
+		const char *text = whisper_full_get_segment_text(whisper_context, i);
+		print_line(vformat("%s", text));
 	}
 }
 
@@ -192,11 +186,11 @@ void SpeechToText::set_use_sample_stretching(bool val) {
 	use_sample_stretching = val;
 }
 
-PackedVector2Array SpeechToText::get_uncompressed_audio() const {
+PackedFloat32Array SpeechToText::get_uncompressed_audio() const {
 	return uncompressed_audio;
 }
 
-void SpeechToText::set_uncompressed_audio(PackedVector2Array val) {
+void SpeechToText::set_uncompressed_audio(PackedFloat32Array val) {
 	uncompressed_audio = val;
 }
 
@@ -247,6 +241,8 @@ int SpeechToText::calc_playback_ring_buffer_length(Ref<AudioStreamGenerator> aud
 }
 
 void SpeechToText::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_speech_processor"),
+			&SpeechToText::get_speech_processor);
 	ClassDB::bind_method(D_METHOD("get_skipped_audio_packets"),
 			&SpeechToText::get_skipped_audio_packets);
 	ClassDB::bind_method(D_METHOD("clear_skipped_audio_packets"),
@@ -432,7 +428,7 @@ void SpeechToText::_notification(int p_what) {
 			}
 			uncompressed_audio.resize(
 					SpeechToTextProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT);
-			uncompressed_audio.fill(Vector2());
+			uncompressed_audio.fill(float());
 			set_process_internal(true);
 			break;
 		}
@@ -458,9 +454,6 @@ void SpeechToText::_notification(int p_what) {
 					continue;
 				}
 				Dictionary elem = player_audio[key];
-				if (!elem.has("speech_decoder")) {
-					continue;
-				}
 				if (!elem.has("audio_stream_player")) {
 					continue;
 				}
@@ -543,36 +536,36 @@ SpeechToText::~SpeechToText() {
 }
 
 void SpeechToText::add_player_audio(int p_player_id, Node *p_audio_stream_player) {
-	if (cast_to<AudioStreamPlayer>(p_audio_stream_player) || cast_to<AudioStreamPlayer2D>(p_audio_stream_player) || cast_to<AudioStreamPlayer3D>(p_audio_stream_player)) {
-		if (!player_audio.has(p_player_id)) {
-			Ref<AudioStreamGenerator> new_generator;
-			new_generator.instantiate();
-			new_generator->set_mix_rate(SpeechToTextProcessor::SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE);
-			new_generator->set_buffer_length(BUFFER_DELAY_THRESHOLD);
-			playback_ring_buffer_length = calc_playback_ring_buffer_length(new_generator);
-			p_audio_stream_player->call("set_stream", new_generator);
-			p_audio_stream_player->call("set_bus", "VoiceOutput");
-			p_audio_stream_player->call("set_autoplay", true);
-			p_audio_stream_player->call("play");
-			Ref<SpeechToTextPlaybackStats> pstats = memnew(SpeechToTextPlaybackStats);
-			pstats->playback_ring_buffer_length = playback_ring_buffer_length;
-			pstats->buffer_frame_count = SpeechToTextProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT;
-			Dictionary dict;
-			dict["playback_last_skips"] = 0;
-			dict["audio_stream_player"] = p_audio_stream_player;
-			dict["jitter_buffer"] = Array();
-			dict["sequence_id"] = -1;
-			dict["last_update"] = OS::get_singleton()->get_ticks_msec();
-			dict["packets_received_this_frame"] = 0;
-			dict["excess_packets"] = 0;
-			dict["playback_stats"] = pstats;
-			dict["playback_start_time"] = 0;
-			dict["playback_prev_time"] = -1;
-			player_audio[p_player_id] = dict;
-		} else {
-			print_error(vformat("Attempted to duplicate player_audio entry (%s)!", p_player_id));
-		}
+	if (!cast_to<AudioStreamPlayer>(p_audio_stream_player) && !cast_to<AudioStreamPlayer2D>(p_audio_stream_player) && !cast_to<AudioStreamPlayer3D>(p_audio_stream_player)) {
+		return;
 	}
+	if (player_audio.has(p_player_id)) {
+		print_error(vformat("Attempted to duplicate player_audio entry (%s)!", p_player_id));
+	}
+	Ref<AudioStreamGenerator> new_generator;
+	new_generator.instantiate();
+	new_generator->set_mix_rate(SpeechToTextProcessor::SPEECH_SETTING_VOICE_PACKET_SAMPLE_RATE);
+	new_generator->set_buffer_length(BUFFER_DELAY_THRESHOLD);
+	playback_ring_buffer_length = calc_playback_ring_buffer_length(new_generator);
+	p_audio_stream_player->call("set_stream", new_generator);
+	p_audio_stream_player->call("set_bus", "VoiceOutput");
+	p_audio_stream_player->call("set_autoplay", true);
+	p_audio_stream_player->call("play");
+	Ref<SpeechToTextPlaybackStats> pstats = memnew(SpeechToTextPlaybackStats);
+	pstats->playback_ring_buffer_length = playback_ring_buffer_length;
+	pstats->buffer_frame_count = SpeechToTextProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT;
+	Dictionary dict;
+	dict["playback_last_skips"] = 0;
+	dict["audio_stream_player"] = p_audio_stream_player;
+	dict["jitter_buffer"] = Array();
+	dict["sequence_id"] = -1;
+	dict["last_update"] = OS::get_singleton()->get_ticks_msec();
+	dict["packets_received_this_frame"] = 0;
+	dict["excess_packets"] = 0;
+	dict["playback_stats"] = pstats;
+	dict["playback_start_time"] = 0;
+	dict["playback_prev_time"] = -1;
+	player_audio[p_player_id] = dict;
 }
 
 void SpeechToText::vc_debug_print(String p_str) const {

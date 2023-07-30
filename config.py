@@ -8,8 +8,8 @@ def configure(env):
 
 def get_doc_classes():
     return [
-        "Speech",
-        "SpeechProcessor",
+        "SpeechToText",
+        "SpeechToTextProcessor",
         "PlaybackStats",
     ]
 

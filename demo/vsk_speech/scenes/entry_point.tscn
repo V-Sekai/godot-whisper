@@ -12,8 +12,42 @@ stream = SubResource("AudioStreamMicrophone_tmvyd")
 volume_db = 1.0
 bus = &"Mic"
 
-[node name="GodotSpeech" type="SpeechToText" parent="."]
+[node name="SpeechLobby" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 2
+size_flags_vertical = 2
 
-[node name="SpeechProcessor2" type="SpeechToTextProcessor" parent="GodotSpeech"]
+[node name="ColorRect" type="ColorRect" parent="SpeechLobby"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.576471, 0.25098, 0.231373, 1)
 
-[node name="SpeechProcessor" type="SpeechToTextProcessor" parent="GodotSpeech"]
+[node name="label" type="Label" parent="SpeechLobby"]
+layout_mode = 0
+offset_right = 1024.0
+offset_bottom = 40.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.843137, 0.882353, 0.909804, 1)
+text = "Speech To Text"
+horizontal_alignment = 1
+
+[node name="debug_output" type="Label" parent="SpeechLobby"]
+layout_mode = 0
+anchor_right = 0.446
+anchor_bottom = 1.0
+offset_top = 160.0
+offset_right = 311.296
+theme_override_font_sizes/font_size = 16
+metadata/_edit_layout_mode = 1
+metadata/_edit_use_custom_anchors = true
+
+[node name="GodotSpeech" type="SpeechToText" parent="SpeechLobby"]
+
+[node name="SpeechToTextProcessor" type="SpeechToTextProcessor" parent="SpeechLobby/GodotSpeech"]

@@ -66,7 +66,7 @@ public:
 		SPEECH_SETTING_MILLISECONDS_PER_SECOND = 1000,
 		SPEECH_SETTING_MILLISECONDS_PER_PACKET = 100,
 		SPEECH_SETTING_BUFFER_BYTE_COUNT = sizeof(int16_t),
-		SPEECH_SETTING_SAMPLE_RATE = 48000,
+		SPEECH_SETTING_SAMPLE_RATE = 16000,
 		SPEECH_SETTING_BUFFER_FRAME_COUNT = SPEECH_SETTING_SAMPLE_RATE / SPEECH_SETTING_MILLISECONDS_PER_PACKET,
 		SPEECH_SETTING_INTERNAL_BUFFER_SIZE = 25 * 3 * 1276,
 		SPEECH_SETTING_VOICE_SAMPLE_RATE = SPEECH_SETTING_SAMPLE_RATE,
@@ -197,6 +197,30 @@ public:
 
 	static bool _16_pcm_mono_to_real_stereo(const PackedByteArray *p_src_buffer,
 			PackedVector2Array *p_dst_buffer);
+
+	static bool _16_pcm_mono_to_real_mono(
+			const PackedByteArray *p_src_buffer, PackedFloat32Array *p_dst_buffer) {
+		uint32_t buffer_size = p_src_buffer->size();
+
+		ERR_FAIL_COND_V(buffer_size % 2, false);
+
+		uint32_t frame_count = buffer_size / 2;
+
+		const int16_t *src_buffer_ptr =
+				reinterpret_cast<const int16_t *>(p_src_buffer->ptr());
+		real_t *real_buffer_ptr = reinterpret_cast<real_t *>(p_dst_buffer->ptrw());
+
+		for (uint32_t i = 0; i < frame_count; i++) {
+			float value = ((float)*src_buffer_ptr) / 32768.0f;
+
+			*(real_buffer_ptr) = value;
+
+			real_buffer_ptr++;
+			src_buffer_ptr++;
+		}
+
+		return true;
+	}
 
 	virtual bool decompress_buffer_internal(
 			void *speech_decoder, const PackedByteArray *p_read_byte_array,

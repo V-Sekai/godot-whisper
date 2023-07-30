@@ -32,6 +32,7 @@
 #define SPEECH_H
 
 #include "core/error/error_macros.h"
+#include "core/variant/variant.h"
 #include "thirdparty/libsamplerate/src/samplerate.h"
 
 #include "core/config/engine.h"
@@ -39,7 +40,6 @@
 #include "core/os/mutex.h"
 #include "core/variant/array.h"
 #include "core/variant/dictionary.h"
-#include "scene/gui/rich_text_label.h"
 #include "servers/audio_server.h"
 
 #include "servers/audio/effects/audio_stream_generator.h"
@@ -74,8 +74,8 @@ public:
 	Dictionary get_playback_stats();
 };
 
-class SpeechToText : public RichTextLabel {
-	GDCLASS(SpeechToText, RichTextLabel);
+class SpeechToText : public Node {
+	GDCLASS(SpeechToText, Node);
 
 	static const int MAX_AUDIO_BUFFER_ARRAY_SIZE = 10;
 
@@ -123,7 +123,7 @@ class SpeechToText : public RichTextLabel {
 
 	whisper_params params;
 	std::vector<whisper_token> prompt_tokens;
-	whisper_context *whisper_context;
+	whisper_context *whisper_context = nullptr;
 
 private:
 	// Assigns the memory to the fixed audio buffer arrays
@@ -152,7 +152,7 @@ private:
 
 	bool DEBUG = false;
 	bool use_sample_stretching = true;
-	PackedVector2Array uncompressed_audio;
+	PackedFloat32Array uncompressed_audio;
 
 	int packets_received_this_frame = 0;
 	int playback_ring_buffer_length = 0;
@@ -162,6 +162,9 @@ private:
 	int nearest_shift(int p_number);
 
 public:
+	NodePath get_speech_processor() {
+		return get_path_to(speech_processor);
+	}
 	int get_jitter_buffer_speedup() const;
 	void set_jitter_buffer_speedup(int p_jitter_buffer_speedup);
 	int get_jitter_buffer_slowdown() const;
@@ -178,8 +181,8 @@ public:
 	void set_debug(bool val);
 	bool get_use_sample_stretching() const;
 	void set_use_sample_stretching(bool val);
-	PackedVector2Array get_uncompressed_audio() const;
-	void set_uncompressed_audio(PackedVector2Array val);
+	PackedFloat32Array get_uncompressed_audio() const;
+	void set_uncompressed_audio(PackedFloat32Array val);
 	int get_packets_received_this_frame() const;
 	void set_packets_received_this_frame(int val);
 	int get_playback_ring_buffer_length() const;

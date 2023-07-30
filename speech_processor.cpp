@@ -374,8 +374,7 @@ void SpeechToTextProcessor::_notification(int p_what) {
 			audio_server = nullptr;
 			break;
 		case NOTIFICATION_PROCESS:
-			if (audio_effect_capture.is_valid() && audio_input_stream_player &&
-					audio_input_stream_player->is_playing() && audio_effect_error_cancellation_capture.is_valid()) {
+			if (audio_effect_capture.is_valid() && audio_effect_error_cancellation_capture.is_valid()) {
 				_update_stats();
 				// This is pretty ugly, but needed to keep the audio from going out of
 				// sync
