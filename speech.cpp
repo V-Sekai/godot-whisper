@@ -91,7 +91,7 @@ void SpeechToText::speech_processed(SpeechToTextProcessor::SpeechInput *p_mic_in
 	}
 	bool ok = SpeechToTextProcessor::_16_pcm_mono_to_real_mono(&input_byte_array, &uncompressed_audio);
 	ERR_FAIL_COND(!ok);
-	if (!whisper_context) {
+	if (!context_instance) {
 		return;
 	}
 
@@ -110,14 +110,14 @@ void SpeechToText::speech_processed(SpeechToTextProcessor::SpeechInput *p_mic_in
 	whispher_params.prompt_tokens = params.no_context ? nullptr : prompt_tokens.data();
 	whispher_params.prompt_n_tokens = params.no_context ? 0 : prompt_tokens.size();
 
-	if (whisper_full(whisper_context, whispher_params, uncompressed_audio.ptr(), SpeechToTextProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT) != 0) {
+	if (whisper_full(context_instance, whispher_params, uncompressed_audio.ptr(), SpeechToTextProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT) != 0) {
 		ERR_PRINT("Failed to process audio");
 		return;
 	}
 
-	const int n_segments = whisper_full_n_segments(whisper_context);
+	const int n_segments = whisper_full_n_segments(context_instance);
 	for (int i = 0; i < n_segments; ++i) {
-		const char *text = whisper_full_get_segment_text(whisper_context, i);
+		const char *text = whisper_full_get_segment_text(context_instance, i);
 		print_line(vformat("%s", text));
 	}
 }
@@ -520,7 +520,7 @@ SpeechToText::SpeechToText() {
 	params.language = "en";
 	params.model = "models/ggml-base.en.bin";
 
-	whisper_context = whisper_init_from_file_with_params(params.model.c_str(), context_parameters);
+	context_instance = whisper_init_from_file_with_params(params.model.c_str(), context_parameters);
 }
 
 SpeechToText::~SpeechToText() {
