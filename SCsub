@@ -15,6 +15,7 @@ module_env.Append(
         "CPU_CLIPS_NEGATIVE=0",
         "WEBRTC_APM_DEBUG_DUMP=0",
         "WHISPER_BUILD",
+        "GGML_BUILD",
     ]
 )
 
