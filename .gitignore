@@ -1,3 +1,3 @@
 .DS_Store
-thirdparty/whisper.cpp/models/*.bin
-thirdparty/whisper.cpp/samples/*
+!thirdparty/whisper.cpp/models/*.bin
+!thirdparty/whisper.cpp/samples/*
