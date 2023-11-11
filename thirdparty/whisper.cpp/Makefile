@@ -18,7 +18,7 @@ ifndef NVCC_VERSION
 	endif
 endif
 
-CCV := $(shell $(CC) --version | head -n 1)
+CCV  := $(shell $(CC) --version | head -n 1)
 CXXV := $(shell $(CXX) --version | head -n 1)
 
 # Mac OS + Arm can report x86_64
@@ -42,34 +42,59 @@ CFLAGS   = -I.              -O3 -DNDEBUG -std=c11   -fPIC
 CXXFLAGS = -I. -I./examples -O3 -DNDEBUG -std=c++11 -fPIC
 LDFLAGS  =
 
-# ref: https://github.com/ggerganov/whisper.cpp/issues/37
-ifneq ($(wildcard /usr/include/musl/*),)
-	CFLAGS += -D_POSIX_SOURCE -D_GNU_SOURCE
-	CXXFLAGS += -D_POSIX_SOURCE -D_GNU_SOURCE
+# clock_gettime came in POSIX.1b (1993)
+# CLOCK_MONOTONIC came in POSIX.1-2001 / SUSv3 as optional
+# posix_memalign came in POSIX.1-2001 / SUSv3
+# M_PI is an XSI extension since POSIX.1-2001 / SUSv3, came in XPG1 (1985)
+CFLAGS   += -D_XOPEN_SOURCE=600
+CXXFLAGS += -D_XOPEN_SOURCE=600
+
+# Somehow in OpenBSD whenever POSIX conformance is specified
+# some string functions rely on locale_t availability,
+# which was introduced in POSIX.1-2008, forcing us to go higher
+ifeq ($(UNAME_S),OpenBSD)
+	CFLAGS   += -U_XOPEN_SOURCE -D_XOPEN_SOURCE=700
+	CXXFLAGS += -U_XOPEN_SOURCE -D_XOPEN_SOURCE=700
+endif
+
+# Data types, macros and functions related to controlling CPU affinity
+# are available on Linux through GNU extensions in libc
+ifeq ($(UNAME_S),Linux)
+	CFLAGS   += -D_GNU_SOURCE
+	CXXFLAGS += -D_GNU_SOURCE
 endif
 
 # RLIMIT_MEMLOCK came in BSD, is not specified in POSIX.1,
 # and on macOS its availability depends on enabling Darwin extensions
+# similarly on DragonFly, enabling BSD extensions is necessary
 ifeq ($(UNAME_S),Darwin)
 	CFLAGS   += -D_DARWIN_C_SOURCE
 	CXXFLAGS += -D_DARWIN_C_SOURCE
 endif
+ifeq ($(UNAME_S),DragonFly)
+	CFLAGS   += -D__BSD_VISIBLE
+	CXXFLAGS += -D__BSD_VISIBLE
+endif
+
+# alloca is a non-standard interface that is not visible on BSDs when
+# POSIX conformance is specified, but not all of them provide a clean way
+# to enable it in such cases
+ifeq ($(UNAME_S),FreeBSD)
+	CFLAGS   += -D__BSD_VISIBLE
+	CXXFLAGS += -D__BSD_VISIBLE
+endif
+ifeq ($(UNAME_S),NetBSD)
+	CFLAGS   += -D_NETBSD_SOURCE
+	CXXFLAGS += -D_NETBSD_SOURCE
+endif
+ifeq ($(UNAME_S),OpenBSD)
+	CFLAGS   += -D_BSD_SOURCE
+	CXXFLAGS += -D_BSD_SOURCE
+endif
 
 # OS specific
 # TODO: support Windows
-ifeq ($(UNAME_S),Linux)
-	CFLAGS   += -pthread
-	CXXFLAGS += -pthread
-endif
-ifeq ($(UNAME_S),Darwin)
-	CFLAGS   += -pthread
-	CXXFLAGS += -pthread
-endif
-ifeq ($(UNAME_S),FreeBSD)
-	CFLAGS   += -pthread
-	CXXFLAGS += -pthread
-endif
-ifeq ($(UNAME_S),Haiku)
+ifeq ($(filter $(UNAME_S),Linux Darwin DragonFly FreeBSD NetBSD OpenBSD Haiku),$(UNAME_S))
 	CFLAGS   += -pthread
 	CXXFLAGS += -pthread
 endif
@@ -77,66 +102,56 @@ endif
 # Architecture specific
 # TODO: probably these flags need to be tweaked on some architectures
 #       feel free to update the Makefile for your architecture and send a pull request or issue
-ifeq ($(UNAME_M),$(filter $(UNAME_M),x86_64 i686))
+ifeq ($(UNAME_M),$(filter $(UNAME_M),x86_64 i686 amd64))
 	ifeq ($(UNAME_S),Darwin)
-		CFLAGS += -mf16c
-		AVX1_M := $(shell sysctl machdep.cpu.features)
-		ifneq (,$(findstring FMA,$(AVX1_M)))
-			CFLAGS += -mfma
-		endif
-		ifneq (,$(findstring AVX1.0,$(AVX1_M)))
-			CFLAGS += -mavx
-		endif
-		AVX2_M := $(shell sysctl machdep.cpu.leaf7_features)
-		ifneq (,$(findstring AVX2,$(AVX2_M)))
-			CFLAGS += -mavx2
-		endif
+		CPUINFO_CMD := sysctl machdep.cpu.features machdep.cpu.leaf7_features
 	else ifeq ($(UNAME_S),Linux)
-		AVX2_M := $(shell grep "avx2 " /proc/cpuinfo)
-		ifneq (,$(findstring avx2,$(AVX2_M)))
-			CFLAGS += -mavx2
-		endif
-		FMA_M := $(shell grep "fma " /proc/cpuinfo)
-		ifneq (,$(findstring fma,$(FMA_M)))
-			CFLAGS += -mfma
-		endif
-		F16C_M := $(shell grep "f16c " /proc/cpuinfo)
-		ifneq (,$(findstring f16c,$(F16C_M)))
-			CFLAGS += -mf16c
-
-			AVX1_M := $(shell grep "avx " /proc/cpuinfo)
-			ifneq (,$(findstring avx,$(AVX1_M)))
-				CFLAGS += -mavx
-			endif
-		endif
-		SSE3_M := $(shell grep "sse3 " /proc/cpuinfo)
-		ifneq (,$(findstring sse3,$(SSE3_M)))
-			CFLAGS += -msse3
-		endif
+		CPUINFO_CMD := cat /proc/cpuinfo
+	else ifneq (,$(filter MINGW32_NT% MINGW64_NT%,$(UNAME_S)))
+		CPUINFO_CMD := cat /proc/cpuinfo
+	else ifneq (,$(filter DragonFly FreeBSD,$(UNAME_S)))
+		CPUINFO_CMD := grep Features /var/run/dmesg.boot
 	else ifeq ($(UNAME_S),Haiku)
-		AVX2_M := $(shell sysinfo -cpu | grep "AVX2 ")
-		ifneq (,$(findstring avx2,$(AVX2_M)))
-			CFLAGS += -mavx2
-		endif
-		FMA_M := $(shell sysinfo -cpu | grep "FMA ")
-		ifneq (,$(findstring fma,$(FMA_M)))
-			CFLAGS += -mfma
-		endif
-		F16C_M := $(shell sysinfo -cpu | grep "F16C ")
-		ifneq (,$(findstring f16c,$(F16C_M)))
-			CFLAGS += -mf16c
-
-			AVX1_M := $(shell sysinfo -cpu | grep "AVX ")
-			ifneq (,$(findstring avx,$(AVX1_M)))
-				CFLAGS += -mavx
-			endif
-		endif
-	else
-		CFLAGS += -mfma -mf16c -mavx -mavx2
+		CPUINFO_CMD := sysinfo -cpu
 	endif
-endif
-ifeq ($(UNAME_M),amd64)
-	CFLAGS += -mavx -mavx2 -mfma -mf16c
+
+	ifdef CPUINFO_CMD
+		AVX_M := $(shell $(CPUINFO_CMD) | grep -iwE 'AVX|AVX1.0')
+		ifneq (,$(AVX_M))
+			CFLAGS   += -mavx
+			CXXFLAGS += -mavx
+		endif
+
+		AVX2_M := $(shell $(CPUINFO_CMD) | grep -iw 'AVX2')
+		ifneq (,$(AVX2_M))
+			CFLAGS   += -mavx2
+			CXXFLAGS += -mavx2
+		endif
+
+		FMA_M := $(shell $(CPUINFO_CMD) | grep -iw 'FMA')
+		ifneq (,$(FMA_M))
+			CFLAGS   += -mfma
+			CXXFLAGS += -mfma
+		endif
+
+		F16C_M := $(shell $(CPUINFO_CMD) | grep -iw 'F16C')
+		ifneq (,$(F16C_M))
+			CFLAGS   += -mf16c
+			CXXFLAGS += -mf16c
+		endif
+
+		SSE3_M := $(shell $(CPUINFO_CMD) | grep -iwE 'PNI|SSE3')
+		ifneq (,$(SSE3_M))
+			CFLAGS   += -msse3
+			CXXFLAGS += -msse3
+		endif
+
+		SSSE3_M := $(shell $(CPUINFO_CMD) | grep -iw 'SSSE3')
+		ifneq (,$(SSSE3_M))
+			CFLAGS   += -mssse3
+			CXXFLAGS += -mssse3
+		endif
+	endif
 endif
 
 ifneq ($(filter ppc64%,$(UNAME_M)),)
@@ -167,8 +182,18 @@ ifdef WHISPER_COREML_ALLOW_FALLBACK
 endif
 endif
 
+ifndef WHISPER_NO_METAL
+	ifeq ($(UNAME_S),Darwin)
+		WHISPER_METAL := 1
+
+		CFLAGS   += -DGGML_USE_METAL
+		CXXFLAGS += -DGGML_USE_METAL
+		LDFLAGS  += -framework Foundation -framework Metal -framework MetalKit
+	endif
+endif
+
 ifdef WHISPER_OPENBLAS
-	CFLAGS  += -DGGML_USE_OPENBLAS -I/usr/local/include/openblas
+	CFLAGS  += -DGGML_USE_OPENBLAS -I/usr/local/include/openblas -I/usr/include/openblas
 	LDFLAGS += -lopenblas
 endif
 
@@ -188,6 +213,21 @@ ifdef WHISPER_CUBLAS
 
 ggml-cuda.o: ggml-cuda.cu ggml-cuda.h
 	$(NVCC) $(NVCCFLAGS) $(CXXFLAGS) -Wno-pedantic -c $< -o $@
+endif
+
+ifdef WHISPER_HIPBLAS
+	ROCM_PATH   ?= /opt/rocm
+	HIPCC       ?= $(ROCM_PATH)/bin/hipcc
+	GPU_TARGETS ?= $(shell $(ROCM_PATH)/llvm/bin/amdgpu-arch)
+	CFLAGS      += -DGGML_USE_HIPBLAS -DGGML_USE_CUBLAS
+	CXXFLAGS    += -DGGML_USE_HIPBLAS -DGGML_USE_CUBLAS
+	LDFLAGS     += -L$(ROCM_PATH)/lib -Wl,-rpath=$(ROCM_PATH)/lib
+	LDFLAGS     += -lhipblas -lamdhip64 -lrocblas
+	HIPFLAGS    += $(addprefix --offload-arch=,$(GPU_TARGETS))
+	WHISPER_OBJ += ggml-cuda.o
+
+ggml-cuda.o: ggml-cuda.cu ggml-cuda.h
+	$(HIPCC) $(CXXFLAGS) $(HIPFLAGS) -x hip -c -o $@ $<
 endif
 
 ifdef WHISPER_CLBLAST
@@ -258,6 +298,17 @@ $(info )
 ggml.o: ggml.c ggml.h ggml-cuda.h
 	$(CC)  $(CFLAGS)   -c $< -o $@
 
+ggml-alloc.o: ggml-alloc.c ggml.h ggml-alloc.h
+	$(CC)  $(CFLAGS)   -c $< -o $@
+
+ggml-backend.o: ggml-backend.c ggml.h ggml-backend.h
+	$(CC)  $(CFLAGS)   -c $< -o $@
+
+ggml-quants.o: ggml-quants.c ggml.h ggml-quants.h
+	$(CC)  $(CFLAGS)   -c $< -o $@
+
+WHISPER_OBJ += ggml-alloc.o ggml-backend.o ggml-quants.o
+
 whisper.o: whisper.cpp whisper.h ggml.h ggml-cuda.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
@@ -273,6 +324,13 @@ whisper-encoder-impl.o: coreml/whisper-encoder-impl.m coreml/whisper-encoder-imp
 WHISPER_OBJ += whisper.o whisper-encoder.o whisper-encoder-impl.o
 endif
 
+ifdef WHISPER_METAL
+ggml-metal.o: ggml-metal.m ggml-metal.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+WHISPER_OBJ += ggml-metal.o
+endif
+
 libwhisper.a: ggml.o $(WHISPER_OBJ)
 	$(AR) rcs libwhisper.a ggml.o $(WHISPER_OBJ)
 
@@ -280,7 +338,7 @@ libwhisper.so: ggml.o $(WHISPER_OBJ)
 	$(CXX) $(CXXFLAGS) -shared -o libwhisper.so ggml.o $(WHISPER_OBJ) $(LDFLAGS)
 
 clean:
-	rm -f *.o main stream command talk talk-llama bench quantize libwhisper.a libwhisper.so
+	rm -f *.o main stream command talk talk-llama bench quantize lsp libwhisper.a libwhisper.so
 
 #
 # Examples
@@ -306,6 +364,9 @@ stream: examples/stream/stream.cpp $(SRC_COMMON) $(SRC_COMMON_SDL) ggml.o $(WHIS
 
 command: examples/command/command.cpp $(SRC_COMMON) $(SRC_COMMON_SDL) ggml.o $(WHISPER_OBJ)
 	$(CXX) $(CXXFLAGS) examples/command/command.cpp $(SRC_COMMON) $(SRC_COMMON_SDL) ggml.o $(WHISPER_OBJ) -o command $(CC_SDL) $(LDFLAGS)
+
+lsp: examples/lsp/lsp.cpp $(SRC_COMMON) $(SRC_COMMON_SDL) ggml.o $(WHISPER_OBJ)
+	$(CXX) $(CXXFLAGS) examples/lsp/lsp.cpp $(SRC_COMMON) $(SRC_COMMON_SDL) ggml.o $(WHISPER_OBJ) -o lsp $(CC_SDL) $(LDFLAGS)
 
 talk: examples/talk/talk.cpp examples/talk/gpt-2.cpp $(SRC_COMMON) $(SRC_COMMON_SDL) ggml.o $(WHISPER_OBJ)
 	$(CXX) $(CXXFLAGS) examples/talk/talk.cpp examples/talk/gpt-2.cpp $(SRC_COMMON) $(SRC_COMMON_SDL) ggml.o $(WHISPER_OBJ) -o talk $(CC_SDL) $(LDFLAGS)
@@ -356,9 +417,10 @@ samples:
 .PHONY: medium.en
 .PHONY: medium
 .PHONY: large-v1
+.PHONY: large-v2
 .PHONY: large
 
-tiny.en tiny base.en base small.en small medium.en medium large-v1 large: main
+tiny.en tiny base.en base small.en small medium.en medium large-v1 large-v2 large: main
 	bash ./models/download-ggml-model.sh $@
 	@echo ""
 	@echo "==============================================="
