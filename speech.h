@@ -125,7 +125,7 @@ class SpeechToText : public Node {
 	whisper_params params;
 	whisper_context_params context_parameters;
 	std::vector<whisper_token> prompt_tokens;
-	whisper_context *whisper_instance = nullptr;
+	whisper_context *context_instance = nullptr;
 
 private:
 	// Assigns the memory to the fixed audio buffer arrays
