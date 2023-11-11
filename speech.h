@@ -123,6 +123,7 @@ class SpeechToText : public Node {
 	};
 
 	whisper_params params;
+	whisper_context_params context_parameters;
 	std::vector<whisper_token> prompt_tokens;
 	whisper_context *whisper_context = nullptr;
 

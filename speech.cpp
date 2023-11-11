@@ -520,7 +520,7 @@ SpeechToText::SpeechToText() {
 	params.language = "en";
 	params.model = "models/ggml-base.en.bin";
 
-	whisper_context = whisper_init_from_file(params.model.c_str());
+	whisper_context = whisper_init_from_file_with_params(params.model.c_str(), context_parameters);
 }
 
 SpeechToText::~SpeechToText() {
