@@ -1,5 +1,4 @@
 .DS_Store
-!thirdparty/*
 !thirdparty/whisper.cpp/models/for-tests-ggml-base.bin
 !thirdparty/whisper.cpp/models/for-tests-ggml-base.en.bin
 !thirdparty/whisper.cpp/models/for-tests-ggml-large.bin
