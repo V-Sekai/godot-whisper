@@ -1,1 +1,10 @@
 *.bin
+!for-tests-ggml-base.bin
+!for-tests-ggml-base.en.bin
+!for-tests-ggml-large.bin
+!for-tests-ggml-medium.bin
+!for-tests-ggml-medium.en.bin
+!for-tests-ggml-small.bin
+!for-tests-ggml-small.en.bin
+!for-tests-ggml-tiny.bin
+!for-tests-ggml-tiny.en.bin
