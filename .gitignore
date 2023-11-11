@@ -1,3 +1,12 @@
 .DS_Store
-!thirdparty/whisper.cpp/models/*.bin
-!thirdparty/whisper.cpp/samples/*
+!thirdparty/whisper.cpp/models/for-tests-ggml-base.bin
+!thirdparty/whisper.cpp/models/for-tests-ggml-base.en.bin
+!thirdparty/whisper.cpp/models/for-tests-ggml-large.bin
+!thirdparty/whisper.cpp/models/for-tests-ggml-medium.bin
+!thirdparty/whisper.cpp/models/for-tests-ggml-medium.en.bin
+!thirdparty/whisper.cpp/models/for-tests-ggml-small.bin
+!thirdparty/whisper.cpp/models/for-tests-ggml-small.en.bin
+!thirdparty/whisper.cpp/models/for-tests-ggml-tiny.bin
+!thirdparty/whisper.cpp/models/for-tests-ggml-tiny.en.bin
+!thirdparty/whisper.cpp/samples/README.md
+!thirdparty/whisper.cpp/samples/jfk.wav
