@@ -46,7 +46,7 @@ env_thirdparty.Prepend(CPPPATH=["#thirdparty/libogg"])
 
 env_thirdparty.add_source_files(env.modules_sources, Glob("thirdparty/libsamplerate/src/*.c"))
 env_thirdparty.add_source_files(env.modules_sources, Glob("thirdparty/whisper.cpp/*.c"))
-env_thirdparty.add_source_files(env.modules_sources, Glob("thirdparty/whisper.cpp/*.cpp"))
+env_thirdparty.add_source_files(env.modules_sources, Glob("thirdparty/whisper.cpp/whisper.cpp"))
 env_thirdparty.Append(CPPPATH=['thirdparty/whisper.cpp'])
 env_thirdparty.Append(CPPDEFINES=['WHISPER_SHARED', 'GGML_SHARED'])
 module_env.add_source_files(env.modules_sources, "*.cpp")
