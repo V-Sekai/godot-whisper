@@ -322,8 +322,6 @@ void SpeechToText::_bind_methods() {
 			&SpeechToText::remove_player_audio);
 	ClassDB::bind_method(D_METHOD("clear_all_player_audio"),
 			&SpeechToText::clear_all_player_audio);
-	ClassDB::bind_method(D_METHOD("set_error_cancellation_bus", "name"),
-			&SpeechToText::set_error_cancellation_bus);
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "BUFFER_DELAY_THRESHOLD"), "set_buffer_delay_threshold",
 			"get_buffer_delay_threshold");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "STREAM_STANDARD_PITCH"), "set_stream_standard_pitch",
@@ -481,12 +479,6 @@ void SpeechToText::_notification(int p_what) {
 void SpeechToText::set_streaming_bus(const String &p_name) {
 	if (speech_processor) {
 		speech_processor->set_streaming_bus(p_name);
-	}
-}
-
-void SpeechToText::set_error_cancellation_bus(const String &p_name) {
-	if (speech_processor) {
-		speech_processor->set_error_cancellation_bus(p_name);
 	}
 }
 

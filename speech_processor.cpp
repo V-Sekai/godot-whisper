@@ -47,8 +47,6 @@ void SpeechToTextProcessor::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("stop"), &SpeechToTextProcessor::stop);
 	ClassDB::bind_method(D_METHOD("set_streaming_bus", "name"),
 			&SpeechToTextProcessor::set_streaming_bus);
-	ClassDB::bind_method(D_METHOD("set_error_cancellation_bus", "name"),
-			&SpeechToTextProcessor::set_error_cancellation_bus);
 	ClassDB::bind_method(D_METHOD("set_audio_input_stream_player", "stream_player"),
 			&SpeechToTextProcessor::set_audio_input_stream_player);
 	ADD_SIGNAL(MethodInfo("speech_processed",
@@ -108,9 +106,8 @@ void SpeechToTextProcessor::_get_capture_block(AudioServer *p_audio_server,
 	}
 }
 
-void SpeechToTextProcessor::_mix_audio(const Vector2 *p_capture_buffer, const Vector2 *p_reference_buffer) {
+void SpeechToTextProcessor::_mix_audio(const Vector2 *p_capture_buffer) {
 	if (audio_server) {
-		_get_capture_block(audio_server, RECORD_MIX_FRAMES, p_reference_buffer, mono_reference_real_array.ptrw());
 		_get_capture_block(audio_server, RECORD_MIX_FRAMES, p_capture_buffer, mono_capture_real_array.ptrw());
 		// Speaker frame.
 		_resample_audio_buffer(
@@ -135,32 +132,11 @@ void SpeechToTextProcessor::_mix_audio(const Vector2 *p_capture_buffer, const Ve
 		const float *reference_real_array_read_ptr = reference_real_array.ptr();
 		double_t sum = 0;
 		while (capture_real_array_offset < resampled_frame_count - SPEECH_SETTING_BUFFER_FRAME_COUNT) {
-			sum = 0.0;
-			// Speaker frame.
-			for (int64_t i = 0; i < SPEECH_SETTING_BUFFER_FRAME_COUNT; i++) {
-				float frame_error_cancellation_float = reference_real_array_read_ptr[static_cast<size_t>(capture_real_array_offset) + i];
-				mix_reference_buffer.write[i] = webrtc::FloatToS16(frame_error_cancellation_float);
-			}
-			ref_frame.UpdateFrame(0, mix_reference_buffer.ptr(), SPEECH_SETTING_BUFFER_FRAME_COUNT, SPEECH_SETTING_VOICE_SAMPLE_RATE, webrtc::AudioFrame::kNormalSpeech, webrtc::AudioFrame::kVadActive, 1);
 			// Microphone frame.
 			for (int64_t i = 0; i < SPEECH_SETTING_BUFFER_FRAME_COUNT; i++) {
 				float frame_float = capture_real_array_read_ptr[static_cast<size_t>(capture_real_array_offset) + i];
-				sum += fabsf(frame_float);
-				mix_capture_buffer.write[i] = webrtc::FloatToS16(frame_float);
 			}
-			capture_frame.UpdateFrame(0, mix_capture_buffer.ptr(), SPEECH_SETTING_BUFFER_FRAME_COUNT, SPEECH_SETTING_VOICE_SAMPLE_RATE, webrtc::AudioFrame::kNormalSpeech, webrtc::AudioFrame::kVadActive, 1);
-			capture_audio->CopyFrom(&capture_frame);
-			reference_audio->CopyFrom(&ref_frame);
-			reference_audio->SplitIntoFrequencyBands();
-			echo_controller->AnalyzeRender(reference_audio.get());
-			reference_audio->MergeFrequencyBands();
-			echo_controller->AnalyzeCapture(capture_audio.get());
-			capture_audio->SplitIntoFrequencyBands();
-			hp_filter->Process(capture_audio.get(), true);
-			echo_controller->ProcessCapture(capture_audio.get(), nullptr, false);
-			capture_audio->MergeFrequencyBands();
-			capture_audio->CopyTo(&capture_frame);
-			memcpy(mix_byte_array.ptrw(), capture_frame.data(), mix_byte_array.size());
+			memcpy(mix_byte_array.ptrw(), mono_capture_real_array.ptrw(), mix_byte_array.size());
 			Dictionary voice_data_packet;
 			voice_data_packet["buffer"] = mix_byte_array;
 			float average = (float)sum / (float)SPEECH_SETTING_BUFFER_FRAME_COUNT;
@@ -204,7 +180,7 @@ void SpeechToTextProcessor::start() {
 		return;
 	}
 
-	if (!audio_input_stream_player || !audio_effect_capture.is_valid() || !audio_effect_error_cancellation_capture.is_valid()) {
+	if (!audio_input_stream_player || !audio_effect_capture.is_valid()) {
 		return;
 	}
 	if (AudioDriver::get_singleton()) {
@@ -212,22 +188,6 @@ void SpeechToTextProcessor::start() {
 	}
 	audio_input_stream_player->play();
 	audio_effect_capture->clear_buffer();
-	audio_effect_error_cancellation_capture->clear_buffer();
-	webrtc::EchoCanceller3Factory aec_factory = webrtc::EchoCanceller3Factory(aec_config);
-	echo_controller = aec_factory.Create(SPEECH_SETTING_VOICE_SAMPLE_RATE, SPEECH_SETTING_CHANNEL_COUNT, SPEECH_SETTING_CHANNEL_COUNT);
-	hp_filter = std::make_unique<webrtc::HighPassFilter>(SPEECH_SETTING_VOICE_SAMPLE_RATE, SPEECH_SETTING_CHANNEL_COUNT);
-
-	webrtc::StreamConfig config = webrtc::StreamConfig(SPEECH_SETTING_VOICE_SAMPLE_RATE, SPEECH_SETTING_CHANNEL_COUNT, false);
-
-	reference_audio = std::make_unique<webrtc::AudioBuffer>(
-			config.sample_rate_hz(), config.num_channels(),
-			config.sample_rate_hz(), config.num_channels(),
-			config.sample_rate_hz(), config.num_channels());
-	capture_audio = std::make_unique<webrtc::AudioBuffer>(
-			config.sample_rate_hz(), config.num_channels(),
-			config.sample_rate_hz(), config.num_channels(),
-			config.sample_rate_hz(), config.num_channels());
-	echo_controller->SetAudioBufferDelay(AudioServer::get_singleton()->get_output_latency());
 }
 
 void SpeechToTextProcessor::stop() {
@@ -374,7 +334,7 @@ void SpeechToTextProcessor::_notification(int p_what) {
 			audio_server = nullptr;
 			break;
 		case NOTIFICATION_PROCESS:
-			if (audio_effect_capture.is_valid() && audio_effect_error_cancellation_capture.is_valid()) {
+			if (audio_effect_capture.is_valid()) {
 				_update_stats();
 				// This is pretty ugly, but needed to keep the audio from going out of
 				// sync
@@ -396,24 +356,7 @@ void SpeechToTextProcessor::_notification(int p_what) {
 							(capture_ring_current_size > capture_ring_max_size)
 							? capture_ring_current_size
 							: capture_ring_max_size;
-
-					PackedVector2Array audio_error_cancellation_frames =
-							audio_effect_error_cancellation_capture->get_buffer(RECORD_MIX_FRAMES);
-					if (audio_error_cancellation_frames.size() != audio_frames.size()) {
-						break;
-					}
-					capture_error_cancellation_get_calls++;
-					capture_error_cancellation_get_frames += audio_error_cancellation_frames.size();
-					capture_error_cancellation_pushed_frames = audio_effect_error_cancellation_capture->get_pushed_frames();
-					capture_error_cancellation_discarded_frames = audio_effect_error_cancellation_capture->get_discarded_frames();
-					capture_error_cancellation_ring_limit = audio_effect_error_cancellation_capture->get_buffer_length_frames();
-					capture_error_cancellation_ring_current_size = audio_effect_error_cancellation_capture->get_frames_available();
-					capture_error_cancellation_ring_size_sum += capture_error_cancellation_ring_current_size;
-					capture_error_cancellation_ring_max_size =
-							(capture_error_cancellation_ring_current_size > capture_error_cancellation_ring_max_size)
-							? capture_error_cancellation_ring_current_size
-							: capture_error_cancellation_ring_max_size;
-					_mix_audio(audio_frames.ptrw(), audio_error_cancellation_frames.ptrw());
+					_mix_audio(audio_frames.ptrw());
 					record_mix_frames_processed++;
 				}
 			}
