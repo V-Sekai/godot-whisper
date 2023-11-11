@@ -129,13 +129,8 @@ void SpeechToTextProcessor::_mix_audio(const Vector2 *p_capture_buffer) {
 								static_cast<size_t>(capture_real_array_offset));
 		capture_real_array_offset = 0;
 		const float *capture_real_array_read_ptr = capture_real_array.ptr();
-		const float *reference_real_array_read_ptr = reference_real_array.ptr();
 		double_t sum = 0;
 		while (capture_real_array_offset < resampled_frame_count - SPEECH_SETTING_BUFFER_FRAME_COUNT) {
-			// Microphone frame.
-			for (int64_t i = 0; i < SPEECH_SETTING_BUFFER_FRAME_COUNT; i++) {
-				float frame_float = capture_real_array_read_ptr[static_cast<size_t>(capture_real_array_offset) + i];
-			}
 			memcpy(mix_byte_array.ptrw(), mono_capture_real_array.ptrw(), mix_byte_array.size());
 			Dictionary voice_data_packet;
 			voice_data_packet["buffer"] = mix_byte_array;
