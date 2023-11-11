@@ -221,4 +221,5 @@ public:
 	SpeechToTextProcessor();
 	~SpeechToTextProcessor();
 };
+
 #endif // SPEECH_PROCESSOR_H
