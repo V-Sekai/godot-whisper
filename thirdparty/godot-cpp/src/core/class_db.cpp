@@ -105,7 +105,15 @@ void ClassDB::add_property(const StringName &p_class, const PropertyInfo &p_pinf
 		p_pinfo.usage, // DEFAULT //uint32_t usage;
 	};
 
-	internal::gdextension_interface_classdb_register_extension_class_property_indexed(internal::library, info.name._native_ptr(), &prop_info, p_setter._native_ptr(), p_getter._native_ptr(), p_index);
+	PropertySetGet setget;
+	setget.setter = p_setter;
+	setget.getter = p_getter;
+	setget._setptr = setter;
+	setget._getptr = getter;
+	setget.index = p_index;
+	setget.type = p_pinfo.type;
+
+	internal::gdextension_interface_classdb_register_extension_class_property(internal::library, info.name._native_ptr(), &prop_info, setget.setter._native_ptr(), setget.getter._native_ptr());
 }
 
 MethodBind *ClassDB::get_method(const StringName &p_class, const StringName &p_method) {
@@ -352,7 +360,6 @@ void ClassDB::initialize(GDExtensionInitializationLevel p_level) {
 }
 
 void ClassDB::deinitialize(GDExtensionInitializationLevel p_level) {
-	std::set<StringName> to_erase;
 	for (std::vector<StringName>::reverse_iterator i = class_register_order.rbegin(); i != class_register_order.rend(); ++i) {
 		const StringName &name = *i;
 		const ClassInfo &cl = classes[name];
@@ -363,20 +370,9 @@ void ClassDB::deinitialize(GDExtensionInitializationLevel p_level) {
 
 		internal::gdextension_interface_classdb_unregister_extension_class(internal::library, name._native_ptr());
 
-		for (const std::pair<const StringName, MethodBind *> &method : cl.method_map) {
+		for (auto method : cl.method_map) {
 			memdelete(method.second);
 		}
-
-		classes.erase(name);
-		to_erase.insert(name);
-	}
-
-	{
-		// The following is equivalent to c++20 `std::erase_if(class_register_order, [&](const StringName& name){ return to_erase.contains(name); });`
-		std::vector<StringName>::iterator it = std::remove_if(class_register_order.begin(), class_register_order.end(), [&](const StringName &p_name) {
-			return to_erase.count(p_name) > 0;
-		});
-		class_register_order.erase(it, class_register_order.end());
 	}
 }
 

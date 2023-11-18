@@ -177,15 +177,9 @@ def options(opts, env):
 
     opts.Add(
         BoolVariable(
-            key="use_hot_reload",
-            help="Enable the extra accounting required to support hot reload.",
-            default=env.get("use_hot_reload", None),
-        )
-    )
-
-    opts.Add(
-        BoolVariable(
-            "disable_exceptions", "Force disabling exception handling code", default=env.get("disable_exceptions", True)
+            "disable_exceptions",
+            "Force disabling exception handling code",
+            default=env.get("disable_exceptions", False),
         )
     )
 
@@ -244,11 +238,6 @@ def generate(env):
                 env.Exit(1)
 
     print("Building for architecture " + env["arch"] + " on platform " + env["platform"])
-
-    if env.get("use_hot_reload") is None:
-        env["use_hot_reload"] = env["target"] != "template_release"
-    if env["use_hot_reload"]:
-        env.Append(CPPDEFINES=["HOT_RELOAD_ENABLED"])
 
     tool = Tool(env["platform"], toolpath=["tools"])
 

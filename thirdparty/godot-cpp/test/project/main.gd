@@ -26,10 +26,6 @@ func _ready():
 	# Property list.
 	example.property_from_list = Vector3(100, 200, 300)
 	assert_equal(example.property_from_list, Vector3(100, 200, 300))
-	var prop_list = example.get_property_list()
-	for prop_info in prop_list:
-		if prop_info['name'] == 'mouse_filter':
-			assert_equal(prop_info['usage'], PROPERTY_USAGE_NO_EDITOR)
 
 	# Call simple methods.
 	example.simple_func()
@@ -83,9 +79,6 @@ func _ready():
 	var array: Array[int] = [1, 2, 3]
 	assert_equal(example.test_tarray_arg(array), 6)
 
-	example.callable_bind()
-	assert_equal(custom_signal_emitted, ["bound", 11])
-
 	# String += operator
 	assert_equal(example.test_string_ops(), "ABCĎE")
 
@@ -95,62 +88,6 @@ func _ready():
 	# Test converting string to char* and doing comparison.
 	assert_equal(example.test_string_is_fourty_two("blah"), false)
 	assert_equal(example.test_string_is_fourty_two("fourty two"), true)
-
-	# String::resize().
-	assert_equal(example.test_string_resize("What"), "What!?")
-
-	# mp_callable() with void method.
-	var mp_callable: Callable = example.test_callable_mp()
-	assert_equal(mp_callable.is_valid(), true)
-	mp_callable.call(example, "void", 36)
-	assert_equal(custom_signal_emitted, ["unbound_method1: Example - void", 36])
-
-	# Check that it works with is_connected().
-	assert_equal(example.renamed.is_connected(mp_callable), false)
-	example.renamed.connect(mp_callable)
-	assert_equal(example.renamed.is_connected(mp_callable), true)
-	# Make sure a new object is still treated as equivalent.
-	assert_equal(example.renamed.is_connected(example.test_callable_mp()), true)
-	assert_equal(mp_callable.hash(), example.test_callable_mp().hash())
-	example.renamed.disconnect(mp_callable)
-	assert_equal(example.renamed.is_connected(mp_callable), false)
-
-	# mp_callable() with return value.
-	var mp_callable_ret: Callable = example.test_callable_mp_ret()
-	assert_equal(mp_callable_ret.call(example, "test", 77), "unbound_method2: Example - test - 77")
-
-	# mp_callable() with const method and return value.
-	var mp_callable_retc: Callable = example.test_callable_mp_retc()
-	assert_equal(mp_callable_retc.call(example, "const", 101), "unbound_method3: Example - const - 101")
-
-	# mp_callable_static() with void method.
-	var mp_callable_static: Callable = example.test_callable_mp_static()
-	mp_callable_static.call(example, "static", 83)
-	assert_equal(custom_signal_emitted, ["unbound_static_method1: Example - static", 83])
-
-	# Check that it works with is_connected().
-	assert_equal(example.renamed.is_connected(mp_callable_static), false)
-	example.renamed.connect(mp_callable_static)
-	assert_equal(example.renamed.is_connected(mp_callable_static), true)
-	# Make sure a new object is still treated as equivalent.
-	assert_equal(example.renamed.is_connected(example.test_callable_mp_static()), true)
-	assert_equal(mp_callable_static.hash(), example.test_callable_mp_static().hash())
-	example.renamed.disconnect(mp_callable_static)
-	assert_equal(example.renamed.is_connected(mp_callable_static), false)
-
-	# mp_callable_static() with return value.
-	var mp_callable_static_ret: Callable = example.test_callable_mp_static_ret()
-	assert_equal(mp_callable_static_ret.call(example, "static-ret", 84), "unbound_static_method2: Example - static-ret - 84")
-
-	# CallableCustom.
-	var custom_callable: Callable = example.test_custom_callable();
-	assert_equal(custom_callable.is_custom(), true);
-	assert_equal(custom_callable.is_valid(), true);
-	assert_equal(custom_callable.call(), "Hi")
-	assert_equal(custom_callable.hash(), 27);
-	assert_equal(custom_callable.get_object(), null);
-	assert_equal(custom_callable.get_method(), "");
-	assert_equal(str(custom_callable), "<MyCallableCustom>");
 
 	# PackedArray iterators
 	assert_equal(example.test_vector_ops(), 105)
@@ -217,10 +154,6 @@ func _ready():
 	assert_equal(Example.FLAG_TWO, 2)
 	assert_equal(example.test_bitfield(0), 0)
 	assert_equal(example.test_bitfield(Example.FLAG_ONE | Example.FLAG_TWO), 3)
-
-	# Test variant iterator.
-	assert_equal(example.test_variant_iterator([10, 20, 30]), [15, 25, 35])
-	assert_equal(example.test_variant_iterator(null), "iter_init: not valid")
 
 	# RPCs.
 	assert_equal(example.return_last_rpc_arg(), 0)

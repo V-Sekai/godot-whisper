@@ -154,17 +154,9 @@ public:
 	Variant(int64_t v);
 	Variant(int32_t v) :
 			Variant(static_cast<int64_t>(v)) {}
-	Variant(int16_t v) :
-			Variant(static_cast<int64_t>(v)) {}
-	Variant(int8_t v) :
-			Variant(static_cast<int64_t>(v)) {}
-	Variant(uint64_t v) :
-			Variant(static_cast<int64_t>(v)) {}
 	Variant(uint32_t v) :
 			Variant(static_cast<int64_t>(v)) {}
-	Variant(uint16_t v) :
-			Variant(static_cast<int64_t>(v)) {}
-	Variant(uint8_t v) :
+	Variant(uint64_t v) :
 			Variant(static_cast<int64_t>(v)) {}
 	Variant(double v);
 	Variant(float v) :
@@ -217,12 +209,8 @@ public:
 	operator bool() const;
 	operator int64_t() const;
 	operator int32_t() const;
-	operator int16_t() const;
-	operator int8_t() const;
 	operator uint64_t() const;
 	operator uint32_t() const;
-	operator uint16_t() const;
-	operator uint8_t() const;
 	operator double() const;
 	operator float() const;
 	operator String() const;
@@ -353,8 +341,6 @@ String vformat(const String &p_text, const VarArgs... p_args) {
 
 	return p_text % args_array;
 }
-
-#include <godot_cpp/variant/builtin_vararg_methods.hpp>
 
 } // namespace godot
 
