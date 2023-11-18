@@ -1,0 +1,13 @@
+name: Upload
+description: Upload Extension.
+
+runs:
+  using: composite
+  steps:
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: V-Sekai.Whisper
+        path: |
+          ${{ github.workspace }}/bin/**
+        retention-days: 14

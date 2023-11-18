@@ -1,0 +1,32 @@
+name: 🤖 Android Builds
+on:
+  workflow_call:
+
+jobs:
+  android:
+    runs-on: "ubuntu-20.04"
+    name: Android Build ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64, arm32, x86_64, x86_32]
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
+      - name: Set up Java 11
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 11
+
+      - name: Build ${{ matrix.arch }}
+        uses: ./.github/actions/build
+        with:
+          arch: ${{ matrix.arch }}
+          platform: android
+
+      - name: Upload ${{ matrix.arch }}
+        uses: ./.github/actions/upload
