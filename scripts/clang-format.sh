@@ -7,7 +7,7 @@
 set -uo pipefail
 
 # Loop through all code files tracked by Git.
-files=$(git ls-files -- '*.h' '*.cpp')
+files=$(git ls-files -- '*.h' '*.cpp' ':!thirdparty')
 
 
 if [ ! -z "$files" ]; then

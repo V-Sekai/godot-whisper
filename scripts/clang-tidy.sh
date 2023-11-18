@@ -8,7 +8,7 @@ set -uo pipefail
 
 # Loops through all code files tracked by Git.
 
-git ls-files -- '*.h' '*.cpp' |
+git ls-files -- '*.h' '*.cpp' ':!thirdparty' |
 while read -r f; do
     # Run clang-tidy.
     clang-tidy --quiet --fix "$f" &> /dev/null
