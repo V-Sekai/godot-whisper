@@ -6,7 +6,7 @@
 [subrepo]
 	remote = https://github.com/ggerganov/whisper.cpp.git
 	branch = master
-	commit = ec7a6f04f9c32adec2e6b0995b8c728c5bf56f35
+	commit = e2f0eba2d4dbe4ded5625cbd8a9c17e13f2482f6
 	parent = 5faf8eda9557c7e5b065caa7036b0584310d57fa
 	method = merge
 	cmdver = 0.4.6
