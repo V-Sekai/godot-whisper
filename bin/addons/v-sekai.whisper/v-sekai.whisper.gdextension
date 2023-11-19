@@ -2,6 +2,7 @@
 
 entry_symbol = "TODO"
 compatibility_minimum = 4.1
+reloadable = true
 
 [libraries]
 

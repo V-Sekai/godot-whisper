@@ -1,4 +1,8 @@
-Import("env")
+#!/usr/bin/env python
+import os
+import sys
+
+env = SConscript("thirdparty/godot-cpp/SConstruct")
 
 module_env = env.Clone()
 
@@ -51,3 +55,24 @@ env_thirdparty.add_source_files(env.modules_sources, Glob("thirdparty/whisper.cp
 env_thirdparty.Append(CPPPATH=['thirdparty/whisper.cpp'])
 env_thirdparty.Append(CPPDEFINES=['WHISPER_SHARED', 'GGML_SHARED'])
 module_env.add_source_files(env.modules_sources, "*.cpp")
+
+# For the reference:
+# - CCFLAGS are compilation flags shared between C and C++
+# tweak this if you want to use different folders, or more folders, to store your source code in.
+env.Append(CPPPATH=["src/"])
+sources = [Glob("src/*.cpp")]
+sources.extend([box2d_folder + 'src/' + box2d_src_file for box2d_src_file in box2d_src])
+
+if env["platform"] == "macos":
+	library = env.SharedLibrary(
+		"bin/addons/godot-box2d/bin/libgodot-box2d.{}.{}.framework/libgodot-box2d.{}.{}".format(
+			env["platform"], env["target"], env["platform"], env["target"]
+		),
+		source=sources,
+	)
+else:
+	library = env.SharedLibrary(
+		"bin/addons/godot-box2d/bin/libgodot-box2d{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
+		source=sources,
+	)
+Default(library)
