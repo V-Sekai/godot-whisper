@@ -1,21 +1,24 @@
 #ifndef SPEECH_H
 #define SPEECH_H
 
-#include "core/error/error_macros.h"
-#include "core/variant/variant.h"
-#include <vector>
-
-#include "core/config/engine.h"
-#include "core/config/project_settings.h"
-#include "core/os/mutex.h"
-#include "core/variant/array.h"
-#include "core/variant/dictionary.h"
-#include "servers/audio/effects/audio_stream_generator.h"
-#include "servers/audio_server.h"
-
 #include "speech_processor.h"
-#include "thirdparty/libsamplerate/src/samplerate.h"
-#include "thirdparty/whisper.cpp/whisper.h"
+
+#include <vector>
+#include <godot_cpp/core/error_macros.hpp>
+#include <godot_cpp/variant/variant.hpp>
+
+#include <godot_cpp/variant/variant.hpp>
+#include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/os.hpp>
+#include <godot_cpp/classes/project_settings.hpp>
+#include <godot_cpp/classes/mutex.hpp>
+#include <godot_cpp/variant/array.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
+#include <godot_cpp/classes/audio_stream_generator.hpp>
+#include <godot_cpp/classes/audio_server.hpp>
+
+#include <libsamplerate/src/samplerate.h>
+#include <whisper.cpp/whisper.h>
 
 class SpeechToTextPlaybackStats : public RefCounted {
 	GDCLASS(SpeechToTextPlaybackStats, RefCounted);
@@ -70,7 +73,7 @@ class SpeechToText : public Node {
 	InputPacket input_audio_buffer_array[MAX_AUDIO_BUFFER_ARRAY_SIZE];
 
 	struct whisper_params {
-		int32_t n_threads = std::min(4, (int32_t)OS::get_singleton()->get_processor_count());
+		int32_t n_threads = MIN(4, (int32_t)OS::get_singleton()->get_processor_count());
 		int32_t step_ms = 3000;
 		int32_t keep_ms = 200;
 		int32_t capture_id = -1;

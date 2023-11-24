@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleExecutable</key>
-	<string>libv-sekai.whisper.macos.template_debug</string>
+	<string>libgodot_whisper.macos.template_release</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.v-sekai.whisper.v-sekai.whisper</string>
+	<string>org.godot_whisper.godot_whisper</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>V-Sekai.Whisper</string>
+	<string>Godot_Whisper</string>
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>

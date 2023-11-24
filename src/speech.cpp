@@ -1,11 +1,14 @@
-#include "core/error/error_macros.h"
-#include "core/string/print_string.h"
-#include "core/variant/variant.h"
-#include "scene/2d/audio_stream_player_2d.h"
-#include "scene/3d/audio_stream_player_3d.h"
-
 #include "speech.h"
 #include "speech_processor.h"
+#include <thread>
+#include <godot_cpp/core/error_macros.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
+#include <godot_cpp/core/mutex_lock.hpp>
+#include <godot_cpp/variant/variant.hpp>
+#include <godot_cpp/classes/time.hpp>
+#include <godot_cpp/classes/audio_stream_player2d.hpp>
+#include <godot_cpp/classes/audio_stream_player3d.hpp>
+
 
 void SpeechToText::preallocate_buffers() {
 	input_byte_array.resize(SpeechToTextProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);
@@ -88,7 +91,7 @@ void SpeechToText::speech_processed(SpeechToTextProcessor::SpeechInput *p_mic_in
 	const int n_segments = whisper_full_n_segments(context_instance);
 	for (int i = 0; i < n_segments; ++i) {
 		const char *text = whisper_full_get_segment_text(context_instance, i);
-		print_line(vformat("%s", text));
+		UtilityFunctions::print(vformat("%s", text));
 	}
 }
 
@@ -410,7 +413,7 @@ void SpeechToText::_notification(int p_what) {
 			blank_packet.resize(SpeechToTextProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT);
 			blank_packet.fill(Vector2());
 			for (int32_t i = 0; i < SpeechToTextProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT; i++) {
-				blank_packet.write[i] = Vector2();
+				blank_packet[i] = Vector2();
 			}
 			break;
 		}
@@ -473,7 +476,7 @@ SpeechToText::SpeechToText() {
 	speech_processor = memnew(SpeechToTextProcessor);
 	preallocate_buffers();
 
-	params.n_threads = std::min(4, (int32_t)std::thread::hardware_concurrency());
+	params.n_threads = MIN(4, (int32_t)std::thread::hardware_concurrency());
 	params.step_ms = 3000;
 	params.keep_ms = 200;
 	params.capture_id = -1;
@@ -502,7 +505,7 @@ void SpeechToText::add_player_audio(int p_player_id, Node *p_audio_stream_player
 		return;
 	}
 	if (player_audio.has(p_player_id)) {
-		print_error(vformat("Attempted to duplicate player_audio entry (%s)!", p_player_id));
+		ERR_PRINT(vformat("Attempted to duplicate player_audio entry (%s)!", p_player_id));
 	}
 	Ref<AudioStreamGenerator> new_generator;
 	new_generator.instantiate();
@@ -521,7 +524,7 @@ void SpeechToText::add_player_audio(int p_player_id, Node *p_audio_stream_player
 	dict["audio_stream_player"] = p_audio_stream_player;
 	dict["jitter_buffer"] = Array();
 	dict["sequence_id"] = -1;
-	dict["last_update"] = OS::get_singleton()->get_ticks_msec();
+	dict["last_update"] = Time::get_singleton()->get_ticks_msec();
 	dict["packets_received_this_frame"] = 0;
 	dict["excess_packets"] = 0;
 	dict["playback_stats"] = pstats;
@@ -534,14 +537,14 @@ void SpeechToText::vc_debug_print(String p_str) const {
 	if (!DEBUG) {
 		return;
 	}
-	print_line(p_str);
+	UtilityFunctions::print(p_str);
 }
 
 void SpeechToText::vc_debug_printerr(String p_str) const {
 	if (!DEBUG) {
 		return;
 	}
-	print_error(p_str);
+	ERR_PRINT(p_str);
 }
 
 void SpeechToText::on_received_audio_packet(int p_peer_id, int p_sequence_id, PackedByteArray p_packet) {
@@ -641,7 +644,7 @@ Dictionary SpeechToText::get_playback_stats(Dictionary speech_stat_dict) {
 			continue;
 		}
 		Dictionary stats = playback_stats->get_playback_stats();
-		stats["playback_total_time"] = (OS::get_singleton()->get_ticks_msec() - int64_t(elem["playback_start_time"])) / double(SpeechToTextProcessor::SPEECH_SETTING_MILLISECONDS_PER_SECOND);
+		stats["playback_total_time"] = (Time::get_singleton()->get_ticks_msec() - int64_t(elem["playback_start_time"])) / double(SpeechToTextProcessor::SPEECH_SETTING_MILLISECONDS_PER_SECOND);
 		stats["excess_packets"] = elem["excess_packets"];
 		stats["excess_s"] = int64_t(elem["excess_packets"]) * SpeechToTextProcessor::SPEECH_SETTING_PACKET_DELTA_TIME;
 		stat_dict[key] = stats;
@@ -655,7 +658,7 @@ void SpeechToText::remove_player_audio(int p_player_id) {
 			return;
 		}
 	}
-	print_error(vformat("Attempted to remove a non-existant player_audio entry (%s)", p_player_id));
+	ERR_PRINT(vformat("Attempted to remove a non-existant player_audio entry (%s)", p_player_id));
 }
 
 void SpeechToText::clear_all_player_audio() {

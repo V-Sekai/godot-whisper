@@ -5,7 +5,6 @@
 
 using namespace godot;
 
-
 void initialize_whisper_module(ModuleInitializationLevel p_level);
 void uninitialize_whisper_module(ModuleInitializationLevel p_level);
 

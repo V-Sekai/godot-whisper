@@ -1,1 +1,8 @@
+# Binaries
+*.os
+*.o
+*.dblite
+
 .DS_Store
+.vscode
+

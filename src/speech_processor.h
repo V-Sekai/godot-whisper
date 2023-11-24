@@ -3,22 +3,27 @@
 
 #include <godot_cpp/classes/node.hpp>
 
-#include <godot_cpp/classes/engine.hpp>
-#include <godot_cpp/classes/project_settings.hpp>
-#include <godot_cpp/core/class_db.hpp>
-#include <godot_cpp/classes/ref_counted.hpp>
-#include <godot_cpp/classes/mutex.hpp>
-#include <godot_cpp/classes/audio_stream_player.hpp>
-#include <godot_cpp/classes/audio_stream.hpp>
 #include <godot_cpp/classes/audio_effect_capture.hpp>
 #include <godot_cpp/classes/audio_server.hpp>
+#include <godot_cpp/classes/audio_stream.hpp>
+#include <godot_cpp/classes/audio_stream_player.hpp>
+#include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/mutex.hpp>
+#include <godot_cpp/classes/project_settings.hpp>
+#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/node.hpp>
+#include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/variant/packed_byte_array.hpp>
+#include <godot_cpp/templates/vector.hpp>
 
 #include <stdlib.h>
 #include <functional>
 
-#include "thirdparty/libsamplerate/src/samplerate.h"
+#include <libsamplerate/src/samplerate.h>
 
 #include <stdint.h>
+
+using namespace godot;
 
 class SpeechToTextProcessor : public Node {
 	GDCLASS(SpeechToTextProcessor, Node);

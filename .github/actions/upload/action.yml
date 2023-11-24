@@ -7,7 +7,7 @@ runs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
       with:
-        name: V-Sekai.Whisper
+        name: Godot_Whisper
         path: |
           ${{ github.workspace }}/bin/**
         retention-days: 14
