@@ -9,12 +9,12 @@
 #include <godot_cpp/classes/audio_stream_player.hpp>
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/mutex.hpp>
+#include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/ref_counted.hpp>
-#include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/core/class_db.hpp>
-#include <godot_cpp/variant/packed_byte_array.hpp>
 #include <godot_cpp/templates/vector.hpp>
+#include <godot_cpp/variant/packed_byte_array.hpp>
 
 #include <stdlib.h>
 #include <functional>

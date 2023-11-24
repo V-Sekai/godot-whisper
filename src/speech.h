@@ -3,19 +3,19 @@
 
 #include "speech_processor.h"
 
-#include <vector>
 #include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/variant/variant.hpp>
+#include <vector>
 
-#include <godot_cpp/variant/variant.hpp>
+#include <godot_cpp/classes/audio_server.hpp>
+#include <godot_cpp/classes/audio_stream_generator.hpp>
 #include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/mutex.hpp>
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
-#include <godot_cpp/classes/mutex.hpp>
 #include <godot_cpp/variant/array.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
-#include <godot_cpp/classes/audio_stream_generator.hpp>
-#include <godot_cpp/classes/audio_server.hpp>
+#include <godot_cpp/variant/variant.hpp>
 
 #include <libsamplerate/src/samplerate.h>
 #include <whisper.cpp/whisper.h>

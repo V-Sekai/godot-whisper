@@ -1,14 +1,13 @@
 #include "speech.h"
 #include "speech_processor.h"
-#include <thread>
-#include <godot_cpp/core/error_macros.hpp>
-#include <godot_cpp/variant/utility_functions.hpp>
-#include <godot_cpp/core/mutex_lock.hpp>
-#include <godot_cpp/variant/variant.hpp>
-#include <godot_cpp/classes/time.hpp>
 #include <godot_cpp/classes/audio_stream_player2d.hpp>
 #include <godot_cpp/classes/audio_stream_player3d.hpp>
-
+#include <godot_cpp/classes/time.hpp>
+#include <godot_cpp/core/error_macros.hpp>
+#include <godot_cpp/core/mutex_lock.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
+#include <godot_cpp/variant/variant.hpp>
+#include <thread>
 
 void SpeechToText::preallocate_buffers() {
 	input_byte_array.resize(SpeechToTextProcessor::SPEECH_SETTING_PCM_BUFFER_SIZE);

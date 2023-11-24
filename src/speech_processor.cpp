@@ -143,7 +143,7 @@ void SpeechToTextProcessor::_mix_audio(const Vector2 *p_capture_buffer) {
 void SpeechToTextProcessor::start() {
 	if (!ProjectSettings::get_singleton()->get("audio/enable_audio_input")) {
 		UtilityFunctions::print("Need to enable Project settings > Audio > Enable Audio Input "
-				   "option to use capturing.");
+								"option to use capturing.");
 		return;
 	}
 
@@ -151,8 +151,8 @@ void SpeechToTextProcessor::start() {
 		return;
 	}
 	//if (AudioDriver::get_singleton()) {
-		//mix_rate = AudioDriver::get_singleton()->get_mix_rate();
-		mix_rate = AudioServer::get_singleton()->get_mix_rate();
+	//mix_rate = AudioDriver::get_singleton()->get_mix_rate();
+	mix_rate = AudioServer::get_singleton()->get_mix_rate();
 	//}
 	audio_input_stream_player->play();
 	audio_effect_capture->clear_buffer();
