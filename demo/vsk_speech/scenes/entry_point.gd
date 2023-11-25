@@ -3,10 +3,8 @@ extends Node
 const PACKET_TICK_TIMESLICE = 10
 const MIC_BUS_NAME = "Mic"
 const AEC_BUS_NAME = "Master"
-var lobby_scene : Node = null
 var debug_output : Label = null
 @onready var godot_speech : SpeechToText = get_node("SpeechLobby/GodotSpeech")
-var is_connected : bool = false
 var audio_players : Dictionary
 var audio_mutex : Mutex = Mutex.new()
 const MAX_VOICE_BUFFERS = 16
@@ -66,41 +64,6 @@ func ended() -> void:
 		return
 	godot_speech.end_recording()
 	voice_recording_started = false
-
-
-func confirm_connection() -> void:
-	is_connected = true
-	voice_id = 0
-
-
-func _on_connection_success() -> void:
-	started()
-	confirm_connection()
-
-
-func _on_connection_failed() -> void:
-	if lobby_scene:
-		lobby_scene.on_connection_failed()
-
-
-func _player_list_changed() -> void:
-	if lobby_scene:
-		lobby_scene.refresh_lobby(network_layer.get_full_player_list())
-
-
-func _on_game_ended() -> void:
-	if network_layer.is_active_player():
-		ended()
-
-	if lobby_scene:
-		lobby_scene.on_game_ended()
-
-
-func _on_game_error(p_errtxt : String) -> void:
-	if not lobby_scene:
-		return
-	lobby_scene.on_game_error(p_errtxt)
-
 
 func get_ticks_since_recording_started() -> int:
 	return (Time.get_ticks_msec() - audio_start_tick)
@@ -174,15 +137,13 @@ func _ready() -> void:
 	var microphone_stream : AudioStreamPlayer = $MicrophoneStreamAudio
 	godot_speech.set_audio_input_stream_player(microphone_stream)
 	godot_speech.set_streaming_bus(MIC_BUS_NAME)
-	godot_speech.set_error_cancellation_bus(AEC_BUS_NAME)
+	#godot_speech.set_error_cancellation_bus(AEC_BUS_NAME)
 	set_process(true)
 	microphone_stream.play()
 	godot_speech.add_player_audio(get_current_voice_id(), microphone_stream)
 	started()
-	confirm_connection()
 	var speech_process: SpeechToTextProcessor = godot_speech.get_node(godot_speech.get_speech_processor())
-	var on_packet: Callable = Callable(self, "process_on_received_audio_packet")
-	speech_process.speech_processed.connect(on_packet)
+	speech_process.speech_processed.connect(process_on_received_audio_packet)
 
 
 func process_on_received_audio_packet(packet: Dictionary):

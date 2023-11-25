@@ -22,10 +22,6 @@ driver/mix_rate=48000
 enable_audio_input=true
 mix_rate=48000
 
-[autoload]
-
-network_layer="*res://vsk_speech/scenes/network_layer.gd"
-
 [editor_plugins]
 
 enabled=PackedStringArray()

@@ -49,5 +49,6 @@ metadata/_edit_layout_mode = 1
 metadata/_edit_use_custom_anchors = true
 
 [node name="GodotSpeech" type="SpeechToText" parent="SpeechLobby"]
+DEBUG = true
 
 [node name="SpeechToTextProcessor" type="SpeechToTextProcessor" parent="SpeechLobby/GodotSpeech"]
