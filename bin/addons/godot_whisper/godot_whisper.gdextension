@@ -1,0 +1,28 @@
+[configuration]
+
+entry_symbol = "godot_whisper_library_init"
+compatibility_minimum = 4.1
+reloadable = true
+
+[libraries]
+
+macos.debug = "res://addons/godot_whisper/bin/libgodot_whisper.macos.template_debug.framework"
+macos.release = "res://addons/godot_whisper/bin/libgodot_whisper.macos.template_release.framework"
+ios.debug = "res://addons/godot_whisper/bin/libgodot_whisper.ios.template_debug.arm64.dylib"
+ios.release = "res://addons/godot_whisper/bin/libgodot_whisper.ios.template_release.arm64.dylib"
+windows.debug.x86_32 = "res://addons/godot_whisper/bin/libgodot_whisper.windows.template_debug.x86_32.dll"
+windows.release.x86_32 = "res://addons/godot_whisper/bin/libgodot_whisper.windows.template_release.x86_32.dll"
+windows.debug.x86_64 = "res://addons/godot_whisper/bin/libgodot_whisper.windows.template_debug.x86_64.dll"
+windows.release.x86_64 = "res://addons/godot_whisper/bin/libgodot_whisper.windows.template_release.x86_64.dll"
+linux.debug.x86_64 = "res://addons/godot_whisper/bin/libgodot_whisper.linux.template_debug.x86_64.so"
+linux.release.x86_64 = "res://addons/godot_whisper/bin/libgodot_whisper.linux.template_release.x86_64.so"
+android.debug.x86_64 = "res://addons/godot_whisper/bin/libgodot_whisper.android.template_debug.x86_64.so"
+android.release.x86_64 = "res://addons/godot_whisper/bin/libgodot_whisper.android.template_release.x86_64.so"
+android.debug.x86_32 = "res://addons/godot_whisper/bin/libgodot_whisper.android.template_debug.x86_32.so"
+android.release.x86_32 = "res://addons/godot_whisper/bin/libgodot_whisper.android.template_release.x86_32.so"
+android.debug.arm64 = "res://addons/godot_whisper/bin/libgodot_whisper.android.template_debug.arm64.so"
+android.release.arm64 = "res://addons/godot_whisper/bin/libgodot_whisper.android.template_release.arm64.so"
+android.debug.arm32 = "res://addons/godot_whisper/bin/libgodot_whisper.android.template_debug.arm32.so"
+android.release.arm32 = "res://addons/godot_whisper/bin/libgodot_whisper.android.template_release.arm32.so"
+web.debug.wasm32 = "res://addons/godot_whisper/bin/libgodot_whisper.web.template_debug.wasm32.wasm"
+web.release.wasm32 = "res://addons/godot_whisper/bin/libgodot_whisper.web.template_release.wasm32.wasm"
