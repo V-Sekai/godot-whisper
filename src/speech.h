@@ -1,51 +1,24 @@
-/**************************************************************************/
-/*  speech.h                                                              */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
-/**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
 #ifndef SPEECH_H
 #define SPEECH_H
 
-#include "core/error/error_macros.h"
-#include "core/variant/variant.h"
+#include "speech_processor.h"
+
+#include <godot_cpp/core/error_macros.hpp>
+#include <godot_cpp/variant/variant.hpp>
 #include <vector>
 
-#include "core/config/engine.h"
-#include "core/config/project_settings.h"
-#include "core/os/mutex.h"
-#include "core/variant/array.h"
-#include "core/variant/dictionary.h"
-#include "servers/audio/effects/audio_stream_generator.h"
-#include "servers/audio_server.h"
+#include <godot_cpp/classes/audio_server.hpp>
+#include <godot_cpp/classes/audio_stream_generator.hpp>
+#include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/mutex.hpp>
+#include <godot_cpp/classes/os.hpp>
+#include <godot_cpp/classes/project_settings.hpp>
+#include <godot_cpp/variant/array.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
+#include <godot_cpp/variant/variant.hpp>
 
-#include "speech_processor.h"
-#include "thirdparty/libsamplerate/src/samplerate.h"
-#include "thirdparty/whisper.cpp/whisper.h"
+#include <libsamplerate/src/samplerate.h>
+#include <whisper.cpp/whisper.h>
 
 class SpeechToTextPlaybackStats : public RefCounted {
 	GDCLASS(SpeechToTextPlaybackStats, RefCounted);
@@ -100,7 +73,7 @@ class SpeechToText : public Node {
 	InputPacket input_audio_buffer_array[MAX_AUDIO_BUFFER_ARRAY_SIZE];
 
 	struct whisper_params {
-		int32_t n_threads = std::min(4, (int32_t)OS::get_singleton()->get_processor_count());
+		int32_t n_threads = MIN(4, (int32_t)OS::get_singleton()->get_processor_count());
 		int32_t step_ms = 3000;
 		int32_t keep_ms = 200;
 		int32_t capture_id = -1;

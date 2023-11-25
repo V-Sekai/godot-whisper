@@ -1,4 +1,4 @@
-V-Sekai.Whisper incorporates third-party material from the projects listed below.
+Godot Whisper incorporates third-party material from the projects listed below.
 
 Godot Jolt (https://github.com/godot-jolt/godot-jolt)
 
