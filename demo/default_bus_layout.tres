@@ -6,7 +6,7 @@ pan_pullout = 0.0
 
 [sub_resource type="AudioEffectCapture" id="AudioEffectCapture_uns3m"]
 resource_name = "Capture"
-buffer_length = 1.0
+buffer_length = 5.0
 
 [resource]
 bus/1/name = &"Record"

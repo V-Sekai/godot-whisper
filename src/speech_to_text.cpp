@@ -90,7 +90,6 @@ String SpeechToText::transcribe(PackedVector2Array buffer) {
 	for (int i = 0; i < n_segments; ++i) {
 		const char *text = whisper_full_get_segment_text(context_instance, i);
 		texts += String(text) + "\n";
-		//UtilityFunctions::print(vformat("%s", text));
 	}
 	return String("");
 }
@@ -111,7 +110,7 @@ SpeechToText::SpeechToText() {
 	params.no_context = true;
 	params.no_timestamps = false;
 	params.language = "en";
-	params.model = "models/ggml-base.en.bin";
+	params.model = "./addons/godot_whisper/models/ggml-tiny.en.bin";
 
 	context_instance = whisper_init_from_file_with_params(params.model.c_str(), context_parameters);
 }
