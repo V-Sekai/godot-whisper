@@ -5,8 +5,11 @@
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_rhq81"]
 
 [node name="MicTest" type="Node2D"]
+script = ExtResource("1_gio36")
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_rhq81")
+autoplay = true
 bus = &"Record"
-script = ExtResource("1_gio36")
+
+[node name="SpeechToText" type="SpeechToText" parent="."]

@@ -1,10 +1,12 @@
 [gd_resource type="AudioBusLayout" load_steps=3 format=3 uid="uid://bdisip03skrxl"]
 
-[sub_resource type="AudioEffectRecord" id="AudioEffectRecord_gcigp"]
-resource_name = "Record"
+[sub_resource type="AudioEffectStereoEnhance" id="AudioEffectStereoEnhance_nxvuy"]
+resource_name = "StereoEnhance"
+pan_pullout = 0.0
 
-[sub_resource type="AudioEffectCapture" id="AudioEffectCapture_6pg6b"]
+[sub_resource type="AudioEffectCapture" id="AudioEffectCapture_uns3m"]
 resource_name = "Capture"
+buffer_length = 1.0
 
 [resource]
 bus/1/name = &"Record"
@@ -13,7 +15,7 @@ bus/1/mute = true
 bus/1/bypass_fx = false
 bus/1/volume_db = 0.696087
 bus/1/send = &"Mute"
-bus/1/effect/0/effect = SubResource("AudioEffectRecord_gcigp")
+bus/1/effect/0/effect = SubResource("AudioEffectStereoEnhance_nxvuy")
 bus/1/effect/0/enabled = true
-bus/1/effect/1/effect = SubResource("AudioEffectCapture_6pg6b")
+bus/1/effect/1/effect = SubResource("AudioEffectCapture_uns3m")
 bus/1/effect/1/enabled = true

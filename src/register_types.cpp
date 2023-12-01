@@ -1,13 +1,12 @@
 #include "register_types.h"
 
-#include "audio_effect_transcribe.h"
+#include "speech_to_text.h"
 
 void initialize_whisper_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-	GDREGISTER_CLASS(AudioEffectTranscribe);
-	GDREGISTER_CLASS(AudioEffectTranscribeInstance);
+	GDREGISTER_CLASS(SpeechToText);
 }
 
 void uninitialize_whisper_module(ModuleInitializationLevel p_level) {
