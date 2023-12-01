@@ -1,6 +1,6 @@
 #include "speech_to_text.h"
-#include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/classes/audio_server.hpp>
+#include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/variant/packed_vector2_array.hpp>
 #include <thread>
 
@@ -35,8 +35,8 @@ uint32_t _resample_audio_buffer(
 }
 
 void _vector2_array_to_float_array(const uint32_t &p_mix_frame_count,
-	const Vector2 *p_process_buffer_in,
-	float *p_process_buffer_out) {
+		const Vector2 *p_process_buffer_in,
+		float *p_process_buffer_out) {
 	for (size_t i = 0; i < p_mix_frame_count; i++) {
 		float mono = p_process_buffer_in[i].x * 0.5f + p_process_buffer_in[i].y * 0.5f;
 		p_process_buffer_out[i] = mono;
@@ -58,7 +58,6 @@ String SpeechToText::transcribe(PackedVector2Array buffer) {
 			AudioServer::get_singleton()->get_mix_rate(), // Source sample rate
 			SPEECH_SETTING_SAMPLE_RATE, // Target sample rate
 			resampled_float);
-	
 
 	whisper_full_params whispher_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
 	whispher_params.print_progress = false;
@@ -77,8 +76,8 @@ String SpeechToText::transcribe(PackedVector2Array buffer) {
 	//whispher_params.prompt_tokens = params.no_context ? nullptr : prompt_tokens.data();
 	//whispher_params.prompt_n_tokens = params.no_context ? 0 : prompt_tokens.size();
 
-    // initialize openvino encoder. this has no effect on whisper.cpp builds that don't have OpenVINO configured
-    // whisper_ctx_init_openvino_encoder(ctx, nullptr, params.openvino_encode_device.c_str(), nullptr);
+	// initialize openvino encoder. this has no effect on whisper.cpp builds that don't have OpenVINO configured
+	// whisper_ctx_init_openvino_encoder(ctx, nullptr, params.openvino_encode_device.c_str(), nullptr);
 
 	if (whisper_full(context_instance, whispher_params, resampled_float, result_size) != 0) {
 		ERR_PRINT("Failed to process audio");
@@ -189,8 +188,8 @@ void SpeechToText::speech_processed(SpeechToTextProcessor::SpeechInput *p_mic_in
 	whispher_params.prompt_tokens = params.no_context ? nullptr : prompt_tokens.data();
 	whispher_params.prompt_n_tokens = params.no_context ? 0 : prompt_tokens.size();
 
-    // initialize openvino encoder. this has no effect on whisper.cpp builds that don't have OpenVINO configured
-    whisper_ctx_init_openvino_encoder(ctx, nullptr, params.openvino_encode_device.c_str(), nullptr);
+	// initialize openvino encoder. this has no effect on whisper.cpp builds that don't have OpenVINO configured
+	whisper_ctx_init_openvino_encoder(ctx, nullptr, params.openvino_encode_device.c_str(), nullptr);
 
 	if (whisper_full(context_instance, whispher_params, uncompressed_audio.ptr(), SpeechToTextProcessor::SPEECH_SETTING_BUFFER_FRAME_COUNT) != 0) {
 		ERR_PRINT("Failed to process audio");
