@@ -43,10 +43,7 @@ class SpeechToText : public Node {
 	whisper_context *context_instance = nullptr;
 
 protected:
-	static void _bind_methods() {
-		ClassDB::bind_method(D_METHOD("transcribe", "buffer"), &SpeechToText::transcribe);
-		BIND_CONSTANT(SPEECH_SETTING_SAMPLE_RATE);
-	}
+	static void _bind_methods();
 
 public:
 	enum {
