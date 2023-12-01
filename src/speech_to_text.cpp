@@ -48,6 +48,7 @@ String SpeechToText::transcribe(PackedVector2Array buffer) {
 		ERR_PRINT("Context not instantiated.");
 		return String();
 	}
+	ERR_PRINT("before size " + rtos(buffer.size()));
 	float buffer_float[buffer.size()];
 	_vector2_array_to_float_array(buffer.size(), buffer.ptr(), buffer_float);
 	float resampled_float[buffer.size()];
