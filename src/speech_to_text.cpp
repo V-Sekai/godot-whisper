@@ -46,7 +46,7 @@ void _vector2_array_to_float_array(const uint32_t &p_mix_frame_count,
 String SpeechToText::transcribe(PackedVector2Array buffer) {
 	if (!context_instance) {
 		ERR_PRINT("Context not instantiated.");
-		return "";
+		return String();
 	}
 	float buffer_float[buffer.size()];
 	_vector2_array_to_float_array(buffer.size(), buffer.ptr(), buffer_float);
@@ -73,15 +73,13 @@ String SpeechToText::transcribe(PackedVector2Array buffer) {
 	whispher_params.speed_up = params.speed_up;
 	whispher_params.prompt_tokens = nullptr;
 	whispher_params.prompt_n_tokens = 0;
+
 	//whispher_params.prompt_tokens = params.no_context ? nullptr : prompt_tokens.data();
 	//whispher_params.prompt_n_tokens = params.no_context ? 0 : prompt_tokens.size();
 
-	// initialize openvino encoder. this has no effect on whisper.cpp builds that don't have OpenVINO configured
-	// whisper_ctx_init_openvino_encoder(ctx, nullptr, params.openvino_encode_device.c_str(), nullptr);
-
 	if (whisper_full(context_instance, whispher_params, resampled_float, result_size) != 0) {
 		ERR_PRINT("Failed to process audio");
-		return "";
+		return String();
 	}
 
 	const int n_segments = whisper_full_n_segments(context_instance);
@@ -90,7 +88,7 @@ String SpeechToText::transcribe(PackedVector2Array buffer) {
 		const char *text = whisper_full_get_segment_text(context_instance, i);
 		texts += String(text) + "\n";
 	}
-	return String("");
+	return String();
 }
 
 SpeechToText::SpeechToText() {
@@ -829,3 +827,7 @@ void SpeechToTextPlaybackStats::_bind_methods() {
 			&SpeechToTextPlaybackStats::get_playback_stats);
 }
 */
+void SpeechToText::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("transcribe", "buffer"), &SpeechToText::transcribe);
+	BIND_CONSTANT(SPEECH_SETTING_SAMPLE_RATE);
+}
