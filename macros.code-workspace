@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../godot"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"vector": "cpp",
+			"functional": "cpp",
+			"algorithm": "cpp",
+			"speech_processor": "cpp"
+		}
+	}
+}
