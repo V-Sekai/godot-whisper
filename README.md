@@ -1,4 +1,5 @@
-# godot.whisper
+# Godot Whisper
+
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
@@ -18,7 +19,18 @@ Result:
 - 12312312345
 ```
 
+The plugin expects a model at the location specified in `language_model`. By default it is set to:
+```
+./addons/godot_whisper/models/ggml-tiny.en.bin
+```
 
+In order to download a model, go to [Whipser.CPP > Models](https://github.com/ggerganov/whisper.cpp/tree/master/models) and download a model after building the repo:
+
+eg.
+
+```
+./download-ggml-model.sh base.en
+```
 
 ## Contributors ✨
 
