@@ -43,9 +43,9 @@ void _vector2_array_to_float_array(const uint32_t &p_mix_frame_count,
 	}
 }
 
-void ellapsed(double start) {
+void elapsed(double start) {
 	double now = Time::get_singleton()->get_unix_time_from_system();
-	ERR_PRINT("time_ellapsed " + rtos(now - start));
+	ERR_PRINT("time_elapsed " + rtos(now - start));
 }
 
 String SpeechToText::transcribe(PackedVector2Array buffer) {
@@ -88,16 +88,16 @@ String SpeechToText::transcribe(PackedVector2Array buffer) {
 		ERR_PRINT("Failed to process audio");
 		return String();
 	}
-	ellapsed(start);
+	elapsed(start);
 	ERR_PRINT(whisper_print_system_info());
 	const int n_segments = whisper_full_n_segments(context_instance);
-	ellapsed(start);
+	elapsed(start);
 	String texts;
 	for (int i = 0; i < n_segments; ++i) {
 		const char *text = whisper_full_get_segment_text(context_instance, i);
 		texts += String(text) + "\n";
 	}
-	ellapsed(start);
+	elapsed(start);
 	return texts;
 }
 
