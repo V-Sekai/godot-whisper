@@ -2,6 +2,7 @@
 #include <godot_cpp/classes/audio_server.hpp>
 #include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/variant/packed_vector2_array.hpp>
+#include <godot_cpp/classes/time.hpp>
 #include <thread>
 
 #include <libsamplerate/src/samplerate.h>
@@ -42,15 +43,18 @@ void _vector2_array_to_float_array(const uint32_t &p_mix_frame_count,
 	}
 }
 
+void ellapsed(double start) {
+	double now = Time::get_singleton()->get_unix_time_from_system();
+	ERR_PRINT("time_ellapsed " + rtos(now - start));
+}
+
 String SpeechToText::transcribe(PackedVector2Array buffer) {
+	double start = Time::get_singleton()->get_unix_time_from_system();
 	if (!context_instance) {
 		ERR_PRINT("Context not instantiated.");
 		return String();
 	}
-	ERR_PRINT("before size " + rtos(buffer.size()));
-	float buffer_float[buffer.size()];
 	_vector2_array_to_float_array(buffer.size(), buffer.ptr(), buffer_float);
-	float resampled_float[buffer.size()];
 	// Speaker frame.
 	int result_size = _resample_audio_buffer(
 			buffer_float, // Pointer to source buffer
@@ -59,12 +63,13 @@ String SpeechToText::transcribe(PackedVector2Array buffer) {
 			SPEECH_SETTING_SAMPLE_RATE, // Target sample rate
 			resampled_float);
 
-	ERR_PRINT("after size " + rtos(result_size));
 	whisper_full_params whispher_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
-	whispher_params.print_progress = true;
+	whispher_params.print_progress = false;
 	whispher_params.print_special = params.print_special;
-	whispher_params.print_realtime = true;
-	whispher_params.duration_ms = params.duration_ms;
+	whispher_params.print_realtime = false;
+	// this seems to be for how much time to process out of all.
+	//whispher_params.duration_ms = params.duration_ms;
+	whispher_params.duration_ms = 0;
 	whispher_params.print_timestamps = !params.no_timestamps;
 	whispher_params.translate = params.translate;
 	whispher_params.single_segment = true;
@@ -83,13 +88,16 @@ String SpeechToText::transcribe(PackedVector2Array buffer) {
 		ERR_PRINT("Failed to process audio");
 		return String();
 	}
-
+	ellapsed(start);
+	ERR_PRINT(whisper_print_system_info());
 	const int n_segments = whisper_full_n_segments(context_instance);
+	ellapsed(start);
 	String texts;
 	for (int i = 0; i < n_segments; ++i) {
 		const char *text = whisper_full_get_segment_text(context_instance, i);
 		texts += String(text) + "\n";
 	}
+	ellapsed(start);
 	return texts;
 }
 

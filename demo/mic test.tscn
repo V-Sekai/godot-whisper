@@ -20,6 +20,7 @@ autoplay = true
 bus = &"Record"
 
 [node name="Timer" type="Timer" parent="."]
+wait_time = 3.0
 autostart = true
 
 [connection signal="timeout" from="Timer" to="." method="transcribe"]

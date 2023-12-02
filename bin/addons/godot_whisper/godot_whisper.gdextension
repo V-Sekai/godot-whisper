@@ -6,7 +6,7 @@ reloadable = true
 
 [libraries]
 
-macos.debug = "res://addons/godot_whisper/bin/libgodot_whisper.macos.template_debug.framework"
+macos.debug = "res://addons/godot_whisper/bin/libgodot_whisper.macos.template_release.framework"
 macos.release = "res://addons/godot_whisper/bin/libgodot_whisper.macos.template_release.framework"
 ios.debug = "res://addons/godot_whisper/bin/libgodot_whisper.ios.template_debug.arm64.dylib"
 ios.release = "res://addons/godot_whisper/bin/libgodot_whisper.ios.template_release.arm64.dylib"

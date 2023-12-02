@@ -12,9 +12,13 @@ func _process(_delta):
 	#buffer_full.resize(speech_to_text.step_ms)
 	#print(effect_transcribe.is_transcribing_active())
 
+func ellapsed(time: float):
+	return Time.get_unix_time_from_system() - time
+
 func transcribe():
+	var start = Time.get_unix_time_from_system()
 	buffer_full.resize(ProjectSettings.get_setting("audio/driver/mix_rate") * effect_capture.buffer_length)
-	
-	print(buffer_full.size())
+	print(ellapsed(start))
 	print("text " + speech_to_text.transcribe(buffer_full))
+	print(ellapsed(start))
 	buffer_full.clear()
