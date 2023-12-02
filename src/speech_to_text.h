@@ -42,8 +42,9 @@ class SpeechToText : public Node {
 	Vector<whisper_token> prompt_tokens;
 	whisper_context *context_instance = nullptr;
 
-	float * buffer_float;
-	float * resampled_float;
+	float *buffer_float;
+	float *resampled_float;
+
 protected:
 	static void _bind_methods();
 
