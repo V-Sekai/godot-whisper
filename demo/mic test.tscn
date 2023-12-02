@@ -5,7 +5,7 @@
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_rhq81"]
 
-[node name="MicTest" type="Node2D"]
+[node name="AudioStreamToText" type="Node2D"]
 script = ExtResource("1_gio36")
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
@@ -18,9 +18,3 @@ bus = &"Record"
 stream = ExtResource("2_ljgdb")
 autoplay = true
 bus = &"Record"
-
-[node name="Timer" type="Timer" parent="."]
-wait_time = 3.0
-autostart = true
-
-[connection signal="timeout" from="Timer" to="." method="transcribe"]
