@@ -11,14 +11,13 @@ config_version=5
 [application]
 
 config/name="Speech Voip Demo"
-run/main_scene="res://vsk_speech/scenes/entry_point.tscn"
+run/main_scene="res://mic test.tscn"
 config/features=PackedStringArray("4.2")
 config/icon="res://icon.png"
 
 [audio]
 
 driver/enable_input=true
-driver/mix_rate=48000
 enable_audio_input=true
 mix_rate=48000
 

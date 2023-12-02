@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3 uid="uid://dibqfutwftm8j"]
+
+[ext_resource type="Script" path="res://test.gd" id="1_gio36"]
+[ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="2_ljgdb"]
+
+[sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_rhq81"]
+
+[node name="MicTest" type="Node2D"]
+script = ExtResource("1_gio36")
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+stream = SubResource("AudioStreamMicrophone_rhq81")
+bus = &"Record"
+
+[node name="SpeechToText" type="SpeechToText" parent="."]
+
+[node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_ljgdb")
+autoplay = true
+bus = &"Record"
+
+[node name="Timer" type="Timer" parent="."]
+wait_time = 3.0
+autostart = true
+
+[connection signal="timeout" from="Timer" to="." method="transcribe"]

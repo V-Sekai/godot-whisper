@@ -1,14 +1,11 @@
 #include "register_types.h"
 
-#include "speech.h"
-#include "speech_processor.h"
+#include "speech_to_text.h"
 
 void initialize_whisper_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-	GDREGISTER_CLASS(SpeechToTextPlaybackStats);
-	GDREGISTER_CLASS(SpeechToTextProcessor);
 	GDREGISTER_CLASS(SpeechToText);
 }
 
@@ -19,8 +16,6 @@ void uninitialize_whisper_module(ModuleInitializationLevel p_level) {
 }
 
 extern "C" {
-
-// Initialization.
 
 GDExtensionBool GDE_EXPORT godot_whisper_library_init(const GDExtensionInterfaceGetProcAddress p_get_proc_address, GDExtensionClassLibraryPtr p_library, GDExtensionInitialization *r_initialization) {
 	godot::GDExtensionBinding::InitObject init_obj(p_get_proc_address, p_library, r_initialization);
