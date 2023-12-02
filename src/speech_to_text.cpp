@@ -87,12 +87,11 @@ Array SpeechToText::transcribe(PackedVector2Array buffer) {
 	Array results;
 	// should be just 1 segment for realtime
 	for (int i = 0; i < n_segments; ++i) {
-
-        const int n_tokens = whisper_full_n_tokens(context_instance, i);
-        // fprintf(stderr,"tokens: %d\n",n_tokens);
-        for (int j = 0; j < n_tokens; j++) {
-            auto token = whisper_full_get_token_data(context_instance, i, j);
-            auto text = whisper_full_get_token_text(context_instance, i, j);
+		const int n_tokens = whisper_full_n_tokens(context_instance, i);
+		// fprintf(stderr,"tokens: %d\n",n_tokens);
+		for (int j = 0; j < n_tokens; j++) {
+			auto token = whisper_full_get_token_data(context_instance, i, j);
+			auto text = whisper_full_get_token_text(context_instance, i, j);
 			Dictionary token_result;
 			token_result["id"] = token.id;
 			token_result["tid"] = token.tid;
@@ -105,7 +104,7 @@ Array SpeechToText::transcribe(PackedVector2Array buffer) {
 			token_result["vlen"] = token.vlen;
 			token_result["text"] = text;
 			results.append(token_result);
-	    }
+		}
 	}
 	return results;
 }
