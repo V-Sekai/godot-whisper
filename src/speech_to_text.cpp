@@ -38,8 +38,7 @@ void _vector2_array_to_float_array(const uint32_t &p_mix_frame_count,
 		const Vector2 *p_process_buffer_in,
 		float *p_process_buffer_out) {
 	for (size_t i = 0; i < p_mix_frame_count; i++) {
-		float mono = p_process_buffer_in[i].x * 0.5f + p_process_buffer_in[i].y * 0.5f;
-		p_process_buffer_out[i] = mono;
+		p_process_buffer_out[i] = (p_process_buffer_in[i].x + p_process_buffer_in[i].y) / 2.0;
 	}
 }
 
@@ -60,10 +59,12 @@ String SpeechToText::transcribe(PackedVector2Array buffer) {
 			SPEECH_SETTING_SAMPLE_RATE, // Target sample rate
 			resampled_float);
 
+	ERR_PRINT("after size " + rtos(result_size));
 	whisper_full_params whispher_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
-	whispher_params.print_progress = false;
+	whispher_params.print_progress = true;
 	whispher_params.print_special = params.print_special;
-	whispher_params.print_realtime = false;
+	whispher_params.print_realtime = true;
+	whispher_params.duration_ms = params.duration_ms;
 	whispher_params.print_timestamps = !params.no_timestamps;
 	whispher_params.translate = params.translate;
 	whispher_params.single_segment = true;
@@ -89,31 +90,26 @@ String SpeechToText::transcribe(PackedVector2Array buffer) {
 		const char *text = whisper_full_get_segment_text(context_instance, i);
 		texts += String(text) + "\n";
 	}
-	return String();
+	return texts;
 }
 
 SpeechToText::SpeechToText() {
-	params.n_threads = MIN(4, (int32_t)std::thread::hardware_concurrency());
-	params.step_ms = 5000;
-	params.keep_ms = 200;
-	params.capture_id = -1;
-	params.max_tokens = 32;
-	params.audio_ctx = 0;
-	params.vad_thold = 0.6f;
-	params.freq_thold = 100.0f;
-	params.speed_up = false;
-	params.translate = false;
-	params.no_fallback = false;
-	params.print_special = false;
-	params.no_context = true;
-	params.no_timestamps = false;
-	params.language = "en";
-	params.model = "./addons/godot_whisper/models/ggml-tiny.en.bin";
-
 	context_instance = whisper_init_from_file_with_params(params.model.c_str(), context_parameters);
 }
 
 void SpeechToText::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("transcribe", "buffer"), &SpeechToText::transcribe);
+	ClassDB::bind_method(D_METHOD("get_language"), &SpeechToText::get_language);
+	ClassDB::bind_method(D_METHOD("set_language", "language"), &SpeechToText::set_language);
+	ClassDB::bind_method(D_METHOD("get_language_model"), &SpeechToText::get_language_model);
+	ClassDB::bind_method(D_METHOD("set_language_model", "model"), &SpeechToText::set_language_model);
+	ClassDB::bind_method(D_METHOD("get_duration_ms"), &SpeechToText::get_duration_ms);
+	ClassDB::bind_method(D_METHOD("set_duration_ms", "duration_ms"), &SpeechToText::set_duration_ms);
+	ClassDB::bind_method(D_METHOD("is_use_gpu"), &SpeechToText::is_use_gpu);
+	ClassDB::bind_method(D_METHOD("set_use_gpu", "use_gpu"), &SpeechToText::set_use_gpu);
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "language"), "set_language", "get_language");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "language_model"), "set_language_model", "get_language_model");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "duration_ms"), "set_duration_ms", "get_duration_ms");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_gpu"), "set_use_gpu", "is_use_gpu");
 	BIND_CONSTANT(SPEECH_SETTING_SAMPLE_RATE);
 }

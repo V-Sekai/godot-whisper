@@ -16,8 +16,7 @@ class SpeechToText : public Node {
 
 	struct whisper_params {
 		int32_t n_threads = MIN(4, (int32_t)OS::get_singleton()->get_processor_count());
-		int32_t step_ms = 3000;
-		int32_t keep_ms = 200;
+		int32_t duration_ms = 5000;
 		int32_t capture_id = -1;
 		int32_t max_tokens = 32;
 		int32_t audio_ctx = 0;
@@ -31,33 +30,33 @@ class SpeechToText : public Node {
 		bool print_special = false;
 		bool no_context = true;
 		bool no_timestamps = false;
+		bool diarize = false;
 
 		std::string language = "en";
-		std::string model = "models/ggml-base.en.bin";
+		std::string model = "./addons/godot_whisper/models/ggml-tiny.en.bin";
 		std::string fname_out;
 	};
 
 	whisper_params params;
-	whisper_context_params context_parameters;
+	whisper_context_params context_parameters{true};
 	Vector<whisper_token> prompt_tokens;
 	whisper_context *context_instance = nullptr;
 
 protected:
-	static void _bind_methods() {
-		ClassDB::bind_method(D_METHOD("transcribe", "buffer"), &SpeechToText::transcribe);
-		ClassDB::bind_method(D_METHOD("get_language"), &SpeechToText::get_language);
-		ClassDB::bind_method(D_METHOD("set_language", "language"), &SpeechToText::set_language);
-		ADD_PROPERTY(PropertyInfo(Variant::STRING, "language"), "set_language", "get_language");
-		BIND_CONSTANT(SPEECH_SETTING_SAMPLE_RATE);
-	}
+	static void _bind_methods();
 public:
 	enum {
 		SPEECH_SETTING_SAMPLE_RATE = 16000,
 	};
 	String transcribe(PackedVector2Array buffer);
-	_FORCE_INLINE_ void set_language(String p_language) { params.language = p_language.ptr(); }
-	_FORCE_INLINE_ String get_language() { return params.language; }
-	String get_language();
+	_FORCE_INLINE_ void set_language(String p_language) { params.language = p_language.utf8().get_data(); }
+	_FORCE_INLINE_ String get_language() { return String(params.language.c_str()); }
+	_FORCE_INLINE_ void set_language_model(String p_model) { params.model = p_model.utf8().get_data(); }
+	_FORCE_INLINE_ String get_language_model() { return String(params.model.c_str()); }
+	_FORCE_INLINE_ void set_duration_ms(int32_t duration_ms) { params.duration_ms = duration_ms; }
+	_FORCE_INLINE_ int32_t get_duration_ms() { return params.duration_ms; }
+	_FORCE_INLINE_ void set_use_gpu(bool use_gpu) { context_parameters.use_gpu = use_gpu; }
+	_FORCE_INLINE_ bool is_use_gpu() { return context_parameters.use_gpu; }
 	SpeechToText();
 };
 

@@ -18,3 +18,8 @@ bus = &"Record"
 stream = ExtResource("2_ljgdb")
 autoplay = true
 bus = &"Record"
+
+[node name="Timer" type="Timer" parent="."]
+autostart = true
+
+[connection signal="timeout" from="Timer" to="." method="transcribe"]
