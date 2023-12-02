@@ -14,6 +14,7 @@ env.Append(
         "WEBRTC_APM_DEBUG_DUMP=0",
         "WHISPER_BUILD",
         "GGML_BUILD",
+        "GGML_USE_CLBLAST",
         # Debug logs
         # "GGML_METAL_NDEBUG"
     ]
@@ -36,11 +37,11 @@ elif env["platform"] == "android":
     env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_ANDROID"])
 else:  # including if env["platform"] == "javascript":
     env.Append(CPPDEFINES=["WEBRTC_POSIX"])
-env.Prepend(CPPPATH=["thirdparty", "include"])
+env.Prepend(CPPPATH=["thirdparty", "include", "thirdparty/clblast/include"])
 env.Append(CPPPATH=["src/"])
 env.Append(CPPDEFINES=['WHISPER_SHARED', 'GGML_SHARED'])
 sources = [Glob("src/*.cpp")]
-sources.extend([Glob("thirdparty/libsamplerate/src/*.c"), Glob("thirdparty/whisper.cpp/*.c"), Glob("thirdparty/whisper.cpp/whisper.cpp")])
+sources.extend([Glob("thirdparty/libsamplerate/src/*.c"), Glob("thirdparty/whisper.cpp/*.c"), Glob("thirdparty/whisper.cpp/whisper.cpp"), "thirdparty/whisper.cpp/ggml-opencl.cpp"])
 if env["platform"] == "macos":
 	library = env.SharedLibrary(
 		"bin/addons/godot_whisper/bin/libgodot_whisper{}.framework/libgodot_whisper{}".format(
