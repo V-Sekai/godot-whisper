@@ -15,6 +15,7 @@ env.Append(
         "WHISPER_BUILD",
         "GGML_BUILD",
         "GGML_USE_CLBLAST",
+        "OPENCL_API",
         # Debug logs
         # "GGML_METAL_NDEBUG"
     ]
@@ -22,26 +23,51 @@ env.Append(
 
 enable_webrtc_logging = env["target"] == "debug"
 
-if not enable_webrtc_logging:
-    env.Append(CPPDEFINES=["RTC_DISABLE_LOGGING", "RTC_DISABLE_METRICS"])
-
-if env["platform"] == "windows" or env["platform"] == "uwp":
-    env.Append(CPPDEFINES=["WEBRTC_WIN"])
-elif env["platform"] == "ios":
-    env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_IOS"])
-elif env["platform"] == "macos":
-    env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_MAC"])
-elif env["platform"] == "linuxbsd":
-    env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_LINUX"])
-elif env["platform"] == "android":
-    env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_ANDROID"])
-else:  # including if env["platform"] == "javascript":
-    env.Append(CPPDEFINES=["WEBRTC_POSIX"])
-env.Prepend(CPPPATH=["thirdparty", "include", "thirdparty/clblast/include"])
+env.Prepend(CPPPATH=["thirdparty", "include", "thirdparty/clblast/include", "thirdparty/clblast/src", "thirdparty/opencl_headers"])
 env.Append(CPPPATH=["src/"])
 env.Append(CPPDEFINES=['WHISPER_SHARED', 'GGML_SHARED'])
 sources = [Glob("src/*.cpp")]
-sources.extend([Glob("thirdparty/libsamplerate/src/*.c"), Glob("thirdparty/whisper.cpp/*.c"), Glob("thirdparty/whisper.cpp/whisper.cpp"), "thirdparty/whisper.cpp/ggml-opencl.cpp"])
+
+sources.extend([
+    Glob("thirdparty/libsamplerate/src/*.c"),
+    Glob("thirdparty/whisper.cpp/*.c"),
+    Glob("thirdparty/whisper.cpp/whisper.cpp"),
+    "thirdparty/whisper.cpp/ggml-opencl.cpp",
+])
+
+clblast_sources = [
+    "thirdparty/clblast/src/database/database.cpp",
+    "thirdparty/clblast/src/routines/common.cpp",
+    "thirdparty/clblast/src/utilities/compile.cpp",
+    "thirdparty/clblast/src/utilities/clblast_exceptions.cpp",
+    "thirdparty/clblast/src/utilities/timing.cpp",
+    "thirdparty/clblast/src/utilities/utilities.cpp",
+    "thirdparty/clblast/src/api_common.cpp",
+    "thirdparty/clblast/src/cache.cpp",
+    "thirdparty/clblast/src/kernel_preprocessor.cpp",
+    "thirdparty/clblast/src/routine.cpp",
+    "thirdparty/clblast/src/routines/levelx/xinvert.cpp", # only source, don't include it as a test
+    "thirdparty/clblast/src/tuning/configurations.cpp",
+    # OpenCL specific sources
+    "thirdparty/clblast/src/clblast.cpp",
+    "thirdparty/clblast/src/clblast_c.cpp",
+    "thirdparty/clblast/src/tuning/tuning_api.cpp"
+]
+
+sources.extend(clblast_sources)
+
+routines = {
+    'level1': Glob("thirdparty/clblast/src/routines/level1/*.cpp"),
+    'level2': Glob("thirdparty/clblast/src/routines/level2/*.cpp"),
+    'level3': Glob("thirdparty/clblast/src/routines/level3/*.cpp"),
+    'levelx': Glob("thirdparty/clblast/src/routines/levelx/*.cpp"),
+}
+
+for level, files in routines.items():
+    sources.extend(files)
+
+sources.extend(Glob("thirdparty/clblast/src/tuners/*.cpp"))
+
 if env["platform"] == "macos":
 	library = env.SharedLibrary(
 		"bin/addons/godot_whisper/bin/libgodot_whisper{}.framework/libgodot_whisper{}".format(
