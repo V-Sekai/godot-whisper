@@ -55,9 +55,9 @@ public:
 	String transcribe(PackedVector2Array buffer);
 	_FORCE_INLINE_ void set_language(String p_language) { params.language = p_language.utf8().get_data(); }
 	_FORCE_INLINE_ String get_language() { return String(params.language.c_str()); }
-	_FORCE_INLINE_ void set_language_model(String p_model) { params.model = p_model.utf8().get_data(); }
+	void set_language_model(String p_model);
 	_FORCE_INLINE_ String get_language_model() { return String(params.model.c_str()); }
-	_FORCE_INLINE_ void set_duration_ms(int32_t duration_ms) { params.duration_ms = duration_ms; }
+	void set_duration_ms(int32_t duration_ms);
 	_FORCE_INLINE_ int32_t get_duration_ms() { return params.duration_ms; }
 	_FORCE_INLINE_ void set_use_gpu(bool use_gpu) { context_parameters.use_gpu = use_gpu; }
 	_FORCE_INLINE_ bool is_use_gpu() { return context_parameters.use_gpu; }
