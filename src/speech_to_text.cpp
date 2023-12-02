@@ -1,10 +1,10 @@
 #include "speech_to_text.h"
 #include <godot_cpp/classes/audio_server.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
-#include <godot_cpp/core/error_macros.hpp>
-#include <godot_cpp/variant/packed_vector2_array.hpp>
 #include <godot_cpp/classes/time.hpp>
+#include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/core/memory.hpp>
+#include <godot_cpp/variant/packed_vector2_array.hpp>
 #include <thread>
 
 #include <libsamplerate/src/samplerate.h>
