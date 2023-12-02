@@ -1,8 +1,10 @@
 #include "speech_to_text.h"
 #include <godot_cpp/classes/audio_server.hpp>
+#include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/variant/packed_vector2_array.hpp>
 #include <godot_cpp/classes/time.hpp>
+#include <godot_cpp/include/godot_cpp/core/memory.hpp>
 #include <thread>
 
 #include <libsamplerate/src/samplerate.h>
@@ -88,21 +90,25 @@ String SpeechToText::transcribe(PackedVector2Array buffer) {
 		ERR_PRINT("Failed to process audio");
 		return String();
 	}
-	elapsed(start);
-	ERR_PRINT(whisper_print_system_info());
 	const int n_segments = whisper_full_n_segments(context_instance);
-	elapsed(start);
 	String texts;
 	for (int i = 0; i < n_segments; ++i) {
 		const char *text = whisper_full_get_segment_text(context_instance, i);
 		texts += String(text) + "\n";
 	}
-	elapsed(start);
 	return texts;
 }
 
 SpeechToText::SpeechToText() {
+	// TODO we need to renstantiate this when we change params
+	buffer_float = memnew_arr(float, duration_ms / 1000 * ProjectSettings::get_setting_with_override("audio/driver/mix_rate", 44100))
+	resampled_float = memnew_arr(float, duration_ms / 1000 * SPEECH_SETTING_SAMPLE_RATE)
 	context_instance = whisper_init_from_file_with_params(params.model.c_str(), context_parameters);
+}
+
+SpeechToText::~SpeechToText() {
+	memfree(buffer_float);
+	memfree(resampled_float);
 }
 
 void SpeechToText::_bind_methods() {

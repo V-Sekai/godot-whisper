@@ -61,6 +61,7 @@ public:
 	_FORCE_INLINE_ void set_use_gpu(bool use_gpu) { context_parameters.use_gpu = use_gpu; }
 	_FORCE_INLINE_ bool is_use_gpu() { return context_parameters.use_gpu; }
 	SpeechToText();
+	~SpeechToText();
 };
 
 #endif // SPEECH_TO_TEXT_H
