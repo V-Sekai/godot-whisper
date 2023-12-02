@@ -38,12 +38,13 @@ class SpeechToText : public Node {
 	};
 
 	whisper_params params;
-	whisper_context_params context_parameters{true};
+	whisper_context_params context_parameters{ true };
 	Vector<whisper_token> prompt_tokens;
 	whisper_context *context_instance = nullptr;
 
 protected:
 	static void _bind_methods();
+
 public:
 	enum {
 		SPEECH_SETTING_SAMPLE_RATE = 16000,
