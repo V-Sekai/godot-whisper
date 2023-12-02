@@ -16,12 +16,11 @@ env.Append(
         "GGML_BUILD",
         "GGML_USE_CLBLAST",
         "OPENCL_API",
+        "USE_ICD_LOADER",
         # Debug logs
         # "GGML_METAL_NDEBUG"
     ]
 )
-
-enable_webrtc_logging = env["target"] == "debug"
 
 env.Prepend(CPPPATH=["thirdparty", "include", "thirdparty/opencl_headers", "thirdparty/clblast/include", "thirdparty/clblast/src"])
 env.Append(CPPPATH=["src/"])
@@ -54,6 +53,10 @@ clblast_sources = [
 ]
 
 sources.extend(clblast_sources)
+
+icd_loader_sources = Glob("thirdparty/OpenCL-ICD-Loader/loader/*.c")
+
+sources.extend(icd_loader_sources)
 
 routines = {
     'level1': Glob("thirdparty/clblast/src/routines/level1/*.cpp"),
