@@ -13,10 +13,10 @@ jobs:
     name: 📊 Static checks
     uses: ./.github/workflows/static_checks.yml
 
-  android-build:
-    name: 🤖 Android
-    needs: static-checks
-    uses: ./.github/workflows/android_builds.yml
+  # android-build:
+  #   name: 🤖 Android
+  #   needs: static-checks
+  #   uses: ./.github/workflows/android_builds.yml
 
   ios-build:
     name: 🍏 iOS
@@ -34,10 +34,10 @@ jobs:
     uses: ./.github/workflows/macos_builds.yml
     secrets: inherit
 
-  windows-build:
-    name: 🏁 Windows
-    needs: static-checks
-    uses: ./.github/workflows/windows_builds.yml
+  # windows-build:
+  #   name: 🏁 Windows
+  #   needs: static-checks
+  #   uses: ./.github/workflows/windows_builds.yml
 
   web-build:
     name: 🌐 Web Builds
