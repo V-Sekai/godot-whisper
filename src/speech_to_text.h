@@ -5,6 +5,7 @@
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/thread.hpp>
 #include <godot_cpp/templates/vector.hpp>
+#include <godot_cpp/variant/array.hpp>
 
 #include <libsamplerate/src/samplerate.h>
 #include <whisper.cpp/whisper.h>
@@ -41,7 +42,7 @@ class SpeechToText : public Node {
 	whisper_context_params context_parameters{ true };
 	Vector<whisper_token> prompt_tokens;
 	whisper_context *context_instance = nullptr;
-
+	int buffer_len;
 	float *buffer_float;
 	float *resampled_float;
 
@@ -52,7 +53,7 @@ public:
 	enum {
 		SPEECH_SETTING_SAMPLE_RATE = 16000,
 	};
-	String transcribe(PackedVector2Array buffer);
+	Array transcribe(PackedVector2Array buffer);
 	_FORCE_INLINE_ void set_language(String p_language) { params.language = p_language.utf8().get_data(); }
 	_FORCE_INLINE_ String get_language() { return String(params.language.c_str()); }
 	void set_language_model(String p_model);

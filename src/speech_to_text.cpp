@@ -45,17 +45,15 @@ void _vector2_array_to_float_array(const uint32_t &p_mix_frame_count,
 	}
 }
 
-String SpeechToText::transcribe(PackedVector2Array buffer) {
+Array SpeechToText::transcribe(PackedVector2Array buffer) {
+	ERR_FAIL_COND_V(buffer.size() < buffer_len, Array());
 	double start = Time::get_singleton()->get_unix_time_from_system();
-	if (!context_instance) {
-		ERR_PRINT("Context not instantiated.");
-		return String();
-	}
-	_vector2_array_to_float_array(buffer.size(), buffer.ptr(), buffer_float);
+	ERR_FAIL_COND_V(!context_instance, Array());
+	_vector2_array_to_float_array(buffer_len, buffer.ptr(), buffer_float);
 	// Speaker frame.
 	int result_size = _resample_audio_buffer(
 			buffer_float, // Pointer to source buffer
-			buffer.size(), // Size of source buffer * sizeof(float)
+			buffer_len, // Size of source buffer * sizeof(float)
 			AudioServer::get_singleton()->get_mix_rate(), // Source sample rate
 			SPEECH_SETTING_SAMPLE_RATE, // Target sample rate
 			resampled_float);
@@ -64,12 +62,12 @@ String SpeechToText::transcribe(PackedVector2Array buffer) {
 	whispher_params.print_progress = false;
 	whispher_params.print_special = params.print_special;
 	whispher_params.print_realtime = false;
-	// this seems to be for how much time to process out of all.
-	//whispher_params.duration_ms = params.duration_ms;
-	whispher_params.duration_ms = 0;
-	whispher_params.print_timestamps = !params.no_timestamps;
+	whispher_params.duration_ms = params.duration_ms;
+	whispher_params.print_timestamps = true;
 	whispher_params.translate = params.translate;
 	whispher_params.single_segment = true;
+	whispher_params.no_timestamps = false;
+	whispher_params.token_timestamps = true;
 	whispher_params.max_tokens = params.max_tokens;
 	whispher_params.language = params.language.c_str();
 	whispher_params.n_threads = params.n_threads;
@@ -83,36 +81,54 @@ String SpeechToText::transcribe(PackedVector2Array buffer) {
 
 	if (whisper_full(context_instance, whispher_params, resampled_float, result_size) != 0) {
 		ERR_PRINT("Failed to process audio");
-		return String();
+		return Array();
 	}
 	const int n_segments = whisper_full_n_segments(context_instance);
-	String texts;
+	Array results;
 	// should be just 1 segment for realtime
 	for (int i = 0; i < n_segments; ++i) {
-		const char *text = whisper_full_get_segment_text(context_instance, i);
-		texts += String(text);
+
+        const int n_tokens = whisper_full_n_tokens(context_instance, i);
+        // fprintf(stderr,"tokens: %d\n",n_tokens);
+        for (int j = 0; j < n_tokens; j++) {
+            auto token = whisper_full_get_token_data(context_instance, i, j);
+            auto text = whisper_full_get_token_text(context_instance, i, j);
+			Dictionary token_result;
+			token_result["id"] = token.id;
+			token_result["tid"] = token.tid;
+			token_result["p"] = token.p;
+			token_result["plog"] = token.plog;
+			token_result["pt"] = token.pt;
+			token_result["ptsum"] = token.ptsum;
+			token_result["t0"] = token.t0;
+			token_result["t1"] = token.t1;
+			token_result["vlen"] = token.vlen;
+			token_result["text"] = text;
+			results.append(token_result);
+	    }
 	}
-	return texts;
+	return results;
 }
 
 SpeechToText::SpeechToText() {
 	int mix_rate = ProjectSettings::get_singleton()->get_setting("audio/driver/mix_rate");
-	buffer_float = (float *)memalloc(sizeof(float) * params.duration_ms / 1000 * mix_rate);
+	buffer_len = params.duration_ms / 1000 * mix_rate;
+	buffer_float = (float *)memalloc(sizeof(float) * buffer_len);
 	resampled_float = (float *)memalloc(sizeof(float) * params.duration_ms / 1000 * SPEECH_SETTING_SAMPLE_RATE);
 	context_instance = whisper_init_from_file_with_params(params.model.c_str(), context_parameters);
 }
 
 void SpeechToText::set_language_model(String p_model) {
-	params.model = p_model.utf8().get_data();
-	whisper_free(context_instance);
-	context_instance = whisper_init_from_file_with_params(params.model.c_str(), context_parameters);
+	//params.model = p_model.utf8().get_data();
+	//whisper_free(context_instance);
+	//context_instance = whisper_init_from_file_with_params(params.model.c_str(), context_parameters);
 }
 
 void SpeechToText::set_duration_ms(int32_t duration_ms) {
-	params.duration_ms = duration_ms;
-	int mix_rate = ProjectSettings::get_singleton()->get_setting("audio/driver/mix_rate");
-	memrealloc(buffer_float, sizeof(float) * params.duration_ms / 1000 * mix_rate);
-	memrealloc(resampled_float, sizeof(float) * params.duration_ms / 1000 * SPEECH_SETTING_SAMPLE_RATE);
+	//params.duration_ms = duration_ms;
+	//int mix_rate = ProjectSettings::get_singleton()->get_setting("audio/driver/mix_rate");
+	//memrealloc(buffer_float, sizeof(float) * params.duration_ms / 1000 * mix_rate);
+	//memrealloc(resampled_float, sizeof(float) * params.duration_ms / 1000 * SPEECH_SETTING_SAMPLE_RATE);
 }
 
 SpeechToText::~SpeechToText() {

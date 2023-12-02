@@ -14,9 +14,7 @@ autoplay = true
 bus = &"Record"
 
 [node name="SpeechToText" type="SpeechToText" parent="."]
-duration_ms = 2000
 
 [node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("2_ljgdb")
-autoplay = true
 bus = &"Record"

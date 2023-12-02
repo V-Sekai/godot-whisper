@@ -15,7 +15,7 @@ env.Append(
         "WHISPER_BUILD",
         "GGML_BUILD",
         # Debug logs
-        "GGML_METAL_NDEBUG"
+        # "GGML_METAL_NDEBUG"
     ]
 )
 
