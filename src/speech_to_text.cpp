@@ -4,7 +4,7 @@
 #include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/variant/packed_vector2_array.hpp>
 #include <godot_cpp/classes/time.hpp>
-#include <godot_cpp/include/godot_cpp/core/memory.hpp>
+#include <godot_cpp/core/memory.hpp>
 #include <thread>
 
 #include <libsamplerate/src/samplerate.h>
@@ -43,11 +43,6 @@ void _vector2_array_to_float_array(const uint32_t &p_mix_frame_count,
 	for (size_t i = 0; i < p_mix_frame_count; i++) {
 		p_process_buffer_out[i] = (p_process_buffer_in[i].x + p_process_buffer_in[i].y) / 2.0;
 	}
-}
-
-void elapsed(double start) {
-	double now = Time::get_singleton()->get_unix_time_from_system();
-	ERR_PRINT("time_elapsed " + rtos(now - start));
 }
 
 String SpeechToText::transcribe(PackedVector2Array buffer) {
@@ -101,8 +96,9 @@ String SpeechToText::transcribe(PackedVector2Array buffer) {
 
 SpeechToText::SpeechToText() {
 	// TODO we need to renstantiate this when we change params
-	buffer_float = memnew_arr(float, duration_ms / 1000 * ProjectSettings::get_setting_with_override("audio/driver/mix_rate", 44100))
-	resampled_float = memnew_arr(float, duration_ms / 1000 * SPEECH_SETTING_SAMPLE_RATE)
+	int mix_rate = ProjectSettings::get_singleton()->get_setting("audio/driver/mix_rate");
+	buffer_float = memnew_arr(float, params.duration_ms / 1000 * mix_rate);
+	resampled_float = memnew_arr(float, params.duration_ms / 1000 * SPEECH_SETTING_SAMPLE_RATE);
 	context_instance = whisper_init_from_file_with_params(params.model.c_str(), context_parameters);
 }
 
