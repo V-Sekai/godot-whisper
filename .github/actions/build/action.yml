@@ -44,7 +44,8 @@ runs:
       run: |
         cd thirdparty/godot-cpp && \
         #scons target=template_debug platform=${{ inputs.platform }} arch=${{ inputs.arch }} generate_bindings=yes production=yes && \
-        scons target=template_release platform=${{ inputs.platform }} arch=${{ inputs.arch }} generate_bindings=yes production=yes
+        scons target=template_release platform=${{ inputs.platform }} arch=${{ inputs.arch }} generate_bindings=yes production=yes precision=single
+        scons target=template_release platform=${{ inputs.platform }} arch=${{ inputs.arch }} generate_bindings=yes production=yes precision=double
     - name: Build
       shell: sh
       env:
@@ -52,4 +53,5 @@ runs:
         SCONS_CACHE_DIR: .scons-cache
       run: |
        #scons target=template_debug platform=${{ inputs.platform }} arch=${{ inputs.arch }} generate_bindings=no production=yes
-        scons target=template_release platform=${{ inputs.platform }} arch=${{ inputs.arch }} generate_bindings=no production=yes
+        scons target=template_release platform=${{ inputs.platform }} arch=${{ inputs.arch }} generate_bindings=no production=yes precision=single
+        scons target=template_release platform=${{ inputs.platform }} arch=${{ inputs.arch }} generate_bindings=no production=yes precision=double
