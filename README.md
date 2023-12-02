@@ -3,7 +3,22 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-Godot Engine -> 1 audio bus for data 1 audio bus for echo cancellation -> ggml whisper.cpp every 0.5s -> rich text label 
+Creates a new Node, `SpeechToText` that has a method called `transcribe` which gets a buffer that it transcribes.
+
+Then there is a high level scene which every 3 seconds constructs a 5 second audio.
+It sends this audio to transcribe and removes 2 seconds of audio from previous input.
+
+Eg.:
+
+```
+- 12345
+-    12345
+-       12345
+Result:
+- 12312312345
+```
+
+
 
 ## Contributors ✨
 

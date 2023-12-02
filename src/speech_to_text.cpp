@@ -75,6 +75,9 @@ Array SpeechToText::transcribe(PackedVector2Array buffer) {
 	whispher_params.speed_up = params.speed_up;
 	whispher_params.prompt_tokens = nullptr;
 	whispher_params.prompt_n_tokens = 0;
+	whispher_params.suppress_non_speech_tokens = true;
+	//whispher_params.suppress_blank = true;
+	//whispher_params.entropy_thold = 2.8;
 
 	//whispher_params.prompt_tokens = params.no_context ? nullptr : prompt_tokens.data();
 	//whispher_params.prompt_n_tokens = params.no_context ? 0 : prompt_tokens.size();

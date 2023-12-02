@@ -10,11 +10,11 @@ script = ExtResource("1_gio36")
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_rhq81")
-autoplay = true
 bus = &"Record"
 
 [node name="SpeechToText" type="SpeechToText" parent="."]
 
 [node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("2_ljgdb")
+autoplay = true
 bus = &"Record"
