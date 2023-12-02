@@ -94,7 +94,7 @@ String SpeechToText::transcribe(PackedVector2Array buffer) {
 
 SpeechToText::SpeechToText() {
 	params.n_threads = MIN(4, (int32_t)std::thread::hardware_concurrency());
-	params.step_ms = 3000;
+	params.step_ms = 5000;
 	params.keep_ms = 200;
 	params.capture_id = -1;
 	params.max_tokens = 32;

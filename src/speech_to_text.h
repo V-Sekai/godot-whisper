@@ -43,13 +43,21 @@ class SpeechToText : public Node {
 	whisper_context *context_instance = nullptr;
 
 protected:
-	static void _bind_methods();
-
+	static void _bind_methods() {
+		ClassDB::bind_method(D_METHOD("transcribe", "buffer"), &SpeechToText::transcribe);
+		ClassDB::bind_method(D_METHOD("get_language"), &SpeechToText::get_language);
+		ClassDB::bind_method(D_METHOD("set_language", "language"), &SpeechToText::set_language);
+		ADD_PROPERTY(PropertyInfo(Variant::STRING, "language"), "set_language", "get_language");
+		BIND_CONSTANT(SPEECH_SETTING_SAMPLE_RATE);
+	}
 public:
 	enum {
 		SPEECH_SETTING_SAMPLE_RATE = 16000,
 	};
 	String transcribe(PackedVector2Array buffer);
+	_FORCE_INLINE_ void set_language(String p_language) { params.language = p_language.ptr(); }
+	_FORCE_INLINE_ String get_language() { return params.language; }
+	String get_language();
 	SpeechToText();
 };
 
