@@ -36,6 +36,10 @@ class SpeechToText : public Node {
 		std::string language = "en";
 		std::string model = "./addons/godot_whisper/models/ggml-tiny.en.bin";
 		std::string fname_out;
+
+		int32_t beam_count = 5;
+		float entropy_threshold = 2.8f;
+		int32_t max_context_size = 224;
 	};
 
 	whisper_params params;
@@ -64,6 +68,14 @@ public:
 	_FORCE_INLINE_ bool is_use_gpu() { return context_parameters.use_gpu; }
 	SpeechToText();
 	~SpeechToText();
+	_FORCE_INLINE_ void set_beam_count(int32_t beam_count) { params.beam_count = beam_count; }
+	_FORCE_INLINE_ int32_t get_beam_count() { return params.beam_count; }
+
+	_FORCE_INLINE_ void set_entropy_threshold(float entropy_threshold) { params.entropy_threshold = entropy_threshold; }
+	_FORCE_INLINE_ float get_entropy_threshold() { return params.entropy_threshold; }
+
+	_FORCE_INLINE_ void set_max_context_size(int32_t max_context_size) { params.max_context_size = max_context_size; }
+	_FORCE_INLINE_ int32_t get_max_context_size() { return params.max_context_size; }
 };
 
 #endif // SPEECH_TO_TEXT_H

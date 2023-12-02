@@ -58,31 +58,32 @@ Array SpeechToText::transcribe(PackedVector2Array buffer) {
 			SPEECH_SETTING_SAMPLE_RATE, // Target sample rate
 			resampled_float);
 
-	whisper_full_params whispher_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
-	whispher_params.print_progress = false;
-	whispher_params.print_special = params.print_special;
-	whispher_params.print_realtime = false;
-	whispher_params.duration_ms = params.duration_ms;
-	whispher_params.print_timestamps = true;
-	whispher_params.translate = params.translate;
-	whispher_params.single_segment = true;
-	whispher_params.no_timestamps = false;
-	whispher_params.token_timestamps = true;
-	whispher_params.max_tokens = params.max_tokens;
-	whispher_params.language = params.language.c_str();
-	whispher_params.n_threads = params.n_threads;
-	whispher_params.audio_ctx = params.audio_ctx;
-	whispher_params.speed_up = params.speed_up;
-	whispher_params.prompt_tokens = nullptr;
-	whispher_params.prompt_n_tokens = 0;
-	whispher_params.suppress_non_speech_tokens = true;
-	//whispher_params.suppress_blank = true;
-	//whispher_params.entropy_thold = 2.8;
+	whisper_full_params whisper_params = whisper_full_default_params(WHISPER_SAMPLING_BEAM_SEARCH);
+	whisper_params.max_len = 1;
+	whisper_params.print_progress = false;
+	whisper_params.print_special = params.print_special;
+	whisper_params.print_realtime = false;
+	whisper_params.duration_ms = params.duration_ms;
+	whisper_params.print_timestamps = true;
+	whisper_params.translate = params.translate;
+	whisper_params.single_segment = true;
+	whisper_params.no_timestamps = false;
+	whisper_params.token_timestamps = true;
+	whisper_params.max_tokens = params.max_tokens;
+	whisper_params.language = params.language.c_str();
+	whisper_params.n_threads = params.n_threads;
+	whisper_params.audio_ctx = params.audio_ctx;
+	whisper_params.speed_up = params.speed_up;
+	whisper_params.prompt_tokens = nullptr;
+	whisper_params.prompt_n_tokens = 0;
+	whisper_params.suppress_non_speech_tokens = true;
+	//whisper_params.suppress_blank = true;
+	//whisper_params.entropy_thold = 2.8;
 
-	//whispher_params.prompt_tokens = params.no_context ? nullptr : prompt_tokens.data();
-	//whispher_params.prompt_n_tokens = params.no_context ? 0 : prompt_tokens.size();
+	//whisper_params.prompt_tokens = params.no_context ? nullptr : prompt_tokens.data();
+	//whisper_params.prompt_n_tokens = params.no_context ? 0 : prompt_tokens.size();
 
-	if (whisper_full(context_instance, whispher_params, resampled_float, result_size) != 0) {
+	if (whisper_full(context_instance, whisper_params, resampled_float, result_size) != 0) {
 		ERR_PRINT("Failed to process audio");
 		return Array();
 	}
