@@ -23,7 +23,7 @@ env.Append(
 
 enable_webrtc_logging = env["target"] == "debug"
 
-env.Prepend(CPPPATH=["thirdparty", "include", "thirdparty/clblast/include", "thirdparty/clblast/src", "thirdparty/opencl_headers"])
+env.Prepend(CPPPATH=["thirdparty", "include", "thirdparty/opencl_headers", "thirdparty/clblast/include", "thirdparty/clblast/src"])
 env.Append(CPPPATH=["src/"])
 env.Append(CPPDEFINES=['WHISPER_SHARED', 'GGML_SHARED'])
 sources = [Glob("src/*.cpp")]
@@ -46,7 +46,6 @@ clblast_sources = [
     "thirdparty/clblast/src/cache.cpp",
     "thirdparty/clblast/src/kernel_preprocessor.cpp",
     "thirdparty/clblast/src/routine.cpp",
-    "thirdparty/clblast/src/routines/levelx/xinvert.cpp", # only source, don't include it as a test
     "thirdparty/clblast/src/tuning/configurations.cpp",
     # OpenCL specific sources
     "thirdparty/clblast/src/clblast.cpp",
