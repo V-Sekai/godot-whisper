@@ -5,10 +5,10 @@ compatibility_minimum = 4.1
 
 [libraries]
 
-macos.debug = "res://addons/godot_whisper/bin/libgodot_whisper.macos.template_release.framework"
-macos.release = "res://addons/godot_whisper/bin/libgodot_whisper.macos.template_release.framework"
-macos.debug.double = "res://addons/godot_whisper/bin/libgodot_whisper.macos.template_release.double.framework"
-macos.release.double = "res://addons/godot_whisper/bin/libgodot_whisper.macos.template_release.double.framework"
+macos.debug = "res://addons/godot_whisper/bin/libgodot_whisper.macos.template_release.universal.framework"
+macos.release = "res://addons/godot_whisper/bin/libgodot_whisper.macos.template_release.universal.framework"
+macos.debug.double = "res://addons/godot_whisper/bin/libgodot_whisper.macos.template_release.double.universal.framework"
+macos.release.double = "res://addons/godot_whisper/bin/libgodot_whisper.macos.template_release.double.universal.framework"
 
 ios.debug = "res://addons/godot_whisper/bin/libgodot_whisper.ios.template_release.arm64.dylib"
 ios.release = "res://addons/godot_whisper/bin/libgodot_whisper.ios.template_release.arm64.dylib"

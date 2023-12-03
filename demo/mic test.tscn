@@ -20,13 +20,29 @@ stream = ExtResource("2_ljgdb")
 autoplay = true
 bus = &"Record"
 
-[node name="Label" type="Label" parent="."]
-offset_left = 402.0
-offset_top = 248.0
-offset_right = 442.0
-offset_bottom = 271.0
-theme_override_font_sizes/font_size = 30
+[node name="Panel" type="Panel" parent="."]
+custom_minimum_size = Vector2(400, 400)
+offset_left = 284.0
+offset_top = 200.0
+offset_right = 684.0
+offset_bottom = 600.0
+
+[node name="Label" type="RichTextLabel" parent="Panel"]
+custom_minimum_size = Vector2(400, 400)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -200.0
+offset_right = 200.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
 text = "..."
 script = ExtResource("3_r84sk")
 
-[connection signal="text_updated" from="." to="Label" method="_on_audio_stream_to_text_text_updated"]
+[connection signal="text_updated" from="." to="Panel/Label" method="_on_audio_stream_to_text_text_updated"]

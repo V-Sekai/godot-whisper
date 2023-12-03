@@ -1,10 +1,12 @@
 extends Node2D
 
-signal text_updated(text: String)
+signal text_updated(text: String, new_text: String)
 
 @export var interval := 5.0
 @export var keep_interval := 2.0
 @export var text := ""
+@export var new_text := ""
+@export var max_tokens := 30
 @export var tokens: Array
 @onready var idx = AudioServer.get_bus_index("Record")
 @onready var effect_capture := AudioServer.get_bus_effect(idx, 0) as AudioEffectCapture
@@ -19,35 +21,21 @@ func _ready():
 
 func merge_with_old_tokens(new_tokens: Array):
 	var offset := int((interval - keep_interval) * 100)
-	var last_word_deleted := ""
 	for i in range(tokens.size()-1, -1, -1):
 		# remove from here as they are positive
 		if tokens[i]["t0"] - offset < 0:
 			tokens = tokens.slice(0, i + 1)
-			last_word_deleted = tokens[i]["text"]
 			break
-	#tokens_to_text(tokens)
-	#tokens_to_text(new_tokens)
-	#tokens_to_text(new_tokens)
 	tokens.append_array(new_tokens)
+	if tokens.size() > max_tokens:
+		tokens = tokens.slice(tokens.size() - max_tokens)
 	
 
 func tokens_to_text(speech_tokens):
-	text = ""
+	var computed_text = ""
 	for token in speech_tokens:
-		text += token["text"]
-	print("Text: ... ", text, " ...")
-
-func _thread_function(buffer):
-	var new_tokens :Array= speech_to_text.transcribe(buffer)
-	new_tokens = new_tokens.filter(func (token): return !("[" in token["text"]) && !("<" in token["text"]))
-	if !tokens.is_empty():
-		merge_with_old_tokens(new_tokens)
-	else:
-		tokens = new_tokens
-	tokens_to_text(tokens)
-	#call_deferred()
-	#text_updated.emit(text)
+		computed_text += token["text"]
+	return computed_text
 
 func _process(_delta):
 	var buffer: PackedVector2Array = effect_capture.get_buffer(effect_capture.get_frames_available())
@@ -57,7 +45,15 @@ func _process(_delta):
 	var keep_len := int(mix_rate * keep_interval)
 	if buffer_full.size() > total_len:
 		buffer_full.slice(buffer_full.size() - total_len)
-		var thread = Thread.new()
-		thread.start(_thread_function.bind(buffer_full.duplicate()))
+		var new_tokens : Array= speech_to_text.transcribe(buffer_full)
+		new_tokens = new_tokens.filter(func (token): return !("[" in token["text"]) && !("<" in token["text"]))
+		text = tokens_to_text(tokens)
+		new_text = tokens_to_text(new_tokens)
+		print(new_text)
+		if !tokens.is_empty():
+			merge_with_old_tokens(new_tokens)
+		else:
+			tokens = new_tokens
+		text_updated.emit(text, new_text)
 		buffer_full = buffer_full.slice(buffer_full.size() - keep_len, buffer_full.size())
 
