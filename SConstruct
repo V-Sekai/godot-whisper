@@ -22,8 +22,8 @@ env.Append(
     ]
 )
 
-opencl_include_dir = os.environ['OpenCL_INCLUDE_DIR']
-opencl_library = os.environ['OpenCL_LIBRARY']
+opencl_include_dir = os.environ.get('OpenCL_INCLUDE_DIR')
+opencl_library = os.environ.get('OpenCL_LIBRARY')
 
 env.Prepend(CPPPATH=["thirdparty", "include", "thirdparty/opencl_headers", "thirdparty/clblast/include", "thirdparty/clblast/src"])
 env.Append(CPPPATH=["src/"])
