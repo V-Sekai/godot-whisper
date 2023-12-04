@@ -80,6 +80,7 @@ Array SpeechToText::transcribe(PackedVector2Array buffer) {
 	whisper_params.suppress_non_speech_tokens = true;
 	whisper_params.suppress_blank = true;
 	whisper_params.entropy_thold = params.entropy_threshold;
+	whisper_params.temperature = 0.0;
 
 	if (whisper_full(context_instance, whisper_params, resampled_float, result_size) != 0) {
 		ERR_PRINT("Failed to process audio");
