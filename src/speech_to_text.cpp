@@ -97,6 +97,9 @@ Array SpeechToText::transcribe(PackedVector2Array buffer) {
 			if (token.p > 0.6 && token.plog < -0.5) {
 				continue;
  			}
+			if (token.plog < -1.0) {
+				continue;
+			}
 			auto text = whisper_full_get_token_text(context_instance, i, j);
 			Dictionary token_result;
 			token_result["id"] = token.id;
