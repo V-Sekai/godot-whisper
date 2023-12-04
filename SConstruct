@@ -22,10 +22,14 @@ env.Append(
     ]
 )
 
+opencl_include_dir = os.environ['OpenCL_INCLUDE_DIR']
+opencl_library = os.environ['OpenCL_LIBRARY']
+
 env.Prepend(CPPPATH=["thirdparty", "include", "thirdparty/opencl_headers", "thirdparty/clblast/include", "thirdparty/clblast/src"])
 env.Append(CPPPATH=["src/"])
-env.Append(CPPDEFINES=['WHISPER_SHARED', 'GGML_SHARED'])
+env.Append(CPPDEFINES=['WHISPER_SHARED', 'GGML_SHARED', opencl_include_dir])
 sources = [Glob("src/*.cpp")]
+env.Append(LIB=[opencl_library])
 
 sources.extend([
     Glob("thirdparty/libsamplerate/src/*.c"),
