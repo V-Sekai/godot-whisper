@@ -45,8 +45,8 @@ jobs:
       - name: Build OpenCL
         shell: bash
         run: |
-          cmake -S OpenCL-SDK -B ${{ github.workspace }}\OpenCL-SDK\build -DOPENCL_ICD_LOADER_BUILD=ON
-          cmake --build ${{ github.workspace }}\OpenCL-SDK\build --target install
+          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_ICD_LOADER_BUILD=ON
+          cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
 
       - name: Build ${{ matrix.arch }}
         uses: ./.github/actions/build
