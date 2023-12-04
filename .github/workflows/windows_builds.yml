@@ -20,33 +20,34 @@ jobs:
       - name: Setup MSVC problem matcher
         uses: ammaraskar/msvc-problem-matcher@master
 
+      - uses: actions/checkout@v3
+        with:
+          repository: https://github.com/KhronosGroup/OpenCL-SDK.git
+          submodules: true
+          fetch-depth: 0
+          
       - name: Check OpenCL Cache
         id: opencl_cache
         uses: actions/cache@v3
         with:
           path: |
-            ${{ github.workspace }}/opencl-sdk
+            OpenCL-SDK
           key: __${{ runner.os }}-opencl-v2021.06.30__${{ hashFiles('**/CMakeLists.txt') }}
           restore-keys: |
             __${{runner.os }}-opencl__
 
-      - name: Download OpenCL
-        if: ${{ steps.opencl_cache.outputs.cache-hit != 'true' }}
-        shell: bash
-        run: git clone --recursive https://github.com/KhronosGroup/OpenCL-SDK.git ${{ github.workspace }}/opencl-sdk
-
       - name: Build OpenCL
         shell: bash
         run: |
-          cmake -S ${{ github.workspace }}/opencl-sdk -B ${{ github.workspace }}/opencl-sdk/build -DOPENCL_ICD_LOADER_BUILD=ON
-          cmake --build ${{ github.workspace }}/opencl-sdk/build --target install 
+          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_ICD_LOADER_BUILD=ON
+          cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install 
 
       - name: Export Symbols
         shell: bash
         run: |
-          echo "OpenCL_ROOT=${{ github.workspace }}/opencl-sdk" >> $GITHUB_ENV
-          echo "OpenCL_INCLUDE_DIR=${{ github.workspace }}/opencl-sdk/build/install/include" >> $GITHUB_ENV
-          echo "OpenCL_LIBRARY=${{ github.workspace }}/opencl-sdk/build/bin/OpenCL.lib" >> $GITHUB_ENV
+          echo "OpenCL_ROOT=${{ github.workspace }}/OpenCL-SDK" >> $GITHUB_ENV
+          echo "OpenCL_INCLUDE_DIR=${{ github.workspace }}/OpenCL-SDK/build/install/include" >> $GITHUB_ENV
+          echo "OpenCL_LIBRARY=${{ github.workspace }}/OpenCL-SDK/build/bin/OpenCL.lib" >> $GITHUB_ENV
 
       - name: Build ${{ matrix.arch }}
         uses: ./.github/actions/build
