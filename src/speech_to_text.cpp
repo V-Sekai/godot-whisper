@@ -65,6 +65,7 @@ Array SpeechToText::transcribe(PackedVector2Array buffer) {
 	whispher_params.print_timestamps = true;
 	whispher_params.translate = params.translate;
 	whispher_params.single_segment = true;
+	whispher_params.duration_ms = params.duration_ms;
 	whispher_params.no_timestamps = false;
 	whispher_params.token_timestamps = true;
 	whispher_params.max_tokens = params.max_tokens;

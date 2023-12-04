@@ -1,7 +1,7 @@
 [gd_scene load_steps=6 format=3 uid="uid://dibqfutwftm8j"]
 
+[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-small.bin" id="1_43agh"]
 [ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="1_gio36"]
-[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/ggml-tiny.en.bin" id="1_nt5ud"]
 [ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="2_ljgdb"]
 [ext_resource type="Script" path="res://test_display.gd" id="3_r84sk"]
 
@@ -11,17 +11,18 @@
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_rhq81")
-autoplay = true
 bus = &"Record"
 
 [node name="SpeechToText" type="SpeechToText" parent="."]
-language_model = ExtResource("1_nt5ud")
+language_model = ExtResource("1_43agh")
 audio_duration = 4
 script = ExtResource("1_gio36")
-keep_interval = 2.08165e-12
+language_model_path = "small.en"
+time_taken = null
 
 [node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("2_ljgdb")
+autoplay = true
 bus = &"Record"
 
 [node name="Panel" type="Panel" parent="."]
