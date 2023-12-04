@@ -3,7 +3,7 @@ on:
   workflow_call:
 
 env:
-  OpenCL_ROOT: "${{ github.workspace }}OpenCL-SDK"
+  OpenCL_ROOT: "${{ github.workspace }}/OpenCL-SDK"
   OpenCL_INCLUDE_DIR: "${{ github.workspace }}/OpenCL-SDK/build/install/include"
   OpenCL_LIBRARY: "${{ github.workspace }}/OpenCL-SDK/build/bin/OpenCL.lib"
 
@@ -45,8 +45,8 @@ jobs:
       - name: Build OpenCL
         shell: bash
         run: |
-          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_ICD_LOADER_BUILD=ON
-          cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
+          cmake -S OpenCL-SDK -B ${{ github.workspace }}\OpenCL-SDK\build -DOPENCL_ICD_LOADER_BUILD=ON
+          cmake --build ${{ github.workspace }}\OpenCL-SDK\build --target install
 
       - name: Build ${{ matrix.arch }}
         uses: ./.github/actions/build
