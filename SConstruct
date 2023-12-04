@@ -43,8 +43,8 @@ sources = [Glob("src/*.cpp")]
 sources.extend([Glob("thirdparty/libsamplerate/src/*.c"), Glob("thirdparty/whisper.cpp/*.c"), Glob("thirdparty/whisper.cpp/whisper.cpp")])
 if env["platform"] == "macos":
 	library = env.SharedLibrary(
-		"bin/addons/godot_whisper/bin/libgodot_whisper.{}.{}.framework/libgodot_whisper.{}.{}".format(
-			env["platform"], env["target"], env["platform"], env["target"]
+		"bin/addons/godot_whisper/bin/libgodot_whisper{}.framework/libgodot_whisper{}".format(
+			env["suffix"], env["suffix"]
 		),
 		source=sources,
 	)

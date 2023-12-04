@@ -1,28 +1,41 @@
 # Godot Whisper
 
+<p align="center">
+	<a href="https://github.com/V-Sekai/godot-whisper/actions/workflows/runner.yml">
+        <img src="https://github.com/V-Sekai/godot-whisper/actions/workflows/runner.yml/badge.svg?branch=main"
+            alt="chat on Discord"></a>
+    <a href="https://github.com/ggerganov/whisper.cpp" alt="Whisper CPP">
+        <img src="https://img.shields.io/badge/WhisperCPP-v1.5.1-%23478cbf?logoColor=white" /></a>
+    <a href="https://github.com/godotengine/godot-cpp" alt="Godot Version">
+        <img src="https://img.shields.io/badge/Godot-v4.1-%23478cbf?logo=godot-engine&logoColor=white" /></a>
+    <a href="https://github.com/V-Sekai/godot-whisper/graphs/contributors" alt="Contributors">
+        <img src="https://img.shields.io/github/contributors/V-Sekai/godot-whisper" /></a>
+    <a href="https://github.com/V-Sekai/godot-whisper/pulse" alt="Activity">
+        <img src="https://img.shields.io/github/commit-activity/m/V-Sekai/godot-whisper" /></a>
+    <a href="https://discord.gg/H3s3PD49XC">
+        <img src="https://img.shields.io/discord/1138836561102897172?logo=discord"
+            alt="Chat on Discord"></a>
+</p>
+
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-Creates a new Node, `SpeechToText` that has a method called `transcribe` which gets a buffer that it transcribes.
+## SpeechToText
 
-Then there is a high level scene which every 3 seconds constructs a 5 second audio.
-It sends this audio to transcribe and removes 2 seconds of audio from previous input.
+`SpeechToText` Node has a `transcribe` which gets a buffer that it transcribes.
 
-Eg.:
+## CaptureStreamToText
 
-```
-- 12345
--    12345
--       12345
-Result:
-- 12312312345
-```
+`CaptureStreamToText` - extends SpeechToText and runs transcribe function every 5 seconds.
 
-The plugin expects a model at the location specified in `language_model`. By default it is set to:
-```
-./addons/godot_whisper/models/ggml-tiny.en.bin
-```
+## Main thread
+
+The transcribe can block the main thread. It should run in about 0.5 seconds every 5 seconds, but check for yourself.
+
+## Language Model
+
+This addon uses language models.
 
 In order to download a model, go to [Whipser.CPP > Models](https://github.com/ggerganov/whisper.cpp/tree/master/models) and download a model after building the repo:
 

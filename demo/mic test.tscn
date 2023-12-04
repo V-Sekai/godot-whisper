@@ -1,32 +1,54 @@
-[gd_scene load_steps=5 format=3 uid="uid://dibqfutwftm8j"]
+[gd_scene load_steps=6 format=3 uid="uid://dibqfutwftm8j"]
 
-[ext_resource type="Script" path="res://test.gd" id="1_gio36"]
+[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-small.bin" id="1_43agh"]
+[ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="1_gio36"]
 [ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="2_ljgdb"]
 [ext_resource type="Script" path="res://test_display.gd" id="3_r84sk"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_rhq81"]
 
-[node name="AudioStreamToText" type="Node2D"]
-script = ExtResource("1_gio36")
+[node name="CaptureStreamToText" type="Node2D"]
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_rhq81")
 bus = &"Record"
 
 [node name="SpeechToText" type="SpeechToText" parent="."]
+language_model = ExtResource("1_43agh")
+audio_duration = 4
+script = ExtResource("1_gio36")
+language_model_path = "small.en"
+time_taken = null
 
 [node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("2_ljgdb")
 autoplay = true
 bus = &"Record"
 
-[node name="Label" type="Label" parent="."]
-offset_left = 402.0
-offset_top = 248.0
-offset_right = 442.0
-offset_bottom = 271.0
-theme_override_font_sizes/font_size = 30
+[node name="Panel" type="Panel" parent="."]
+custom_minimum_size = Vector2(400, 400)
+offset_left = 284.0
+offset_top = 200.0
+offset_right = 684.0
+offset_bottom = 600.0
+
+[node name="Label" type="RichTextLabel" parent="Panel"]
+custom_minimum_size = Vector2(400, 400)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -200.0
+offset_right = 200.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+bbcode_enabled = true
 text = "..."
 script = ExtResource("3_r84sk")
 
-[connection signal="text_updated" from="." to="Label" method="_on_audio_stream_to_text_text_updated"]
+[connection signal="text_updated" from="SpeechToText" to="Panel/Label" method="_on_speech_to_text_text_updated"]
