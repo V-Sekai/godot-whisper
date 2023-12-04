@@ -1,5 +1,22 @@
 # Godot Whisper
 
+<p align="center">
+	<a href="https://github.com/V-Sekai/godot-whisper/actions/workflows/runner.yml">
+        <img src="https://github.com/V-Sekai/godot-whisper/actions/workflows/runner.yml/badge.svg?branch=main"
+            alt="chat on Discord"></a>
+    <a href="https://github.com/ggerganov/whisper.cpp" alt="Whisper CPP">
+        <img src="https://img.shields.io/badge/WhisperCPP-v1.5.1-%23478cbf?logoColor=white" /></a>
+    <a href="https://github.com/godotengine/godot-cpp" alt="Godot Version">
+        <img src="https://img.shields.io/badge/Godot-v4.1-%23478cbf?logo=godot-engine&logoColor=white" /></a>
+    <a href="https://github.com/V-Sekai/godot-whisper/graphs/contributors" alt="Contributors">
+        <img src="https://img.shields.io/github/contributors/V-Sekai/godot-whisper" /></a>
+    <a href="https://github.com/V-Sekai/godot-whisper/pulse" alt="Activity">
+        <img src="https://img.shields.io/github/commit-activity/m/V-Sekai/godot-whisper" /></a>
+    <a href="https://discord.gg/H3s3PD49XC">
+        <img src="https://img.shields.io/discord/1138836561102897172?logo=discord"
+            alt="Chat on Discord"></a>
+</p>
+
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
