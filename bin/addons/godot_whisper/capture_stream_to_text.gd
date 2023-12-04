@@ -14,6 +14,7 @@ func do_download():
 	var http_request = HTTPRequest.new()
 	add_child(http_request)
 	http_request.use_threads = true
+	DirAccess.make_dir_recursive_absolute("res://addons/godot_whisper/models")
 	var file_path = "res://addons/godot_whisper/models/gglm-" + language_model_to_download + ".bin"
 	http_request.request_completed.connect(self._http_request_completed.bind(file_path))
 	http_request.download_file = file_path

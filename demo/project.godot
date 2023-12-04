@@ -27,7 +27,7 @@ window/stretch/mode="canvas_items"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/godot_whisper/plugin.cfg")
+enabled=PackedStringArray()
 
 [gdnative]
 

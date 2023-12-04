@@ -347,8 +347,10 @@ void SpeechToText::set_audio_duration(float p_audio_duration) {
 	params.duration_ms = int32_t(audio_duration * 1000);
 	int mix_rate = ProjectSettings::get_singleton()->get_setting("audio/driver/mix_rate");
 	buffer_len = audio_duration * mix_rate;
-	memrealloc(buffer_float, sizeof(float) * audio_duration * mix_rate);
-	memrealloc(resampled_float, sizeof(float) * audio_duration * SPEECH_SETTING_SAMPLE_RATE);
+	memfree(buffer_float);
+	memfree(resampled_float);
+	buffer_float = (float *)memalloc(sizeof(float) * buffer_len);
+	resampled_float = (float *)memalloc(sizeof(float) * audio_duration * SPEECH_SETTING_SAMPLE_RATE);
 }
 
 SpeechToText::~SpeechToText() {
