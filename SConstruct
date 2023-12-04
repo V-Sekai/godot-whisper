@@ -24,7 +24,7 @@ env.Append(
 
 env.Prepend(CPPPATH=["thirdparty", "include", "thirdparty/opencl_headers", "thirdparty/clblast/include", "thirdparty/clblast/src"])
 env.Append(CPPPATH=["src/"])
-env.Append(CPPDEFINES=['WHISPER_SHARED', 'GGML_SHARED', opencl_include_dir])
+env.Append(CPPDEFINES=['WHISPER_SHARED', 'GGML_SHARED'])
 sources = [Glob("src/*.cpp")]
 
 opencl_include_dir = os.environ.get('OpenCL_INCLUDE_DIR')
