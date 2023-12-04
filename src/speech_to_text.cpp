@@ -78,11 +78,9 @@ Array SpeechToText::transcribe(PackedVector2Array buffer) {
 	whisper_params.prompt_tokens = nullptr;
 	whisper_params.prompt_n_tokens = 0;
 	whisper_params.suppress_non_speech_tokens = true;
-	//whisper_params.suppress_blank = true;
-	//whisper_params.entropy_thold = 2.8;
-
-	//whisper_params.prompt_tokens = params.no_context ? nullptr : prompt_tokens.data();
-	//whisper_params.prompt_n_tokens = params.no_context ? 0 : prompt_tokens.size();
+	whisper_params.beam_search.beam_size = params.beam_count;
+	whisper_params.suppress_blank = true;
+	whisper_params.entropy_thold = params.entropy_threshold;
 
 	if (whisper_full(context_instance, whisper_params, resampled_float, result_size) != 0) {
 		ERR_PRINT("Failed to process audio");
