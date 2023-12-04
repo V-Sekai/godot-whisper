@@ -27,13 +27,6 @@ env.Append(CPPPATH=["src/"])
 env.Append(CPPDEFINES=['WHISPER_SHARED', 'GGML_SHARED'])
 sources = [Glob("src/*.cpp")]
 
-if not env["use_mingw"] and env["platform"] == "windows":
-        env.Append(CCFLAGS=['/arch:AVX'])
-        env.Append(LINKFLAGS=['/arch:AVX'])
-else:
-    if env["platform"] != "web":
-        env.Append(CCFLAGS=['-mavx'])
-
 opencl_include_dir = os.environ.get('OpenCL_INCLUDE_DIR')
 if opencl_include_dir:
     env.Append(CPPDEFINES=[opencl_include_dir])
@@ -46,7 +39,6 @@ sources.extend([
     Glob("thirdparty/libsamplerate/src/*.c"),
     Glob("thirdparty/whisper.cpp/*.c"),
     Glob("thirdparty/whisper.cpp/whisper.cpp"),
-    "thirdparty/whisper.cpp/ggml.c",
     "thirdparty/whisper.cpp/ggml-opencl.cpp",
 ])
 
