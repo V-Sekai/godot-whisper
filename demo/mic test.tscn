@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://dibqfutwftm8j"]
+[gd_scene load_steps=6 format=3 uid="uid://dibqfutwftm8j"]
 
 [ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="1_gio36"]
+[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-tiny.en.bin" id="1_m60ms"]
 [ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="2_ljgdb"]
 [ext_resource type="Script" path="res://test_display.gd" id="3_r84sk"]
 
@@ -13,6 +14,7 @@ stream = SubResource("AudioStreamMicrophone_rhq81")
 bus = &"Record"
 
 [node name="SpeechToText" type="SpeechToText" parent="."]
+language_model = ExtResource("1_m60ms")
 audio_duration = 4
 script = ExtResource("1_gio36")
 
@@ -23,10 +25,10 @@ bus = &"Record"
 
 [node name="Panel" type="Panel" parent="."]
 custom_minimum_size = Vector2(400, 400)
-offset_left = 284.0
-offset_top = 200.0
-offset_right = 684.0
-offset_bottom = 600.0
+offset_left = 396.0
+offset_top = 172.0
+offset_right = 796.0
+offset_bottom = 572.0
 
 [node name="Label" type="RichTextLabel" parent="Panel"]
 custom_minimum_size = Vector2(400, 400)
@@ -44,14 +46,17 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 4
 bbcode_enabled = true
-text = "..."
+text = "Time: 0s
+Time to process: 0s
+..."
 script = ExtResource("3_r84sk")
 
 [node name="Label" type="Label" parent="."]
-offset_left = 217.0
-offset_top = 159.0
-offset_right = 782.0
-offset_bottom = 182.0
-text = "Add a language model or download one. Then, set it as language_modelw"
+offset_left = 329.0
+offset_top = 85.0
+offset_right = 894.0
+offset_bottom = 134.0
+text = "Add a language model or download one. Then, set it as language_model.
+Takes sample every 5s and transcribes below."
 
 [connection signal="text_updated" from="SpeechToText" to="Panel/Label" method="_on_speech_to_text_text_updated"]
