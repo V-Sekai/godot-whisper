@@ -1,6 +1,5 @@
-[gd_scene load_steps=6 format=3 uid="uid://dibqfutwftm8j"]
+[gd_scene load_steps=5 format=3 uid="uid://dibqfutwftm8j"]
 
-[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-small.bin" id="1_43agh"]
 [ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="1_gio36"]
 [ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="2_ljgdb"]
 [ext_resource type="Script" path="res://test_display.gd" id="3_r84sk"]
@@ -14,11 +13,8 @@ stream = SubResource("AudioStreamMicrophone_rhq81")
 bus = &"Record"
 
 [node name="SpeechToText" type="SpeechToText" parent="."]
-language_model = ExtResource("1_43agh")
 audio_duration = 4
 script = ExtResource("1_gio36")
-language_model_path = "small.en"
-time_taken = null
 
 [node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("2_ljgdb")
@@ -50,5 +46,12 @@ size_flags_horizontal = 4
 bbcode_enabled = true
 text = "..."
 script = ExtResource("3_r84sk")
+
+[node name="Label" type="Label" parent="."]
+offset_left = 217.0
+offset_top = 159.0
+offset_right = 782.0
+offset_bottom = 182.0
+text = "Add a language model or download one. Then, set it as language_modelw"
 
 [connection signal="text_updated" from="SpeechToText" to="Panel/Label" method="_on_speech_to_text_text_updated"]

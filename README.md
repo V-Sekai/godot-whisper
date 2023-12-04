@@ -21,6 +21,10 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
+## How to install
+
+Go to a github release, copy paste the addons folder to the demo folder. Restart godot editor.
+
 ## SpeechToText
 
 `SpeechToText` Node has a `transcribe` which gets a buffer that it transcribes.
@@ -35,15 +39,7 @@ The transcribe can block the main thread. It should run in about 0.5 seconds eve
 
 ## Language Model
 
-This addon uses language models.
-
-In order to download a model, go to [Whipser.CPP > Models](https://github.com/ggerganov/whisper.cpp/tree/master/models) and download a model after building the repo:
-
-eg.
-
-```
-./download-ggml-model.sh base.en
-```
+Go to a `CaptureStreamToText` node, select a Language Model to Download and click Download. You might have to alt tab editor or restart for asset to appear. Then, select `language_model` property.
 
 ## Contributors ✨
 
