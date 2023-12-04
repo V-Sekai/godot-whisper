@@ -22,7 +22,7 @@ jobs:
 
       - uses: actions/checkout@v3
         with:
-          repository: https://github.com/KhronosGroup/OpenCL-SDK.git
+          repository: KhronosGroup/OpenCL-SDK
           submodules: true
           fetch-depth: 0
           
