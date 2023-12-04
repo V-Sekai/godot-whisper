@@ -4,6 +4,7 @@
 #include <godot_cpp/classes/time.hpp>
 #include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/core/memory.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/variant/packed_vector2_array.hpp>
 #include <thread>
 
@@ -346,6 +347,7 @@ void SpeechToText::set_language_model(Ref<WhisperResource> p_model) {
 		return;
 	}
 	context_instance = whisper_init_from_buffer_with_params((void *)(data.ptr()), data.size(), context_parameters);
+	UtilityFunctions::print(whisper_print_system_info());
 }
 
 void SpeechToText::set_audio_duration(float p_audio_duration) {
