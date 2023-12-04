@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://dibqfutwftm8j"]
+[gd_scene load_steps=6 format=3 uid="uid://dibqfutwftm8j"]
 
 [ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="1_gio36"]
+[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/ggml-tiny.en.bin" id="1_nt5ud"]
 [ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="2_ljgdb"]
 [ext_resource type="Script" path="res://test_display.gd" id="3_r84sk"]
 
@@ -10,15 +11,17 @@
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_rhq81")
+autoplay = true
 bus = &"Record"
 
 [node name="SpeechToText" type="SpeechToText" parent="."]
-language = 1
+language_model = ExtResource("1_nt5ud")
+audio_duration = 4
 script = ExtResource("1_gio36")
+keep_interval = 2.08165e-12
 
 [node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("2_ljgdb")
-autoplay = true
 bus = &"Record"
 
 [node name="Panel" type="Panel" parent="."]
@@ -43,5 +46,8 @@ offset_bottom = 200.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 4
+bbcode_enabled = true
 text = "..."
 script = ExtResource("3_r84sk")
+
+[connection signal="text_updated" from="SpeechToText" to="Panel/Label" method="_on_speech_to_text_text_updated"]

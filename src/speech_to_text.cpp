@@ -111,7 +111,6 @@ SpeechToText::SpeechToText() {
 	buffer_len = audio_duration * mix_rate;
 	buffer_float = (float *)memalloc(sizeof(float) * buffer_len);
 	resampled_float = (float *)memalloc(sizeof(float) * audio_duration * SPEECH_SETTING_SAMPLE_RATE);
-	context_instance = whisper_init_from_file_with_params(params.model.c_str(), context_parameters);
 }
 
 void SpeechToText::set_language(int p_language) {
@@ -331,9 +330,15 @@ std::string SpeechToText::language_to_code(Language language) {
 
 void SpeechToText::set_language_model(Ref<WhisperResource> p_model) {
 	model = p_model;
-	//params.model = p_model.utf8().get_data();
-	//whisper_free(context_instance);
-	//context_instance = whisper_init_from_file_with_params(params.model.c_str(), context_parameters);
+	whisper_free(context_instance);
+	if (p_model.is_null()) {
+		return;
+	}
+	PackedByteArray data = model->get_content();
+	if (data.is_empty()) {
+		return;
+	}
+	context_instance = whisper_init_from_buffer_with_params((void *)(data.ptr()), data.size(), context_parameters);
 }
 
 void SpeechToText::set_audio_duration(float p_audio_duration) {

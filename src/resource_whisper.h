@@ -10,12 +10,14 @@ class WhisperResource : public Resource {
 
 protected:
 	static void _bind_methods() {}
+
 private:
-	void* content;
+	PackedByteArray content;
+
 public:
-	Error load_file(const String &p_path){return OK;}
-	void* get_content(){ return nullptr;}
-	WhisperResource(){}
-	~WhisperResource(){}
+	Error load_file(const String &p_path);
+	PackedByteArray get_content() { return content; }
+	WhisperResource() {}
+	~WhisperResource() {}
 };
 #endif // RESOURCE_JSON_H
