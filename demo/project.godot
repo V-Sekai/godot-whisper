@@ -21,6 +21,10 @@ driver/enable_input=true
 enable_audio_input=true
 mix_rate=48000
 
+[display]
+
+window/stretch/mode="canvas_items"
+
 [editor_plugins]
 
 enabled=PackedStringArray()

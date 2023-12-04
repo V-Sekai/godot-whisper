@@ -1,19 +1,20 @@
 [gd_scene load_steps=5 format=3 uid="uid://dibqfutwftm8j"]
 
-[ext_resource type="Script" path="res://test.gd" id="1_gio36"]
+[ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="1_gio36"]
 [ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="2_ljgdb"]
 [ext_resource type="Script" path="res://test_display.gd" id="3_r84sk"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_rhq81"]
 
-[node name="AudioStreamToText" type="Node2D"]
-script = ExtResource("1_gio36")
+[node name="CaptureStreamToText" type="Node2D"]
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_rhq81")
 bus = &"Record"
 
 [node name="SpeechToText" type="SpeechToText" parent="."]
+language = 1
+script = ExtResource("1_gio36")
 
 [node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("2_ljgdb")
@@ -44,5 +45,3 @@ grow_vertical = 2
 size_flags_horizontal = 4
 text = "..."
 script = ExtResource("3_r84sk")
-
-[connection signal="text_updated" from="." to="Panel/Label" method="_on_audio_stream_to_text_text_updated"]

@@ -1,6 +1,8 @@
 #ifndef SPEECH_TO_TEXT_H
 #define SPEECH_TO_TEXT_H
 
+#include "resource_whisper.h"
+
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/thread.hpp>
@@ -13,6 +15,112 @@
 using namespace godot;
 
 class SpeechToText : public Node {
+public:
+	enum Language {
+		Auto,
+		English,
+		Chinese,
+		German,
+		Spanish,
+		Russian,
+		Korean,
+		French,
+		Japanese,
+		Portuguese,
+		Turkish,
+		Polish,
+		Catalan,
+		Dutch,
+		Arabic,
+		Swedish,
+		Italian,
+		Indonesian,
+		Hindi,
+		Finnish,
+		Vietnamese,
+		Hebrew,
+		Ukrainian,
+		Greek,
+		Malay,
+		Czech,
+		Romanian,
+		Danish,
+		Hungarian,
+		Tamil,
+		Norwegian,
+		Thai,
+		Urdu,
+		Croatian,
+		Bulgarian,
+		Lithuanian,
+		Latin,
+		Maori,
+		Malayalam,
+		Welsh,
+		Slovak,
+		Telugu,
+		Persian,
+		Latvian,
+		Bengali,
+		Serbian,
+		Azerbaijani,
+		Slovenian,
+		Kannada,
+		Estonian,
+		Macedonian,
+		Breton,
+		Basque,
+		Icelandic,
+		Armenian,
+		Nepali,
+		Mongolian,
+		Bosnian,
+		Kazakh,
+		Albanian,
+		Swahili,
+		Galician,
+		Marathi,
+		Punjabi,
+		Sinhala,
+		Khmer,
+		Shona,
+		Yoruba,
+		Somali,
+		Afrikaans,
+		Occitan,
+		Georgian,
+		Belarusian,
+		Tajik,
+		Sindhi,
+		Gujarati,
+		Amharic,
+		Yiddish,
+		Lao,
+		Uzbek,
+		Faroese,
+		Haitian_Creole,
+		Pashto,
+		Turkmen,
+		Nynorsk,
+		Maltese,
+		Sanskrit,
+		Luxembourgish,
+		Myanmar,
+		Tibetan,
+		Tagalog,
+		Malagasy,
+		Assamese,
+		Tatar,
+		Hawaiian,
+		Lingala,
+		Hausa,
+		Bashkir,
+		Javanese,
+		Sundanese,
+		Cantonese
+	};
+
+private:
 	GDCLASS(SpeechToText, Node);
 
 	struct whisper_params {
@@ -22,7 +130,7 @@ class SpeechToText : public Node {
 		int32_t max_tokens = 32;
 		int32_t audio_ctx = 0;
 
-		float vad_thold = 0.6f;
+		float vad_thold = 0.2f;
 		float freq_thold = 100.0f;
 
 		bool speed_up = false;
@@ -37,7 +145,8 @@ class SpeechToText : public Node {
 		std::string model = "./addons/godot_whisper/models/ggml-tiny.en.bin";
 		std::string fname_out;
 	};
-
+	Language language = English;
+	Ref<WhisperResource> model;
 	whisper_params params;
 	whisper_context_params context_parameters{ true };
 	Vector<whisper_token> prompt_tokens;
@@ -45,6 +154,7 @@ class SpeechToText : public Node {
 	int buffer_len;
 	float *buffer_float;
 	float *resampled_float;
+	float audio_duration = 5;
 
 protected:
 	static void _bind_methods();
@@ -54,12 +164,13 @@ public:
 		SPEECH_SETTING_SAMPLE_RATE = 16000,
 	};
 	Array transcribe(PackedVector2Array buffer);
-	_FORCE_INLINE_ void set_language(String p_language) { params.language = p_language.utf8().get_data(); }
-	_FORCE_INLINE_ String get_language() { return String(params.language.c_str()); }
-	void set_language_model(String p_model);
-	_FORCE_INLINE_ String get_language_model() { return String(params.model.c_str()); }
-	void set_duration_ms(int32_t duration_ms);
-	_FORCE_INLINE_ int32_t get_duration_ms() { return params.duration_ms; }
+	std::string language_to_code(Language language);
+	void set_language(int p_language);
+	int get_language();
+	void set_language_model(Ref<WhisperResource> p_model);
+	_FORCE_INLINE_ Ref<WhisperResource> get_language_model() { return model; }
+	void set_audio_duration(float audio_duration);
+	_FORCE_INLINE_ int32_t get_audio_duration() { return audio_duration; }
 	_FORCE_INLINE_ void set_use_gpu(bool use_gpu) { context_parameters.use_gpu = use_gpu; }
 	_FORCE_INLINE_ bool is_use_gpu() { return context_parameters.use_gpu; }
 	SpeechToText();
