@@ -33,7 +33,7 @@ jobs:
       - name: Download OpenCL
         if: ${{ steps.opencl_cache.outputs.cache-hit != 'true' }}
         shell: bash
-        run: git clone --recursive --branch v2021.06.30 https://github.com/KhronosGroup/OpenCL-SDK.git ${{ github.workspace }}/opencl-sdk
+        run: git clone --recursive https://github.com/KhronosGroup/OpenCL-SDK.git ${{ github.workspace }}/opencl-sdk
 
       - name: Build OpenCL
         shell: bash
