@@ -93,6 +93,10 @@ Array SpeechToText::transcribe(PackedVector2Array buffer) {
 		// fprintf(stderr,"tokens: %d\n",n_tokens);
 		for (int j = 0; j < n_tokens; j++) {
 			auto token = whisper_full_get_token_data(context_instance, i, j);
+			// Idea from https://github.com/yum-food/TaSTT/blob/dbb2f72792e2af3ff220313f84bf76a9a1ddbeb4/Scripts/transcribe_v2.py#L457C17-L462C25
+			if (token.p > 0.6 && token.plog < -0.5) {
+				continue;
+ 			}
 			auto text = whisper_full_get_token_text(context_instance, i, j);
 			Dictionary token_result;
 			token_result["id"] = token.id;
