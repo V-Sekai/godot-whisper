@@ -2,6 +2,11 @@ name: 🏁 Windows Builds
 on:
   workflow_call:
 
+env:
+  OpenCL_ROOT: "${{ github.workspace }}OpenCL-SDK"
+  OpenCL_INCLUDE_DIR: "${{ github.workspace }}/OpenCL-SDK/build/install/include"
+  OpenCL_LIBRARY: "${{ github.workspace }}/OpenCL-SDK/build/bin/OpenCL.lib"
+
 jobs:
   build-windows:
     runs-on: "windows-latest"
@@ -26,7 +31,7 @@ jobs:
           repository: KhronosGroup/OpenCL-SDK
           submodules: true
           fetch-depth: 0
-          
+
       - name: Check OpenCL Cache
         id: opencl_cache
         uses: actions/cache@v3
@@ -41,14 +46,7 @@ jobs:
         shell: bash
         run: |
           cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_ICD_LOADER_BUILD=ON
-          cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install 
-
-      - name: Export Symbols
-        shell: bash
-        run: |
-          echo "OpenCL_ROOT=${{ github.workspace }}/OpenCL-SDK" >> $GITHUB_ENV
-          echo "OpenCL_INCLUDE_DIR=${{ github.workspace }}/OpenCL-SDK/build/install/include" >> $GITHUB_ENV
-          echo "OpenCL_LIBRARY=${{ github.workspace }}/OpenCL-SDK/build/bin/OpenCL.lib" >> $GITHUB_ENV
+          cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
 
       - name: Build ${{ matrix.arch }}
         uses: ./.github/actions/build
