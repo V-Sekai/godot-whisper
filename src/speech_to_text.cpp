@@ -4,8 +4,8 @@
 #include <godot_cpp/classes/time.hpp>
 #include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/core/memory.hpp>
-#include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/variant/packed_vector2_array.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
 #include <thread>
 
 #include <libsamplerate/src/samplerate.h>
