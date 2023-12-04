@@ -59,7 +59,7 @@ Array SpeechToText::transcribe(PackedVector2Array buffer) {
 			SPEECH_SETTING_SAMPLE_RATE, // Target sample rate
 			resampled_float);
 
-	whisper_full_params whisper_params = whisper_full_default_params(WHISPER_SAMPLING_BEAM_SEARCH);
+	whisper_full_params whisper_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
 	whisper_params.max_len = 1;
 	whisper_params.print_progress = false;
 	whisper_params.print_special = params.print_special;
@@ -78,7 +78,6 @@ Array SpeechToText::transcribe(PackedVector2Array buffer) {
 	whisper_params.prompt_tokens = nullptr;
 	whisper_params.prompt_n_tokens = 0;
 	whisper_params.suppress_non_speech_tokens = true;
-	whisper_params.beam_search.beam_size = params.beam_count;
 	whisper_params.suppress_blank = true;
 	whisper_params.entropy_thold = params.entropy_threshold;
 
