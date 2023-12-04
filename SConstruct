@@ -29,7 +29,7 @@ env.Prepend(CPPPATH=["thirdparty", "include", "thirdparty/opencl_headers", "thir
 env.Append(CPPPATH=["src/"])
 env.Append(CPPDEFINES=['WHISPER_SHARED', 'GGML_SHARED', opencl_include_dir])
 sources = [Glob("src/*.cpp")]
-env.Append(LIB=[opencl_library])
+env.Append(LIBS=[opencl_library])
 
 sources.extend([
     Glob("thirdparty/libsamplerate/src/*.c"),
@@ -56,11 +56,14 @@ clblast_sources = [
     "thirdparty/clblast/src/tuning/tuning_api.cpp"
 ]
 
+databases = ['copy', 'pad', 'padtranspose', 'transpose', 'xaxpy', 'xdot', 
+             'xgemm', 'xgemm_direct', 'xgemv', 'xgemv_fast', 'xgemv_fast_rot', 
+             'xger', 'invert', 'gemm_routine', 'trsv_routine', 'xconvgemm']
+
+for database in databases:
+    clblast_sources.append('thirdparty/clblast/src/database/kernels/' + database + '/' + database + '.cpp')
+
 sources.extend(clblast_sources)
-
-icd_loader_sources = Glob("thirdparty/OpenCL-ICD-Loader/loader/*.c")
-
-sources.extend(icd_loader_sources)
 
 routines = {
     'level1': Glob("thirdparty/clblast/src/routines/level1/*.cpp"),
