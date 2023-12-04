@@ -21,25 +21,21 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-Creates a new Node, `SpeechToText` that has a method called `transcribe` which gets a buffer that it transcribes.
+## SpeechToText
 
-Then there is a high level scene which every 3 seconds constructs a 5 second audio.
-It sends this audio to transcribe and removes 2 seconds of audio from previous input.
+`SpeechToText` Node has a `transcribe` which gets a buffer that it transcribes.
 
-Eg.:
+## CaptureStreamToText
 
-```
-- 12345
--    12345
--       12345
-Result:
-- 12312312345
-```
+`CaptureStreamToText` - extends SpeechToText and runs transcribe function every 5 seconds.
 
-The plugin expects a model at the location specified in `language_model`. By default it is set to:
-```
-./addons/godot_whisper/models/ggml-tiny.en.bin
-```
+## Main thread
+
+The transcribe can block the main thread. It should run in about 0.5 seconds every 5 seconds, but check for yourself.
+
+## Language Model
+
+This addon uses language models.
 
 In order to download a model, go to [Whipser.CPP > Models](https://github.com/ggerganov/whisper.cpp/tree/master/models) and download a model after building the repo:
 
