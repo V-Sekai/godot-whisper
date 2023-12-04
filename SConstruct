@@ -46,6 +46,7 @@ sources.extend([
     Glob("thirdparty/libsamplerate/src/*.c"),
     Glob("thirdparty/whisper.cpp/*.c"),
     Glob("thirdparty/whisper.cpp/whisper.cpp"),
+    "thirdparty/whisper.cpp/ggml.c",
     "thirdparty/whisper.cpp/ggml-opencl.cpp",
 ])
 
