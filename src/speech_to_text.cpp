@@ -97,7 +97,7 @@ Array SpeechToText::transcribe(PackedVector2Array buffer) {
 			// Idea from https://github.com/yum-food/TaSTT/blob/dbb2f72792e2af3ff220313f84bf76a9a1ddbeb4/Scripts/transcribe_v2.py#L457C17-L462C25
 			if (token.p > 0.6 && token.plog < -0.5) {
 				continue;
- 			}
+			}
 			if (token.plog < -1.0) {
 				continue;
 			}
