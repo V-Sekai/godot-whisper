@@ -14,8 +14,6 @@ env.Append(
         "WEBRTC_APM_DEBUG_DUMP=0",
         "WHISPER_BUILD",
         "GGML_BUILD",
-        # Debug logs
-        # "GGML_METAL_NDEBUG"
     ]
 )
 
@@ -40,9 +38,15 @@ if env["platform"] == "macos" or env["platform"] == "ios":
     env.Append(LINKFLAGS=["MetalKit"])
     env.Append(
         CPPDEFINES=[
-            "DGGML_USE_METAL"
+            "GGML_USE_METAL",
+            # Debug logs
+            "GGML_METAL_NDEBUG",
+            "GGML_USE_ACCELERATE"
         ]
     )
+    sources.extend([
+        Glob("thirdparty/whisper.cpp/ggml-metal.m"),
+    ])
 else:
     # CBlast and OpenCL only on non apple platform
     sources.extend([
