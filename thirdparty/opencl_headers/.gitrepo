@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/KhronosGroup/OpenCL-Headers.git
+	branch = main
+	commit = 8de09e8f07e3272da06e62358a8116c27d235036
+	parent = f3cc76b467541f5f86a00e0ddf4e88e6bba5c13f
+	method = merge
+	cmdver = 0.4.6

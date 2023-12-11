@@ -1,0 +1,64 @@
+environment:
+  global:
+    CLBLAST_BUILD: "C:\\clblast\\build"
+    OPENCL_ROOT: "C:\\dependencies\\opencl"
+
+platform:
+  - x64
+
+configuration:
+  - Release
+
+init:
+  - cmake --version
+  - C:\"Program Files (x86)"\"Microsoft Visual Studio 14.0"\VC\vcvarsall.bat %PLATFORM%
+
+# Creates an OpenCL library to link against. Taken from clMathLibraries/clBLAS
+install:
+  - ps: mkdir $env:OPENCL_ROOT
+  - ps: pushd $env:OPENCL_ROOT
+  # This downloads the source to the Khronos ICD library
+  - git clone https://github.com/KhronosGroup/OpenCL-ICD-Loader.git
+  - ps: pushd OpenCL-ICD-Loader
+  - git checkout cb4acb9  # older version (pre 2.2 support)
+  - ps: popd
+  - ps: mv ./OpenCL-ICD-Loader/* .
+  # This downloads all the opencl header files
+  # The cmake build files expect a directory called inc
+  - ps: mkdir inc/CL
+  - git clone https://github.com/KhronosGroup/OpenCL-Headers.git inc/CL
+  - ps: wget https://raw.githubusercontent.com/KhronosGroup/OpenCL-CLHPP/main/include/CL/opencl.hpp -OutFile inc/CL/cl.hpp
+  # Switch to OpenCL 2.1 headers
+  - ps: pushd inc/CL
+  - git checkout bf0f43b  # OpenCL 2.1
+  - ps: popd
+  # - ps: dir; if( $lastexitcode -eq 0 ){ dir include/CL } else { Write-Output boom }
+  # Create the static import lib in a directory called lib, so findopencl() will find it
+  - ps: mkdir lib
+  - ps: pushd lib
+  - cmake -G "NMake Makefiles" ..
+  - nmake
+  - ps: popd
+  # Rename the inc directory to include, so FindOpencl() will find it
+  - ps: ren inc include
+  - ps: popd
+
+before_build:
+  - ps: mkdir $env:CLBLAST_BUILD
+  - ps: pushd $env:CLBLAST_BUILD
+  - ps: mkdir install_dir
+  - cmake -G "NMake Makefiles" -DCMAKE_INSTALL_PREFIX=install_dir -DCMAKE_BUILD_TYPE=%CONFIGURATION% -DTESTS=ON -DCLIENTS=ON -DSAMPLES=ON -DNETLIB=ON %APPVEYOR_BUILD_FOLDER%
+
+build_script:
+  - nmake
+  - nmake install
+
+after_build:
+  - ps: pushd $env:CLBLAST_BUILD
+  - 7z a CLBlast-1.6.1-Windows-x64.zip .\install_dir\*
+  - ps: mv CLBlast-1.6.1-Windows-x64.zip $env:APPVEYOR_BUILD_FOLDER
+
+artifacts:
+  - path: '*.zip'
+    name: release
+    type: zip

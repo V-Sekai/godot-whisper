@@ -5,6 +5,7 @@
 #include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/core/memory.hpp>
 #include <godot_cpp/variant/packed_vector2_array.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
 #include <thread>
 
 #include <libsamplerate/src/samplerate.h>
@@ -58,26 +59,30 @@ Array SpeechToText::transcribe(PackedVector2Array buffer) {
 			SPEECH_SETTING_SAMPLE_RATE, // Target sample rate
 			resampled_float);
 
-	whisper_full_params whispher_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
-	whispher_params.print_progress = false;
-	whispher_params.print_special = params.print_special;
-	whispher_params.print_realtime = false;
-	whispher_params.print_timestamps = true;
-	whispher_params.translate = params.translate;
-	whispher_params.single_segment = true;
-	whispher_params.duration_ms = params.duration_ms;
-	whispher_params.no_timestamps = false;
-	whispher_params.token_timestamps = true;
-	whispher_params.max_tokens = params.max_tokens;
-	whispher_params.language = params.language.c_str();
-	whispher_params.n_threads = params.n_threads;
-	whispher_params.audio_ctx = params.audio_ctx;
-	whispher_params.speed_up = params.speed_up;
-	whispher_params.prompt_tokens = nullptr;
-	whispher_params.prompt_n_tokens = 0;
-	whispher_params.suppress_non_speech_tokens = true;
+	whisper_full_params whisper_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+	whisper_params.max_len = 1;
+	whisper_params.print_progress = false;
+	whisper_params.print_special = params.print_special;
+	whisper_params.print_realtime = false;
+	whisper_params.duration_ms = params.duration_ms;
+	whisper_params.print_timestamps = true;
+	whisper_params.translate = params.translate;
+	whisper_params.single_segment = true;
+	whisper_params.no_timestamps = false;
+	whisper_params.token_timestamps = true;
+	whisper_params.max_tokens = params.max_tokens;
+	whisper_params.language = params.language.c_str();
+	whisper_params.n_threads = params.n_threads;
+	whisper_params.audio_ctx = params.audio_ctx;
+	whisper_params.speed_up = params.speed_up;
+	whisper_params.prompt_tokens = nullptr;
+	whisper_params.prompt_n_tokens = 0;
+	whisper_params.suppress_non_speech_tokens = true;
+	whisper_params.suppress_blank = true;
+	whisper_params.entropy_thold = params.entropy_threshold;
+	whisper_params.temperature = 0.0;
 
-	if (whisper_full(context_instance, whispher_params, resampled_float, result_size) != 0) {
+	if (whisper_full(context_instance, whisper_params, resampled_float, result_size) != 0) {
 		ERR_PRINT("Failed to process audio");
 		return Array();
 	}
@@ -89,6 +94,13 @@ Array SpeechToText::transcribe(PackedVector2Array buffer) {
 		// fprintf(stderr,"tokens: %d\n",n_tokens);
 		for (int j = 0; j < n_tokens; j++) {
 			auto token = whisper_full_get_token_data(context_instance, i, j);
+			// Idea from https://github.com/yum-food/TaSTT/blob/dbb2f72792e2af3ff220313f84bf76a9a1ddbeb4/Scripts/transcribe_v2.py#L457C17-L462C25
+			if (token.p > 0.6 && token.plog < -0.5) {
+				continue;
+			}
+			if (token.plog < -1.0) {
+				continue;
+			}
 			auto text = whisper_full_get_token_text(context_instance, i, j);
 			Dictionary token_result;
 			token_result["id"] = token.id;
@@ -340,6 +352,7 @@ void SpeechToText::set_language_model(Ref<WhisperResource> p_model) {
 		return;
 	}
 	context_instance = whisper_init_from_buffer_with_params((void *)(data.ptr()), data.size(), context_parameters);
+	UtilityFunctions::print(whisper_print_system_info());
 }
 
 void SpeechToText::set_audio_duration(float p_audio_duration) {

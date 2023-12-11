@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/KhronosGroup/OpenCL-ICD-Loader
+	branch = main
+	commit = 229410f86a8c8c9e0f86f195409e5481a2bae067
+	parent = e43eca4c5b09986033d7f69f606de2acf0843bc4
+	method = merge
+	cmdver = 0.4.6

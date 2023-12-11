@@ -19,28 +19,91 @@ env.Append(
     ]
 )
 
-enable_webrtc_logging = env["target"] == "debug"
-
-if not enable_webrtc_logging:
-    env.Append(CPPDEFINES=["RTC_DISABLE_LOGGING", "RTC_DISABLE_METRICS"])
-
-if env["platform"] == "windows" or env["platform"] == "uwp":
-    env.Append(CPPDEFINES=["WEBRTC_WIN"])
-elif env["platform"] == "ios":
-    env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_IOS"])
-elif env["platform"] == "macos":
-    env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_MAC"])
-elif env["platform"] == "linuxbsd":
-    env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_LINUX"])
-elif env["platform"] == "android":
-    env.Append(CPPDEFINES=["WEBRTC_POSIX", "WEBRTC_ANDROID"])
-else:  # including if env["platform"] == "javascript":
-    env.Append(CPPDEFINES=["WEBRTC_POSIX"])
 env.Prepend(CPPPATH=["thirdparty", "include"])
 env.Append(CPPPATH=["src/"])
 env.Append(CPPDEFINES=['WHISPER_SHARED', 'GGML_SHARED'])
 sources = [Glob("src/*.cpp")]
-sources.extend([Glob("thirdparty/libsamplerate/src/*.c"), Glob("thirdparty/whisper.cpp/*.c"), Glob("thirdparty/whisper.cpp/whisper.cpp")])
+
+sources.extend([
+    Glob("thirdparty/libsamplerate/src/*.c"),
+    Glob("thirdparty/whisper.cpp/*.c"),
+    Glob("thirdparty/whisper.cpp/whisper.cpp"),
+])
+
+
+if env["platform"] == "macos" or env["platform"] == "ios":
+    env.Append(LINKFLAGS=["-framework"])
+    env.Append(LINKFLAGS=["Foundation"])
+    env.Append(LINKFLAGS=["-framework"])
+    env.Append(LINKFLAGS=["Metal"])
+    env.Append(LINKFLAGS=["-framework"])
+    env.Append(LINKFLAGS=["MetalKit"])
+    env.Append(
+        CPPDEFINES=[
+            "DGGML_USE_METAL"
+        ]
+    )
+else:
+    # CBlast and OpenCL only on non apple platform
+    sources.extend([
+        "thirdparty/whisper.cpp/ggml-opencl.cpp",
+    ])
+
+    env.Prepend(CPPPATH=["thirdparty/opencl_headers", "thirdparty/clblast/include", "thirdparty/clblast/src"])
+    env.Append(
+        CPPDEFINES=[
+        "GGML_USE_CLBLAST",
+        "OPENCL_API",
+        "USE_ICD_LOADER",
+        ]
+    )
+    opencl_include_dir = os.environ.get('OpenCL_INCLUDE_DIR')
+    if opencl_include_dir:
+        env.Append(CPPDEFINES=[opencl_include_dir])
+
+    opencl_library = os.environ.get('OpenCL_LIBRARY')
+    if opencl_library:
+        env.Append(LIBS=[opencl_library])
+
+    clblast_sources = [
+        "thirdparty/clblast/src/database/database.cpp",
+        "thirdparty/clblast/src/routines/common.cpp",
+        "thirdparty/clblast/src/utilities/compile.cpp",
+        "thirdparty/clblast/src/utilities/clblast_exceptions.cpp",
+        "thirdparty/clblast/src/utilities/timing.cpp",
+        "thirdparty/clblast/src/utilities/utilities.cpp",
+        "thirdparty/clblast/src/api_common.cpp",
+        "thirdparty/clblast/src/cache.cpp",
+        "thirdparty/clblast/src/kernel_preprocessor.cpp",
+        "thirdparty/clblast/src/routine.cpp",
+        "thirdparty/clblast/src/tuning/configurations.cpp",
+        # OpenCL specific sources
+        "thirdparty/clblast/src/clblast.cpp",
+        "thirdparty/clblast/src/clblast_c.cpp",
+        "thirdparty/clblast/src/tuning/tuning_api.cpp"
+    ]
+
+    databases = ['copy', 'pad', 'padtranspose', 'transpose', 'xaxpy', 'xdot', 
+                'xgemm', 'xgemm_direct', 'xgemv', 'xgemv_fast', 'xgemv_fast_rot', 
+                'xger', 'invert', 'gemm_routine', 'trsv_routine', 'xconvgemm']
+
+    for database in databases:
+        clblast_sources.append('thirdparty/clblast/src/database/kernels/' + database + '/' + database + '.cpp')
+
+    sources.extend(clblast_sources)
+
+    routines = {
+        'level1': Glob("thirdparty/clblast/src/routines/level1/*.cpp"),
+        'level2': Glob("thirdparty/clblast/src/routines/level2/*.cpp"),
+        'level3': Glob("thirdparty/clblast/src/routines/level3/*.cpp"),
+        'levelx': Glob("thirdparty/clblast/src/routines/levelx/*.cpp"),
+    }
+
+    for level, files in routines.items():
+        sources.extend(files)
+
+    sources.extend(Glob("thirdparty/clblast/src/tuners/*.cpp"))
+
 if env["platform"] == "macos":
 	library = env.SharedLibrary(
 		"bin/addons/godot_whisper/bin/libgodot_whisper{}.framework/libgodot_whisper{}".format(

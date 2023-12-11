@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/CNugteren/CLBlast.git
+	branch = master
+	commit = 9535155ad8a5c3254900329aeba4f16910ab5278
+	parent = 0300c03bb69a67b77b7d821cab952f4cffe6f64d
+	method = merge
+	cmdver = 0.4.6
