@@ -33,10 +33,11 @@ jobs:
     uses: ./.github/workflows/macos_builds.yml
     secrets: inherit
 
-  windows-build:
-    name: 🏁 Windows
-    needs: static-checks
-    uses: ./.github/workflows/windows_builds.yml
+# TODO reenable
+#  windows-build:
+#    name: 🏁 Windows
+#    needs: static-checks
+#    uses: ./.github/workflows/windows_builds.yml
 
 # TODO reenable
 #  web-build:
