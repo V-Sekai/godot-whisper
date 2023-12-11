@@ -36,6 +36,8 @@ if env["platform"] == "macos" or env["platform"] == "ios":
     env.Append(LINKFLAGS=["Metal"])
     env.Append(LINKFLAGS=["-framework"])
     env.Append(LINKFLAGS=["MetalKit"])
+    env.Append(LINKFLAGS=["-framework"])
+    env.Append(LINKFLAGS=["Accelerate"])
     env.Append(
         CPPDEFINES=[
             "GGML_USE_METAL",
