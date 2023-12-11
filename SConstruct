@@ -42,6 +42,15 @@ sources.extend([
     "thirdparty/whisper.cpp/ggml-opencl.cpp",
 ])
 
+
+if env["platform"] == "macos":
+    env.Append(LINKFLAGS=["-framework"])
+    env.Append(LINKFLAGS=["Foundation"])
+    env.Append(LINKFLAGS=["-framework"])
+    env.Append(LINKFLAGS=["Metal"])
+    env.Append(LINKFLAGS=["-framework"])
+    env.Append(LINKFLAGS=["MetalKit"])
+
 clblast_sources = [
     "thirdparty/clblast/src/database/database.cpp",
     "thirdparty/clblast/src/routines/common.cpp",
