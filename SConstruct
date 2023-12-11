@@ -50,6 +50,11 @@ if env["platform"] == "macos":
     env.Append(LINKFLAGS=["Metal"])
     env.Append(LINKFLAGS=["-framework"])
     env.Append(LINKFLAGS=["MetalKit"])
+    env.Append(
+        CPPDEFINES=[
+            "DGGML_USE_METAL"
+        ]
+    )
 
 clblast_sources = [
     "thirdparty/clblast/src/database/database.cpp",
