@@ -113,9 +113,7 @@ SpeechToText::SpeechToText() {
 void SpeechToText::start_listen() {
 	if (is_running == false) {
 		is_running = true;
-		Callable call_run = Callable(this, "run");
-		call_run = call_run.bind(this);
-		worker.start(call_run, Thread::Priority::PRIORITY_NORMAL);
+		worker.start(Callable(this, StringName("run")), Thread::Priority::PRIORITY_NORMAL);
 		t_last_iter = Time::get_singleton()->get_ticks_msec();
 	}
 }
@@ -405,8 +403,8 @@ std::vector<transcribed_msg> SpeechToText::get_transcribed() {
 }
 
 /** Run Whisper in its own thread to not block the main thread. */
-void SpeechToText::run(void *p_ud) {
-	SpeechToText *speech_to_text_obj = static_cast<SpeechToText *>(p_ud);
+void SpeechToText::run() {
+	SpeechToText *speech_to_text_obj = SpeechToText::get_singleton();
 	whisper_full_params whisper_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
 	// See here for example https://github.com/ggerganov/whisper.cpp/blob/master/examples/stream/stream.cpp#L302
 	whisper_params.max_len = 1;

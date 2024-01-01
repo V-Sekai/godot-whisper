@@ -194,7 +194,7 @@ public:
 	std::vector<transcribed_msg> s_transcribed_msgs;
 	Mutex s_mutex;
 	Thread worker;
-	static void run(void *p_ud);
+	void run();
 	int t_last_iter;
 
 	_FORCE_INLINE_ void set_entropy_threshold(float entropy_threshold) { params.entropy_threshold = entropy_threshold; }
