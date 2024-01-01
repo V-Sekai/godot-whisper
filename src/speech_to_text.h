@@ -3,9 +3,11 @@
 
 #include "resource_whisper.h"
 
+#include <godot_cpp/classes/mutex.hpp>
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/thread.hpp>
+#include <godot_cpp/core/mutex_lock.hpp>
 #include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/variant/array.hpp>
 
@@ -13,9 +15,9 @@
 #include <whisper.cpp/whisper.h>
 
 #include <atomic>
-#include <mutex>
+// #include <mutex>
 #include <string>
-#include <thread>
+// #include <thread>
 #include <vector>
 
 using namespace godot;
@@ -189,10 +191,10 @@ public:
 	std::atomic<bool> is_running;
 	std::vector<float> s_queued_pcmf32;
 	std::vector<transcribed_msg> s_transcribed_msgs;
-	std::mutex s_mutex; // for accessing shared variables from both main thread and worker thread
-	std::thread worker;
-	void run();
-	std::chrono::time_point<std::chrono::high_resolution_clock> t_last_iter;
+	Mutex s_mutex;
+	Thread worker;
+	static void run(void *p_ud);
+	int t_last_iter;
 
 	_FORCE_INLINE_ void set_entropy_threshold(float entropy_threshold) { params.entropy_threshold = entropy_threshold; }
 	_FORCE_INLINE_ float get_entropy_threshold() { return params.entropy_threshold; }
@@ -200,7 +202,6 @@ public:
 	_FORCE_INLINE_ void set_max_context_size(int32_t max_context_size) { params.max_context_size = max_context_size; }
 	_FORCE_INLINE_ int32_t get_max_context_size() { return params.max_context_size; }
 	void add_audio_buffer(PackedVector2Array buffer);
-	void add_audio_data(const std::vector<float> &data);
 	std::vector<transcribed_msg> get_transcribed();
 	void start_listen();
 	void stop_listen();
