@@ -14,10 +14,6 @@
 #include <thread>
 #include <vector>
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
 uint32_t _resample_audio_buffer(
 		const float *p_src, const uint32_t p_src_frame_count,
 		const uint32_t p_src_samplerate, const uint32_t p_target_samplerate,
@@ -55,7 +51,7 @@ void _vector2_array_to_float_array(const uint32_t &p_mix_frame_count,
 }
 
 void high_pass_filter(std::vector<float> &data, float cutoff, float sample_rate) {
-	const float rc = 1.0f / (2.0f * M_PI * cutoff);
+	const float rc = 1.0f / (2.0f * Math_PI * cutoff);
 	const float dt = 1.0f / sample_rate;
 	const float alpha = dt / (rc + dt);
 
@@ -384,7 +380,6 @@ void SpeechToText::add_audio_buffer(PackedVector2Array buffer) {
 	int buffer_len = buffer.size();
 	float *buffer_float = (float *)memalloc(sizeof(float) * buffer_len);
 	float *resampled_float = (float *)memalloc(sizeof(float) * buffer_len * SPEECH_SETTING_SAMPLE_RATE / AudioServer::get_singleton()->get_mix_rate());
-	// printf("AddAudioData: remaining: %d, new: %d\n", (int)s_queued_pcmf32.size(), (int)data.size());
 	_vector2_array_to_float_array(buffer_len, buffer.ptr(), buffer_float);
 	// Speaker frame.
 	int result_size = _resample_audio_buffer(
@@ -395,17 +390,11 @@ void SpeechToText::add_audio_buffer(PackedVector2Array buffer) {
 			resampled_float);
 
 	const std::vector<float> data(resampled_float, resampled_float + result_size);
-	// add_audio_data(data);
 	s_queued_pcmf32.insert(s_queued_pcmf32.end(), data.begin(), data.end());
 	memfree(buffer_float);
 	memfree(resampled_float);
 }
 
-// /** Add audio data in PCM f32 format. */
-// void SpeechToText::add_audio_data(const std::vector<float> &data) {
-// 	std::lock_guard<std::mutex> lock(s_mutex);
-
-// }
 
 /** Get newly transcribed text. */
 std::vector<transcribed_msg> SpeechToText::get_transcribed() {
@@ -433,7 +422,6 @@ void SpeechToText::run() {
 	whisper_params.max_tokens = this->params.max_tokens;
 	whisper_params.language = this->params.language.c_str();
 	whisper_params.n_threads = this->params.n_threads;
-	// whisper_params.audio_ctx = speech_to_text->params.audio_ctx;
 	whisper_params.speed_up = this->params.speed_up;
 	whisper_params.prompt_tokens = nullptr;
 	whisper_params.prompt_n_tokens = 0;
@@ -526,7 +514,6 @@ void SpeechToText::run() {
 			const int n_segments = whisper_full_n_segments(this->context_instance);
 			for (int i = 0; i < n_segments; ++i) {
 				const int n_tokens = whisper_full_n_tokens(this->context_instance, i);
-				// fprintf(stderr,"tokens: %d\n",n_tokens);
 				for (int j = 0; j < n_tokens; j++) {
 					auto token = whisper_full_get_token_data(this->context_instance, i, j);
 					// Idea from https://github.com/yum-food/TaSTT/blob/dbb2f72792e2af3ff220313f84bf76a9a1ddbeb4/Scripts/transcribe_v2.py#L457C17-L462C25
@@ -561,7 +548,6 @@ void SpeechToText::run() {
 			if (pcmf32.size() > n_samples_iter_threshold || speech_has_end) {
 				const auto t_now = std::chrono::high_resolution_clock::now();
 				const auto t_diff = std::chrono::duration_cast<std::chrono::milliseconds>(t_now - t_last_iter).count();
-				// printf("iter took: %ldms\n", t_diff);
 				this->t_last_iter = t_now;
 
 				msg.is_partial = false;
@@ -582,7 +568,6 @@ void SpeechToText::run() {
 			transcribed = std::move(s_transcribed_msgs);
 			s_transcribed_msgs.clear();
 
-			// std::vector<transcribed_msg> transcribed = this->get_transcribed();
 			Array ret;
 			for (int i = 0; i < transcribed.size(); i++) {
 				Dictionary cur_transcribed_msg;

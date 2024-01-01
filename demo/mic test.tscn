@@ -1,6 +1,6 @@
 [gd_scene load_steps=6 format=3 uid="uid://dibqfutwftm8j"]
 
-[ext_resource type="Script" path="res://mic test.gd" id="1_36edp"]
+[ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="1_36edp"]
 [ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-tiny.en.bin" id="2_bbq8o"]
 [ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="3_l8fmi"]
 [ext_resource type="Script" path="res://test_display.gd" id="3_r84sk"]
@@ -19,9 +19,6 @@ offset_right = 200.0
 offset_bottom = 219.5
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_36edp")
-language_model = ExtResource("2_bbq8o")
-use_gpu = true
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_rhq81")
@@ -62,10 +59,6 @@ layout_mode = 2
 text = "Add a language model or download one. Then, set it as language_model.
 Takes sample every 5s and transcribes below."
 
-[node name="Timer" type="Timer" parent="."]
-unique_name_in_owner = true
-autostart = true
-
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
 
@@ -79,7 +72,11 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Stop"
 
-[connection signal="update_transcribed_msg" from="." to="Panel/Label" method="_on_capture_stream_to_text_update_transcribed_msg"]
-[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]
-[connection signal="pressed" from="HBoxContainer/StartButton" to="." method="_on_start_button_pressed"]
-[connection signal="pressed" from="HBoxContainer/StopButton" to="." method="_on_stop_button_pressed"]
+[node name="CaptureStreamToText" type="Node" parent="."]
+script = ExtResource("1_36edp")
+language_model = ExtResource("2_bbq8o")
+use_gpu = true
+
+[connection signal="pressed" from="HBoxContainer/StartButton" to="CaptureStreamToText" method="start_listen"]
+[connection signal="pressed" from="HBoxContainer/StopButton" to="CaptureStreamToText" method="stop_listen"]
+[connection signal="update_transcribed_msg" from="CaptureStreamToText" to="Panel/Label" method="_on_capture_stream_to_text_update_transcribed_msg"]

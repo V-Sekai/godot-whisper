@@ -22,7 +22,6 @@ public:
 		return file;
 	}
 
-	// Error load_file(const String &p_path);
 	PackedByteArray get_content();
 	WhisperResource() {}
 	~WhisperResource() {}

@@ -1,11 +1,10 @@
 @tool
 class_name CaptureStreamToText
-extends SpeechToText
-
-signal text_updated(total_time: float, text: String, new_text: String)
+extends Node
+signal update_transcribed_msg(index: int, is_partial:bool, text: String)
 
 func _get_configuration_warnings():
-	if language_model == null:
+	if speech_to_text_singleton.language_model == null:
 		return ["You need a language model."]
 	else:
 		return []
@@ -40,50 +39,84 @@ func _http_request_completed(result, response_code, headers, body, file_path):
 	get:
 		return false
 @export_enum("tiny.en", "tiny", "base.en", "base", "small.en", "small", "medium.en", "medium", "large-v1", "large-v2", "large-v3") var language_model_to_download = "tiny.en"
-@export var keep_interval := 0.1
-@export var time_taken := 0.0
-@export var text := ""
-@export var new_text := ""
-@export var max_tokens := 30
-@export var tokens: Array
 @onready var idx = AudioServer.get_bus_index("Record")
 @onready var effect_capture := AudioServer.get_bus_effect(idx, 0) as AudioEffectCapture
 var buffer_full : PackedVector2Array
 var url := "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin?download=true"
 
+var last_index = 0
+
+var speech_to_text_singleton:
+	get:
+		return Engine.get_singleton("SpeechToText")
+
+@export_enum("Auto","English","Chinese","German","Spanish","Russian","Korean","French","Japanese","Portuguese","Turkish","Polish","Catalan","Dutch","Arabic","Swedish","Italian","Indonesian","Hindi","Finnish","Vietnamese","Hebrew","Ukrainian","Greek","Malay","Czech","Romanian","Danish","Hungarian","Tamil","Norwegian","Thai","Urdu","Croatian","Bulgarian","Lithuanian","Latin","Maori","Malayalam","Welsh","Slovak","Telugu","Persian","Latvian","Bengali","Serbian","Azerbaijani","Slovenian","Kannada","Estonian","Macedonian","Breton","Basque","Icelandic","Armenian","Nepali","Mongolian","Bosnian","Kazakh","Albanian","Swahili","Galician","Marathi","Punjabi","Sinhala","Khmer","Shona","Yoruba","Somali","Afrikaans","Occitan","Georgian","Belarusian","Tajik","Sindhi","Gujarati","Amharic","Yiddish","Lao","Uzbek","Faroese","Haitian_Creole","Pashto","Turkmen","Nynorsk","Maltese","Sanskrit","Luxembourgish","Myanmar","Tibetan","Tagalog","Malagasy","Assamese","Tatar","Hawaiian","Lingala","Hausa","Bashkir","Javanese","Sundanese","Cantonese") var language:int = 1:
+	get:
+		return speech_to_text_singleton.get_language()
+	set(val):
+		speech_to_text_singleton.set_language(val)
+
+@export var language_model: WhisperResource:
+	get:
+		return speech_to_text_singleton.get_language_model()
+	set(val):
+		speech_to_text_singleton.set_language_model(val)
+		
+@export var use_gpu: bool:
+	get:
+		return speech_to_text_singleton.is_use_gpu()
+	set(val):
+		speech_to_text_singleton.set_use_gpu(val)
+
 func _ready():
 	if Engine.is_editor_hint():
 		return
-	if effect_capture.buffer_length < audio_duration:
-		push_warning("buffer_length smaller than duration_ms.")
-		audio_duration = effect_capture.buffer_length
+	add_timer()
+	speech_to_text_singleton.connect("update_transcribed_msgs", self.update_transcribed_msgs_func)
 
+func add_timer():
+	var timer_node = Timer.new()
+	timer_node.one_shot = false
+	timer_node.autostart = true
+	timer_node.wait_time = 1
+	add_child(timer_node)
+	timer_node.connect("timeout",self._on_timer_timeout)
 
-func tokens_to_text(speech_tokens):
-	var computed_text = ""
-	for token in speech_tokens:
-		computed_text += token["text"]
-	return computed_text
-
-func _process(_delta):
+func _on_timer_timeout():
 	if Engine.is_editor_hint():
 		return
 	var buffer: PackedVector2Array = effect_capture.get_buffer(effect_capture.get_frames_available())
-	buffer_full.append_array(buffer)
-	var mix_rate : int = ProjectSettings.get_setting("audio/driver/mix_rate")
-	var total_len := int(mix_rate * audio_duration)
-	var keep_len := int(mix_rate * keep_interval)
-	if buffer_full.size() > total_len:
-		var buffer_copy = buffer_full.duplicate()
-		buffer_full = buffer_full.slice(buffer_full.size() - keep_len, buffer_full.size())
-		buffer_copy = buffer_copy.slice(buffer_copy.size() - total_len, buffer_copy.size())
+	if is_running:
+		speech_to_text_singleton.add_audio_buffer(buffer)
+
+func update_transcribed_msgs_func(transcribed_msgs):
+	for transcribed_msg  in transcribed_msgs:
+		var cur_text = transcribed_msg["text"]
+		var token_index = cur_text.rfind("]")
+		if token_index!=-1:
+			cur_text = cur_text.substr(token_index+1)
 		
-		var start_time := Time.get_ticks_msec()
-		var new_tokens : Array= transcribe(buffer_copy)
-		time_taken = (Time.get_ticks_msec() - start_time)* 0.001
-		new_tokens = new_tokens.filter(func (token): return !("[" in token["text"]) && !("<" in token["text"]))
-		text = tokens_to_text(tokens)
-		new_text = tokens_to_text(new_tokens)
-		tokens.append_array(new_tokens)
-		text_updated.emit(time_taken, text, new_text)
+		token_index = cur_text.find("<")
+		if token_index!=-1:
+			cur_text = cur_text.substr(0,token_index)
+		
+		if transcribed_msg["is_partial"]==false:
+			if cur_text.ends_with("?") or cur_text.ends_with(",") or cur_text.ends_with("."):
+				pass
+			else:
+				cur_text = cur_text + "."
+		emit_signal("update_transcribed_msg", last_index, transcribed_msg["is_partial"], cur_text)
+		if transcribed_msg["is_partial"]==false:
+			last_index+=1
+
+
+var is_running = false
+func start_listen():
+	speech_to_text_singleton.start_listen()
+	is_running = true
+
+func stop_listen():
+	is_running = false
+	speech_to_text_singleton.stop_listen()
+	
 
