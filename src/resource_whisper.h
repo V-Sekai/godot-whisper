@@ -10,13 +10,20 @@ class WhisperResource : public Resource {
 
 protected:
 	static void _bind_methods() {}
-
-private:
-	PackedByteArray content;
+	String file;
 
 public:
-	Error load_file(const String &p_path);
-	PackedByteArray get_content() { return content; }
+	void set_file(const String &p_file) {
+		file = p_file;
+		emit_changed();
+	}
+
+	String get_file() {
+		return file;
+	}
+
+	// Error load_file(const String &p_path);
+	PackedByteArray get_content();
 	WhisperResource() {}
 	~WhisperResource() {}
 };

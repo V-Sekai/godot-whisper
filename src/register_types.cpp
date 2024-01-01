@@ -8,6 +8,8 @@
 
 static Ref<ResourceFormatLoaderWhisper> whisper_loader;
 
+static SpeechToText *SpeechToTextPtr;
+
 void initialize_whisper_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
@@ -17,12 +19,18 @@ void initialize_whisper_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_CLASS(ResourceFormatLoaderWhisper);
 	whisper_loader.instantiate();
 	ResourceLoader::get_singleton()->add_resource_format_loader(whisper_loader);
+
+	SpeechToTextPtr = memnew(SpeechToText);
+	Engine::get_singleton()->register_singleton("SpeechToText", SpeechToText::get_singleton());
 }
 
 void uninitialize_whisper_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
+	Engine::get_singleton()->unregister_singleton("SpeechToText");
+	memdelete(SpeechToTextPtr);
+
 	ResourceLoader::get_singleton()->remove_resource_format_loader(whisper_loader);
 	whisper_loader.unref();
 }
