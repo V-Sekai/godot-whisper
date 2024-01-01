@@ -10,6 +10,7 @@
 #include <godot_cpp/core/mutex_lock.hpp>
 #include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/variant/array.hpp>
+#include <godot_cpp/variant/callable.hpp>
 
 #include <libsamplerate/src/samplerate.h>
 #include <whisper.cpp/whisper.h>

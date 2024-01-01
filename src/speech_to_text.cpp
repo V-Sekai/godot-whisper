@@ -113,7 +113,9 @@ SpeechToText::SpeechToText() {
 void SpeechToText::start_listen() {
 	if (is_running == false) {
 		is_running = true;
-		worker.start(Callable(this, "run").bind(this), Thread::Priority::PRIORITY_NORMAL);
+		Callable call_run = Callable(this, "run");
+		call_run = call_run.bind(this);
+		worker.start(call_run, Thread::Priority::PRIORITY_NORMAL);
 		t_last_iter = Time::get_singleton()->get_ticks_msec();
 	}
 }
