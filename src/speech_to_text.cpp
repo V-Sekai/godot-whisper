@@ -1,4 +1,7 @@
 #include "speech_to_text.h"
+#include <libsamplerate/src/samplerate.h>
+#include <atomic>
+#include <cmath>
 #include <godot_cpp/classes/audio_server.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/time.hpp>
@@ -6,16 +9,14 @@
 #include <godot_cpp/core/memory.hpp>
 #include <godot_cpp/variant/packed_vector2_array.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
-#include <thread>
-
-#include <corecrt_math_defines.h>
-#include <libsamplerate/src/samplerate.h>
-#include <atomic>
-#include <cmath>
 #include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 uint32_t _resample_audio_buffer(
 		const float *p_src, const uint32_t p_src_frame_count,
