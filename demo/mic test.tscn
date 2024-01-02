@@ -1,35 +1,37 @@
 [gd_scene load_steps=6 format=3 uid="uid://dibqfutwftm8j"]
 
-[ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="1_gio36"]
-[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-base.bin" id="1_rqjke"]
-[ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="2_ljgdb"]
+[ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="1_36edp"]
+[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-tiny.en.bin" id="2_bbq8o"]
+[ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="3_l8fmi"]
 [ext_resource type="Script" path="res://test_display.gd" id="3_r84sk"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_rhq81"]
 
-[node name="CaptureStreamToText" type="Node2D"]
+[node name="CaptureStreamToText" type="VBoxContainer"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -219.5
+offset_right = 200.0
+offset_bottom = 219.5
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_rhq81")
 bus = &"Record"
 
-[node name="SpeechToText" type="SpeechToText" parent="."]
-language_model = ExtResource("1_rqjke")
-audio_duration = 4
-script = ExtResource("1_gio36")
-language_model_to_download = "base"
-
 [node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("2_ljgdb")
+stream = ExtResource("3_l8fmi")
 autoplay = true
 bus = &"Record"
 
 [node name="Panel" type="Panel" parent="."]
 custom_minimum_size = Vector2(400, 400)
-offset_left = 396.0
-offset_top = 172.0
-offset_right = 796.0
-offset_bottom = 572.0
+layout_mode = 2
 
 [node name="Label" type="RichTextLabel" parent="Panel"]
 custom_minimum_size = Vector2(400, 400)
@@ -52,12 +54,29 @@ Time to process: 0s
 ..."
 script = ExtResource("3_r84sk")
 
-[node name="Label" type="Label" parent="."]
-offset_left = 329.0
-offset_top = 85.0
-offset_right = 894.0
-offset_bottom = 134.0
+[node name="Label" type="RichTextLabel" parent="."]
+layout_mode = 2
 text = "Add a language model or download one. Then, set it as language_model.
 Takes sample every 5s and transcribes below."
 
-[connection signal="text_updated" from="SpeechToText" to="Panel/Label" method="_on_speech_to_text_text_updated"]
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="StartButton" type="Button" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Start"
+
+[node name="StopButton" type="Button" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Stop"
+
+[node name="CaptureStreamToText" type="Node" parent="."]
+script = ExtResource("1_36edp")
+language_model = ExtResource("2_bbq8o")
+use_gpu = true
+
+[connection signal="pressed" from="HBoxContainer/StartButton" to="CaptureStreamToText" method="start_listen"]
+[connection signal="pressed" from="HBoxContainer/StopButton" to="CaptureStreamToText" method="stop_listen"]
+[connection signal="update_transcribed_msg" from="CaptureStreamToText" to="Panel/Label" method="_on_capture_stream_to_text_update_transcribed_msg"]

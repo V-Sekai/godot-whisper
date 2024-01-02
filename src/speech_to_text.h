@@ -12,7 +12,18 @@
 #include <libsamplerate/src/samplerate.h>
 #include <whisper.cpp/whisper.h>
 
+#include <atomic>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <vector>
+
 using namespace godot;
+
+struct transcribed_msg {
+	std::string text;
+	bool is_partial;
+};
 
 class SpeechToText : public Node {
 public:
@@ -120,6 +131,8 @@ public:
 		Cantonese
 	};
 
+	static SpeechToText *singleton;
+
 private:
 	GDCLASS(SpeechToText, Node);
 
@@ -151,13 +164,9 @@ private:
 	Language language = English;
 	Ref<WhisperResource> model;
 	whisper_params params;
+	whisper_full_params full_params;
 	whisper_context_params context_parameters{ true };
-	Vector<whisper_token> prompt_tokens;
 	whisper_context *context_instance = nullptr;
-	int buffer_len;
-	float *buffer_float;
-	float *resampled_float;
-	float audio_duration = 5;
 
 protected:
 	static void _bind_methods();
@@ -166,24 +175,35 @@ public:
 	enum {
 		SPEECH_SETTING_SAMPLE_RATE = 16000,
 	};
-	Array transcribe(PackedVector2Array buffer);
+	static SpeechToText *get_singleton();
 	std::string language_to_code(Language language);
 	void set_language(int p_language);
 	int get_language();
 	void set_language_model(Ref<WhisperResource> p_model);
 	_FORCE_INLINE_ Ref<WhisperResource> get_language_model() { return model; }
-	void set_audio_duration(float audio_duration);
-	_FORCE_INLINE_ int32_t get_audio_duration() { return audio_duration; }
-	_FORCE_INLINE_ void set_use_gpu(bool use_gpu) { context_parameters.use_gpu = use_gpu; }
+	void set_use_gpu(bool use_gpu);
 	_FORCE_INLINE_ bool is_use_gpu() { return context_parameters.use_gpu; }
 	SpeechToText();
 	~SpeechToText();
+
+	std::atomic<bool> is_running;
+	std::vector<float> s_queued_pcmf32;
+	std::vector<transcribed_msg> s_transcribed_msgs;
+	std::mutex s_mutex; // for accessing shared variables from both main thread and worker thread
+	std::thread worker;
+	void run();
+	std::chrono::time_point<std::chrono::high_resolution_clock> t_last_iter;
 
 	_FORCE_INLINE_ void set_entropy_threshold(float entropy_threshold) { params.entropy_threshold = entropy_threshold; }
 	_FORCE_INLINE_ float get_entropy_threshold() { return params.entropy_threshold; }
 
 	_FORCE_INLINE_ void set_max_context_size(int32_t max_context_size) { params.max_context_size = max_context_size; }
 	_FORCE_INLINE_ int32_t get_max_context_size() { return params.max_context_size; }
+	void add_audio_buffer(PackedVector2Array buffer);
+	std::vector<transcribed_msg> get_transcribed();
+	void start_listen();
+	void stop_listen();
+	void load_model();
 };
 
 #endif // SPEECH_TO_TEXT_H
