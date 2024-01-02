@@ -395,7 +395,6 @@ void SpeechToText::add_audio_buffer(PackedVector2Array buffer) {
 	memfree(resampled_float);
 }
 
-
 /** Get newly transcribed text. */
 std::vector<transcribed_msg> SpeechToText::get_transcribed() {
 	std::vector<transcribed_msg> transcribed;
