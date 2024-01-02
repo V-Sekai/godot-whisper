@@ -1,15 +1,16 @@
 @tool
+## Node that does transcribing of real time audio. It requires a bus with a [AudioEffectCapture] and a [WhisperResource] language model.
 class_name CaptureStreamToText
 extends Node
 signal update_transcribed_msg(index: int, is_partial:bool, text: String)
 
 func _get_configuration_warnings():
-	if speech_to_text_singleton.language_model == null:
+	if _speech_to_text_singleton.language_model == null:
 		return ["You need a language model."]
 	else:
 		return []
 
-func do_download():
+func _do_download():
 	var http_request = HTTPRequest.new()
 	add_child(http_request)
 	http_request.use_threads = true
@@ -32,49 +33,56 @@ func _http_request_completed(result, response_code, headers, body, file_path):
 	ResourceLoader.load(file_path, "WhisperResource", 2)
 	print("Download successful. Check " + file_path + ". If file is not there, alt tab or restart editor.")
 
+## The record bus has to have a AudioEffectCapture at index specified by [member audio_effect_capture_index]
+@export var record_bus := "Record"
+## The index where the [AudioEffectCapture] is located at in the [member record_bus]
+@export var audio_effect_capture_index := 0
+## Download the model specified in the [member language_model_to_download]
 @export var download := false:
 	set(x):
-		do_download()
-		pass
+		_do_download()
 	get:
 		return false
+## What language model to download.
 @export_enum("tiny.en", "tiny", "base.en", "base", "small.en", "small", "medium.en", "medium", "large-v1", "large-v2", "large-v3") var language_model_to_download = "tiny.en"
-@onready var idx = AudioServer.get_bus_index("Record")
-@onready var effect_capture := AudioServer.get_bus_effect(idx, 0) as AudioEffectCapture
-var buffer_full : PackedVector2Array
-var url := "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin?download=true"
 
-var last_index = 0
+@onready var _idx = AudioServer.get_bus_index(record_bus)
+@onready var _effect_capture := AudioServer.get_bus_effect(_idx, audio_effect_capture_index) as AudioEffectCapture
 
-var speech_to_text_singleton:
+var _last_index = 0
+
+var _speech_to_text_singleton:
 	get:
 		return Engine.get_singleton("SpeechToText")
 
+## What language you would want to transcribe from.
 @export_enum("Auto","English","Chinese","German","Spanish","Russian","Korean","French","Japanese","Portuguese","Turkish","Polish","Catalan","Dutch","Arabic","Swedish","Italian","Indonesian","Hindi","Finnish","Vietnamese","Hebrew","Ukrainian","Greek","Malay","Czech","Romanian","Danish","Hungarian","Tamil","Norwegian","Thai","Urdu","Croatian","Bulgarian","Lithuanian","Latin","Maori","Malayalam","Welsh","Slovak","Telugu","Persian","Latvian","Bengali","Serbian","Azerbaijani","Slovenian","Kannada","Estonian","Macedonian","Breton","Basque","Icelandic","Armenian","Nepali","Mongolian","Bosnian","Kazakh","Albanian","Swahili","Galician","Marathi","Punjabi","Sinhala","Khmer","Shona","Yoruba","Somali","Afrikaans","Occitan","Georgian","Belarusian","Tajik","Sindhi","Gujarati","Amharic","Yiddish","Lao","Uzbek","Faroese","Haitian_Creole","Pashto","Turkmen","Nynorsk","Maltese","Sanskrit","Luxembourgish","Myanmar","Tibetan","Tagalog","Malagasy","Assamese","Tatar","Hawaiian","Lingala","Hausa","Bashkir","Javanese","Sundanese","Cantonese") var language:int = 1:
 	get:
-		return speech_to_text_singleton.get_language()
+		return _speech_to_text_singleton.get_language()
 	set(val):
-		speech_to_text_singleton.set_language(val)
+		_speech_to_text_singleton.set_language(val)
 
+## The language model downloaded.
 @export var language_model: WhisperResource:
 	get:
-		return speech_to_text_singleton.get_language_model()
+		return _speech_to_text_singleton.get_language_model()
 	set(val):
-		speech_to_text_singleton.set_language_model(val)
-		
-@export var use_gpu: bool:
+		_speech_to_text_singleton.set_language_model(val)
+
+## If we should use gpu for transcribing.
+@export var use_gpu := true :
 	get:
-		return speech_to_text_singleton.is_use_gpu()
+		return _speech_to_text_singleton.is_use_gpu()
 	set(val):
-		speech_to_text_singleton.set_use_gpu(val)
+		_speech_to_text_singleton.set_use_gpu(val)
 
 func _ready():
 	if Engine.is_editor_hint():
 		return
-	add_timer()
-	speech_to_text_singleton.connect("update_transcribed_msgs", self.update_transcribed_msgs_func)
+	_add_timer()
+	_speech_to_text_singleton.connect("update_transcribed_msgs", self._update_transcribed_msgs_func)
 
-func add_timer():
+func _add_timer():
 	var timer_node = Timer.new()
 	timer_node.one_shot = false
 	timer_node.autostart = true
@@ -85,11 +93,11 @@ func add_timer():
 func _on_timer_timeout():
 	if Engine.is_editor_hint():
 		return
-	var buffer: PackedVector2Array = effect_capture.get_buffer(effect_capture.get_frames_available())
+	var buffer: PackedVector2Array = _effect_capture.get_buffer(_effect_capture.get_frames_available())
 	if is_running:
-		speech_to_text_singleton.add_audio_buffer(buffer)
+		_speech_to_text_singleton.add_audio_buffer(buffer)
 
-func update_transcribed_msgs_func(transcribed_msgs):
+func _update_transcribed_msgs_func(transcribed_msgs):
 	for transcribed_msg  in transcribed_msgs:
 		var cur_text = transcribed_msg["text"]
 		var token_index = cur_text.rfind("]")
@@ -105,18 +113,21 @@ func update_transcribed_msgs_func(transcribed_msgs):
 				pass
 			else:
 				cur_text = cur_text + "."
-		emit_signal("update_transcribed_msg", last_index, transcribed_msg["is_partial"], cur_text)
+		emit_signal("update_transcribed_msg", _last_index, transcribed_msg["is_partial"], cur_text)
 		if transcribed_msg["is_partial"]==false:
-			last_index+=1
+			_last_index+=1
 
-
+## Is the transcribing thread running? Start it with [method start_listen]
 var is_running = false
-func start_listen():
-	speech_to_text_singleton.start_listen()
-	is_running = true
 
+## Starts listening to audio and transcribing.
+func start_listen():
+	_speech_to_text_singleton.start_listen()
+	is_running = true
+	
+## Stop listening to audio and transcribing.
 func stop_listen():
 	is_running = false
-	speech_to_text_singleton.stop_listen()
+	_speech_to_text_singleton.stop_listen()
 	
 
