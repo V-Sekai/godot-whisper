@@ -81,7 +81,7 @@ jobs:
 
 
       - name: 🔗 GDExtension Build
-        uses: ughuuu/godot-cpp-template/build@add-more-stuff/options-to-build
+        uses: ughuuu/godot-cpp-template/.github/actions/build@add-more-stuff/options-to-build
         with:
           platform: ${{ matrix.platform }}
           arch: ${{ matrix.arch }}
