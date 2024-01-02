@@ -3,19 +3,20 @@
 
 #include "resource_whisper.h"
 
+#include <godot_cpp/classes/mutex.hpp>
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/thread.hpp>
+#include <godot_cpp/core/mutex_lock.hpp>
 #include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/variant/array.hpp>
+#include <godot_cpp/variant/callable.hpp>
 
 #include <libsamplerate/src/samplerate.h>
 #include <whisper.cpp/whisper.h>
 
 #include <atomic>
-#include <mutex>
 #include <string>
-#include <thread>
 #include <vector>
 
 using namespace godot;
@@ -189,10 +190,10 @@ public:
 	std::atomic<bool> is_running;
 	std::vector<float> s_queued_pcmf32;
 	std::vector<transcribed_msg> s_transcribed_msgs;
-	std::mutex s_mutex; // for accessing shared variables from both main thread and worker thread
-	std::thread worker;
+	Mutex s_mutex; // for accessing shared variables from both main thread and worker thread
+	Thread worker;
 	void run();
-	std::chrono::time_point<std::chrono::high_resolution_clock> t_last_iter;
+	int t_last_iter;
 
 	_FORCE_INLINE_ void set_entropy_threshold(float entropy_threshold) { params.entropy_threshold = entropy_threshold; }
 	_FORCE_INLINE_ float get_entropy_threshold() { return params.entropy_threshold; }
