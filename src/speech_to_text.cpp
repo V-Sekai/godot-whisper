@@ -491,7 +491,7 @@ void SpeechToText::run() {
 		{
 			std::lock_guard<std::mutex> lock(s_mutex);
 			if (this->s_queued_pcmf32.size() > 2 * n_samples_iter_threshold) {
-				fprintf(stderr, "\n\n%s: WARNING: too much audio is going to be processed, result may not come out in real time\n\n", __func__);
+				WARN_PRINT("Too much audio is going to be processed, result may not come out in real time");
 			}
 		}
 		{
@@ -500,14 +500,17 @@ void SpeechToText::run() {
 			this->s_queued_pcmf32.clear();
 		}
 
+		if (!this->context_instance) {
+			ERR_PRINT("Context instance is null");
+			continue;
+		}
 		{
 			int ret = whisper_full(this->context_instance, this->full_params, pcmf32.data(), pcmf32.size());
 			if (ret != 0) {
-				fprintf(stderr, "Failed to process audio, returned %d\n", ret);
+				ERR_PRINT("Failed to process audio, returned " + rtos(ret));
 				continue;
 			}
 		}
-
 		{
 			transcribed_msg msg;
 			const int n_segments = whisper_full_n_segments(this->context_instance);
