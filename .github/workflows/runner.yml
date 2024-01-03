@@ -83,9 +83,9 @@ jobs:
           platform: ${{ matrix.platform }}
           arch: ${{ matrix.arch }}
           godot-cpp-location: godot-cpp
-          enable-double-precision-builds: true
-          enable-debug-builds: true
-          enable-clang-lint: false
+          enable-double-precision-builds: false
+          enable-debug-builds: false
+          enable-clang-lint: true
           lint-path: src
           bin-path: bin
       - name: Upload Artifact
