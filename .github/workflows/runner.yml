@@ -86,7 +86,7 @@ jobs:
           enable-double-precision-builds: false
           enable-debug-builds: false
           enable-clang-lint: true
-          lint-path: src
+          lint-path: src/**
           bin-path: bin
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
