@@ -51,9 +51,6 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0
-      - uses: RafikFarhad/clang-format-github-action@v3
-        with:
-          sources: "src/**/*.h,src/**/*.c,test/**/*.c"
 
       - uses: actions/checkout@v3
         with:
