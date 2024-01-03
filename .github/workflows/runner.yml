@@ -71,7 +71,7 @@ jobs:
         with:
           path: |
             OpenCL-SDK
-          key: __${{ runner.os }}-opencl-v2021.06.30__${{ hashFiles('**/CMakeLists.txt') }}
+          key: __${{ runner.os }}_${{ matrix.arch }}-opencl-v2021.06.30__${{ hashFiles('**/CMakeLists.txt') }}
           restore-keys: |
             __${{runner.os }}-opencl__
         if: matrix.platform == 'windows'
