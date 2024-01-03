@@ -63,6 +63,7 @@ jobs:
           repository: KhronosGroup/OpenCL-SDK
           submodules: true
           fetch-depth: 0
+        if: matrix.platform == 'windows'
 
       - name: Check OpenCL Cache
         id: opencl_cache
@@ -77,9 +78,15 @@ jobs:
 
       - name: Build OpenCL
         run: |
-          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF
+          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF -A Win32
           cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
-        if: matrix.platform == 'windows'
+        if: matrix.platform == 'windows' and matri.arch == 'x86_32'
+
+      - name: Build OpenCL
+        run: |
+          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF -A x64
+          cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
+        if: matrix.platform == 'windows' and matri.arch == 'x86_64'
 
 
       - name: 🔗 GDExtension Build
