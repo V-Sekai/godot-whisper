@@ -1,9 +1,9 @@
 [gd_scene load_steps=6 format=3 uid="uid://dibqfutwftm8j"]
 
 [ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="1_36edp"]
-[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-tiny.en.bin" id="2_bbq8o"]
 [ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="3_l8fmi"]
 [ext_resource type="Script" path="res://test_display.gd" id="3_r84sk"]
+[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-base.en.bin" id="4_yv420"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_rhq81"]
 
@@ -74,8 +74,8 @@ text = "Stop"
 
 [node name="CaptureStreamToText" type="Node" parent="."]
 script = ExtResource("1_36edp")
-language_model = ExtResource("2_bbq8o")
-use_gpu = true
+language_model_to_download = "base.en"
+language_model = ExtResource("4_yv420")
 
 [connection signal="pressed" from="HBoxContainer/StartButton" to="CaptureStreamToText" method="start_listen"]
 [connection signal="pressed" from="HBoxContainer/StopButton" to="CaptureStreamToText" method="stop_listen"]

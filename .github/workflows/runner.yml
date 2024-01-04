@@ -1,4 +1,4 @@
-name: 🔗 Builds
+name: Build GDExtension
 on: 
   push:
   workflow_dispatch:
@@ -7,39 +7,102 @@ concurrency:
   group: ci-${{github.actor}}-${{github.head_ref || github.run_number}}-${{github.ref}}
   cancel-in-progress: true
 
+env:
+   OpenCL_ROOT: "${{ github.workspace }}/OpenCL-SDK"
+   OpenCL_INCLUDE_DIR: "${{ github.workspace }}/OpenCL-SDK/build/install/include"
+   OpenCL_LIBRARY: "${{ github.workspace }}/OpenCL-SDK/install/lib/OpenCL.lib"
+  
 jobs:
-  static-checks:
-    name: 📊 Static checks
-    uses: ./.github/workflows/static_checks.yml
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux
+            arch: x86_64
+            os: ubuntu-20.04
+          - platform: windows
+            arch: x86_32
+            os: windows-latest
+          - platform: windows
+            arch: x86_64
+            os: windows-latest
+          - platform: macos
+            arch: universal
+            os: macos-latest
+          - platform: android
+            arch: arm64
+            os: ubuntu-20.04
+          - platform: android
+            arch: arm32
+            os: ubuntu-20.04
+          - platform: android
+            arch: x86_64
+            os: ubuntu-20.04
+          - platform: android
+            arch: x86_32
+            os: ubuntu-20.04
+          - platform: ios
+            arch: arm64
+            os: macos-latest
+          - platform: web
+            arch: wasm32
+            os: ubuntu-20.04
 
-  android-build:
-    name: 🤖 Android
-    needs: static-checks
-    uses: ./.github/workflows/android_builds.yml
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
 
-  ios-build:
-    name: 🍏 iOS
-    needs: static-checks
-    uses: ./.github/workflows/ios_builds.yml
+      - uses: actions/checkout@v3
+        with:
+          path: ${{ github.workspace }}/OpenCL-SDK
+          repository: KhronosGroup/OpenCL-SDK
+          submodules: true
+          fetch-depth: 0
+        if: matrix.platform == 'windows' || matrix.platform == 'linux'
 
-  linux-build:
-    name: 🐧 Linux
-    needs: static-checks
-    uses: ./.github/workflows/linux_builds.yml
+      - name: Check OpenCL Cache
+        id: opencl_cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            OpenCL-SDK
+          key: __${{ runner.os }}_${{ matrix.arch }}-opencl-v2021.06.30__${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            __${{runner.os }}-opencl__
+        if: matrix.platform == 'windows' || matrix.platform == 'linux'
 
-  macos-build:
-    name: 🍎 macOS
-    needs: static-checks
-    uses: ./.github/workflows/macos_builds.yml
-    secrets: inherit
+      - name: Build OpenCL
+        run: |
+          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF -A Win32
+          cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
+        if: matrix.platform == 'windows' && matrix.arch == 'x86_32'
 
-  windows-build:
-    name: 🏁 Windows
-    needs: static-checks
-    uses: ./.github/workflows/windows_builds.yml
+      - name: Build OpenCL
+        run: |
+          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF -A x64
+          cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
+        if: (matrix.platform == 'windows' || matrix.platform == 'linux' || matrix.platform == 'android') && matrix.arch == 'x86_64'
 
-# TODO reenable
-#  web-build:
-#    name: 🌐 Web Builds
-#    needs: static-checks
-#    uses: ./.github/workflows/web_builds.yml
+
+      - name: 🔗 GDExtension Build
+        uses: ughuuu/godot-cpp-template/.github/actions/build@add-more-stuff/options-to-build
+        with:
+          platform: ${{ matrix.platform }}
+          arch: ${{ matrix.arch }}
+          godot-cpp-location: godot-cpp
+          enable-double-precision-builds: false
+          enable-debug-builds: false
+          enable-clang-lint: true
+          lint-path: src/**
+          bin-path: bin
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: GDExtension
+          path: |
+            ${{ github.workspace }}/bin/**
