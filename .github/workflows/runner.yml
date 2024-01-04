@@ -63,7 +63,7 @@ jobs:
           repository: KhronosGroup/OpenCL-SDK
           submodules: true
           fetch-depth: 0
-        if: matrix.platform == 'windows'
+        if: matrix.platform == 'windows' || matrix.platform == 'linux'
 
       - name: Check OpenCL Cache
         id: opencl_cache
@@ -74,7 +74,7 @@ jobs:
           key: __${{ runner.os }}_${{ matrix.arch }}-opencl-v2021.06.30__${{ hashFiles('**/CMakeLists.txt') }}
           restore-keys: |
             __${{runner.os }}-opencl__
-        if: matrix.platform == 'windows'
+        if: matrix.platform == 'windows' || matrix.platform == 'linux'
 
       - name: Build OpenCL
         run: |
