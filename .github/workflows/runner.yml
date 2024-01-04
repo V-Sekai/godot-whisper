@@ -86,7 +86,7 @@ jobs:
         run: |
           cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF -A x64
           cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
-        if: matrix.platform == 'windows' && matrix.arch == 'x86_64'
+        if: (matrix.platform == 'windows' || matrix.platform == 'linux' || matrix.platform == 'android') && matrix.arch == 'x86_64'
 
 
       - name: 🔗 GDExtension Build
