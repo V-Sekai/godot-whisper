@@ -23,9 +23,9 @@ uint32_t _resample_audio_buffer(
 		src_data.data_out = p_dst;
 
 		src_data.input_frames = p_src_frame_count;
-		src_data.output_frames = p_src_frame_count;
-
 		src_data.src_ratio = (double)p_target_samplerate / (double)p_src_samplerate;
+		src_data.output_frames = int(p_src_frame_count * src_data.src_ratio);
+
 		src_data.end_of_input = 0;
 		int error = src_simple(&src_data, SRC_SINC_BEST_QUALITY, 1);
 		if (error != 0) {
