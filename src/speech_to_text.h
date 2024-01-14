@@ -140,27 +140,20 @@ private:
 	struct whisper_params {
 		int32_t n_threads = MIN(4, (int32_t)OS::get_singleton()->get_processor_count());
 		int32_t duration_ms = 5000;
-		int32_t capture_id = -1;
 		int32_t max_tokens = 32;
-		int32_t audio_ctx = 0;
 
-		float vad_thold = 0.6f;
-		float freq_thold = 100.0f;
+		float vad_thold = 0.3f;
+		float freq_thold = 200.0f;
 
 		bool speed_up = false;
 		bool translate = false;
 		bool no_fallback = false;
-		bool print_special = false;
-		bool no_context = true;
 		bool no_timestamps = false;
-		bool diarize = false;
 
 		std::string language = "en";
 		std::string model = "./addons/godot_whisper/models/ggml-tiny.en.bin";
-		std::string fname_out;
 
 		float entropy_threshold = 2.8f;
-		int32_t max_context_size = 224;
 	};
 	Language language = English;
 	Ref<WhisperResource> model;
@@ -168,6 +161,7 @@ private:
 	whisper_full_params full_params;
 	whisper_context_params context_parameters{ true };
 	whisper_context *context_instance = nullptr;
+	int t_last_iter;
 
 protected:
 	static void _bind_methods();
@@ -182,7 +176,7 @@ public:
 	int get_language();
 	void set_language_model(Ref<WhisperResource> p_model);
 	_FORCE_INLINE_ Ref<WhisperResource> get_language_model() { return model; }
-	void set_use_gpu(bool use_gpu);
+	_FORCE_INLINE_ void set_use_gpu(bool use_gpu);
 	_FORCE_INLINE_ bool is_use_gpu() { return context_parameters.use_gpu; }
 	SpeechToText();
 	~SpeechToText();
@@ -193,15 +187,35 @@ public:
 	Mutex s_mutex; // for accessing shared variables from both main thread and worker thread
 	Thread worker;
 	void run();
-	int t_last_iter;
 
 	_FORCE_INLINE_ void set_entropy_threshold(float entropy_threshold) { params.entropy_threshold = entropy_threshold; }
 	_FORCE_INLINE_ float get_entropy_threshold() { return params.entropy_threshold; }
 
-	_FORCE_INLINE_ void set_max_context_size(int32_t max_context_size) { params.max_context_size = max_context_size; }
-	_FORCE_INLINE_ int32_t get_max_context_size() { return params.max_context_size; }
+	_FORCE_INLINE_ void set_no_timestamps(bool no_timestamps) { params.no_timestamps = no_timestamps; }
+	_FORCE_INLINE_ bool is_no_timestamps() { return params.no_timestamps; }
+
+	_FORCE_INLINE_ void set_translate(bool translate) { params.translate = translate; }
+	_FORCE_INLINE_ bool is_translate() { return params.translate; }
+
+	_FORCE_INLINE_ void set_speed_up(bool speed_up) { params.speed_up = speed_up; }
+	_FORCE_INLINE_ bool is_speed_up() { return params.speed_up; }
+
+	_FORCE_INLINE_ void set_freq_thold(float freq_thold) { params.freq_thold = freq_thold; }
+	_FORCE_INLINE_ float get_freq_thold() { return params.freq_thold; }
+
+	_FORCE_INLINE_ void set_vad_thold(float vad_thold) { params.vad_thold = vad_thold; }
+	_FORCE_INLINE_ float get_vad_thold() { return params.vad_thold; }
+
+	_FORCE_INLINE_ void set_max_tokens(int max_tokens) { params.max_tokens = max_tokens; }
+	_FORCE_INLINE_ int get_max_tokens() { return params.max_tokens; }
+
+	_FORCE_INLINE_ void set_duration_ms(int duration_ms) { params.duration_ms = duration_ms; }
+	_FORCE_INLINE_ int get_duration_ms() { return params.duration_ms; }
+
+	_FORCE_INLINE_ void set_n_threads(int n_threads) { params.n_threads = n_threads; }
+	_FORCE_INLINE_ int get_n_threads() { return params.n_threads; }
+
 	void add_audio_buffer(PackedVector2Array buffer);
-	std::vector<transcribed_msg> get_transcribed();
 	void start_listen();
 	void stop_listen();
 	void load_model();

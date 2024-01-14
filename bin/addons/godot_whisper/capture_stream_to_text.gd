@@ -51,30 +51,85 @@ func _http_request_completed(result, response_code, headers, body, file_path):
 
 var _last_index = 0
 
-var _speech_to_text_singleton:
+var _speech_to_text_singleton: SpeechToText:
 	get:
 		return Engine.get_singleton("SpeechToText")
 
 ## What language you would want to transcribe from.
 @export_enum("Auto","English","Chinese","German","Spanish","Russian","Korean","French","Japanese","Portuguese","Turkish","Polish","Catalan","Dutch","Arabic","Swedish","Italian","Indonesian","Hindi","Finnish","Vietnamese","Hebrew","Ukrainian","Greek","Malay","Czech","Romanian","Danish","Hungarian","Tamil","Norwegian","Thai","Urdu","Croatian","Bulgarian","Lithuanian","Latin","Maori","Malayalam","Welsh","Slovak","Telugu","Persian","Latvian","Bengali","Serbian","Azerbaijani","Slovenian","Kannada","Estonian","Macedonian","Breton","Basque","Icelandic","Armenian","Nepali","Mongolian","Bosnian","Kazakh","Albanian","Swahili","Galician","Marathi","Punjabi","Sinhala","Khmer","Shona","Yoruba","Somali","Afrikaans","Occitan","Georgian","Belarusian","Tajik","Sindhi","Gujarati","Amharic","Yiddish","Lao","Uzbek","Faroese","Haitian_Creole","Pashto","Turkmen","Nynorsk","Maltese","Sanskrit","Luxembourgish","Myanmar","Tibetan","Tagalog","Malagasy","Assamese","Tatar","Hawaiian","Lingala","Hausa","Bashkir","Javanese","Sundanese","Cantonese") var language:int = 1:
 	get:
-		return _speech_to_text_singleton.get_language()
+		return _speech_to_text_singleton.language
 	set(val):
-		_speech_to_text_singleton.set_language(val)
+		_speech_to_text_singleton.language = val
 
 ## The language model downloaded.
 @export var language_model: WhisperResource:
 	get:
-		return _speech_to_text_singleton.get_language_model()
+		return _speech_to_text_singleton.language_model
 	set(val):
-		_speech_to_text_singleton.set_language_model(val)
+		_speech_to_text_singleton.language_model = val
 
 ## If we should use gpu for transcribing.
 @export var use_gpu := true :
 	get:
-		return _speech_to_text_singleton.is_use_gpu()
+		return _speech_to_text_singleton.use_gpu
 	set(val):
-		_speech_to_text_singleton.set_use_gpu(val)
+		_speech_to_text_singleton.use_gpu = val
+
+@export var duration_ms := 5000 :
+	get:
+		return _speech_to_text_singleton.duration_ms
+	set(val):
+		_speech_to_text_singleton.duration_ms = val
+
+@export var entropy_threshold := 2.8 :
+	get:
+		return _speech_to_text_singleton.entropy_threshold
+	set(val):
+		_speech_to_text_singleton.entropy_threshold = val
+
+@export var freq_thold := 200.0 :
+	get:
+		return _speech_to_text_singleton.freq_thold
+	set(val):
+		_speech_to_text_singleton.freq_thold = val
+
+@export var max_tokens := 32 :
+	get:
+		return _speech_to_text_singleton.max_tokens
+	set(val):
+		_speech_to_text_singleton.max_tokens = val
+
+@export var n_threads := 4 :
+	get:
+		return _speech_to_text_singleton.n_threads
+	set(val):
+		_speech_to_text_singleton.n_threads = val
+
+@export var no_timestamps := false :
+	get:
+		return _speech_to_text_singleton.no_timestamps
+	set(val):
+		_speech_to_text_singleton.no_timestamps = val
+
+@export var speed_up := false :
+	get:
+		return _speech_to_text_singleton.speed_up
+	set(val):
+		_speech_to_text_singleton.speed_up = val
+
+@export var translate := false :
+	get:
+		return _speech_to_text_singleton.translate
+	set(val):
+		_speech_to_text_singleton.translate = val
+
+
+@export var vad_thold := 0.3 :
+	get:
+		return _speech_to_text_singleton.vad_thold
+	set(val):
+		_speech_to_text_singleton.vad_thold = val
 
 func _ready():
 	if Engine.is_editor_hint():
