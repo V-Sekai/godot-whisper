@@ -2,7 +2,7 @@
 ## Node that does transcribing of real time audio. It requires a bus with a [AudioEffectCapture] and a [WhisperResource] language model.
 class_name CaptureStreamToText
 extends Node
-signal update_transcribed_msg(index: int, is_partial:bool, text: String)
+signal update_transcribed_msg(index: int, is_partial:bool, text: String, process_time: int)
 
 func _get_configuration_warnings():
 	if _speech_to_text_singleton.language_model == null:
@@ -76,12 +76,6 @@ var _speech_to_text_singleton: SpeechToText:
 	set(val):
 		_speech_to_text_singleton.use_gpu = val
 
-@export var duration_ms := 5000 :
-	get:
-		return _speech_to_text_singleton.duration_ms
-	set(val):
-		_speech_to_text_singleton.duration_ms = val
-
 @export var entropy_threshold := 2.8 :
 	get:
 		return _speech_to_text_singleton.entropy_threshold
@@ -105,12 +99,6 @@ var _speech_to_text_singleton: SpeechToText:
 		return _speech_to_text_singleton.n_threads
 	set(val):
 		_speech_to_text_singleton.n_threads = val
-
-@export var no_timestamps := false :
-	get:
-		return _speech_to_text_singleton.no_timestamps
-	set(val):
-		_speech_to_text_singleton.no_timestamps = val
 
 @export var speed_up := false :
 	get:
@@ -152,23 +140,28 @@ func _on_timer_timeout():
 	if is_running:
 		_speech_to_text_singleton.add_audio_buffer(buffer)
 
-func _update_transcribed_msgs_func(transcribed_msgs):
+func _remove_special_characters(message: String):
+	var special_characters = [ \
+		{ "start": "[", "end": "]" }, \
+		{ "start": "<", "end": ">" }]
+	for special_character in special_characters:
+		while(message.find(special_character["start"]) != -1):
+			var begin_character := message.find(special_character["start"])
+			var end_character := message.find(special_character["end"])
+			if end_character != -1:
+				message = message.substr(0, begin_character) + message.substr(end_character + 1)
+	return message
+
+func _update_transcribed_msgs_func(process_time_ms: int, transcribed_msgs: Array):
 	for transcribed_msg  in transcribed_msgs:
-		var cur_text = transcribed_msg["text"]
-		var token_index = cur_text.rfind("]")
-		if token_index!=-1:
-			cur_text = cur_text.substr(token_index+1)
-		
-		token_index = cur_text.find("<")
-		if token_index!=-1:
-			cur_text = cur_text.substr(0,token_index)
+		var cur_text = _remove_special_characters(transcribed_msg["text"])
 		
 		if transcribed_msg["is_partial"]==false:
 			if cur_text.ends_with("?") or cur_text.ends_with(",") or cur_text.ends_with("."):
 				pass
 			else:
 				cur_text = cur_text + "."
-		emit_signal("update_transcribed_msg", _last_index, transcribed_msg["is_partial"], cur_text)
+		update_transcribed_msg.emit(_last_index, transcribed_msg["is_partial"], cur_text, process_time_ms)
 		if transcribed_msg["is_partial"]==false:
 			_last_index+=1
 

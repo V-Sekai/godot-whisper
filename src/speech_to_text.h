@@ -139,7 +139,6 @@ private:
 
 	struct whisper_params {
 		int32_t n_threads = MIN(4, (int32_t)OS::get_singleton()->get_processor_count());
-		int32_t duration_ms = 5000;
 		int32_t max_tokens = 32;
 
 		float vad_thold = 0.3f;
@@ -148,7 +147,6 @@ private:
 		bool speed_up = false;
 		bool translate = false;
 		bool no_fallback = false;
-		bool no_timestamps = false;
 
 		std::string language = "en";
 		std::string model = "./addons/godot_whisper/models/ggml-tiny.en.bin";
@@ -191,9 +189,6 @@ public:
 	_FORCE_INLINE_ void set_entropy_threshold(float entropy_threshold) { params.entropy_threshold = entropy_threshold; }
 	_FORCE_INLINE_ float get_entropy_threshold() { return params.entropy_threshold; }
 
-	_FORCE_INLINE_ void set_no_timestamps(bool no_timestamps) { params.no_timestamps = no_timestamps; }
-	_FORCE_INLINE_ bool is_no_timestamps() { return params.no_timestamps; }
-
 	_FORCE_INLINE_ void set_translate(bool translate) { params.translate = translate; }
 	_FORCE_INLINE_ bool is_translate() { return params.translate; }
 
@@ -208,9 +203,6 @@ public:
 
 	_FORCE_INLINE_ void set_max_tokens(int max_tokens) { params.max_tokens = max_tokens; }
 	_FORCE_INLINE_ int get_max_tokens() { return params.max_tokens; }
-
-	_FORCE_INLINE_ void set_duration_ms(int duration_ms) { params.duration_ms = duration_ms; }
-	_FORCE_INLINE_ int get_duration_ms() { return params.duration_ms; }
 
 	_FORCE_INLINE_ void set_n_threads(int n_threads) { params.n_threads = n_threads; }
 	_FORCE_INLINE_ int get_n_threads() { return params.n_threads; }
