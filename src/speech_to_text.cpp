@@ -393,16 +393,6 @@ void SpeechToText::add_audio_buffer(PackedVector2Array buffer) {
 	s_mutex.unlock();
 }
 
-/** Get newly transcribed text. */
-std::vector<transcribed_msg> SpeechToText::get_transcribed() {
-	std::vector<transcribed_msg> transcribed;
-	s_mutex.lock();
-	transcribed = std::move(s_transcribed_msgs);
-	s_transcribed_msgs.clear();
-	s_mutex.unlock();
-	return transcribed;
-}
-
 /** Run Whisper in its own thread to not block the main thread. */
 void SpeechToText::run() {
 	SpeechToText *speech_to_text_obj = SpeechToText::get_singleton();
@@ -410,14 +400,15 @@ void SpeechToText::run() {
 	// See here for example https://github.com/ggerganov/whisper.cpp/blob/master/examples/stream/stream.cpp#L302
 	whisper_params.max_len = 1;
 	whisper_params.print_progress = false;
-	whisper_params.print_special = speech_to_text_obj->params.print_special;
+	whisper_params.print_special = false;
 	whisper_params.print_realtime = false;
-	whisper_params.duration_ms = speech_to_text_obj->params.duration_ms;
-	whisper_params.print_timestamps = true;
+	// This is set later on based on how much frames we can process
+	whisper_params.duration_ms = 0;
+	whisper_params.print_timestamps = false;
 	whisper_params.translate = speech_to_text_obj->params.translate;
 	whisper_params.single_segment = true;
 	whisper_params.no_timestamps = false;
-	whisper_params.token_timestamps = true;
+	whisper_params.token_timestamps = false;
 	whisper_params.max_tokens = speech_to_text_obj->params.max_tokens;
 	whisper_params.language = speech_to_text_obj->params.language.c_str();
 	whisper_params.n_threads = speech_to_text_obj->params.n_threads;
@@ -465,15 +456,15 @@ void SpeechToText::run() {
 
 	/* VAD parameters */
 	// The most recent 3s.
-	const int vad_window_s = 3;
+	const int vad_window_s = 5;
 	const int n_samples_vad_window = WHISPER_SAMPLE_RATE * vad_window_s;
 	// In VAD, compare the energy of the last 500ms to that of the total 3s.
 	const int vad_last_ms = 500;
 	// Keep the last 0.5s of an iteration to the next one for better
 	// transcription at begin/end.
 	const int n_samples_keep_iter = WHISPER_SAMPLE_RATE * 0.5;
-	const float vad_thold = 0.3f;
-	const float freq_thold = 200.0f;
+	const float vad_thold = speech_to_text_obj->params.vad_thold;
+	const float freq_thold = speech_to_text_obj->params.freq_thold;
 
 	/* Audio buffer */
 	std::vector<float> pcmf32;
@@ -484,7 +475,7 @@ void SpeechToText::run() {
 			speech_to_text_obj->s_mutex.lock();
 			if (speech_to_text_obj->s_queued_pcmf32.size() < n_samples_trigger) {
 				speech_to_text_obj->s_mutex.unlock();
-				OS::get_singleton()->delay_msec(10);
+				OS::get_singleton()->delay_msec(50);
 				continue;
 			}
 			speech_to_text_obj->s_mutex.unlock();
@@ -507,7 +498,9 @@ void SpeechToText::run() {
 			ERR_PRINT("Context instance is null");
 			continue;
 		}
+		float time_started = Time::get_singleton()->get_ticks_msec();
 		{
+			whisper_params.duration_ms = pcmf32.size() / WHISPER_SAMPLE_RATE * 1000.0f;
 			int ret = whisper_full(speech_to_text_obj->context_instance, speech_to_text_obj->full_params, pcmf32.data(), pcmf32.size());
 			if (ret != 0) {
 				ERR_PRINT("Failed to process audio, returned " + rtos(ret));
@@ -521,14 +514,16 @@ void SpeechToText::run() {
 				const int n_tokens = whisper_full_n_tokens(speech_to_text_obj->context_instance, i);
 				for (int j = 0; j < n_tokens; j++) {
 					auto token = whisper_full_get_token_data(speech_to_text_obj->context_instance, i, j);
+					auto text = whisper_full_get_token_text(speech_to_text_obj->context_instance, i, j);
 					// Idea from https://github.com/yum-food/TaSTT/blob/dbb2f72792e2af3ff220313f84bf76a9a1ddbeb4/Scripts/transcribe_v2.py#L457C17-L462C25
 					if (token.p > 0.6 && token.plog < -0.5) {
+						WARN_PRINT("Skipping token " + String::num(token.p) + " " + String::num(token.plog) + " " + text);
 						continue;
 					}
 					if (token.plog < -1.0) {
-						continue;
+						//WARN_PRINT("Skipping token low plog " + String::num(token.p) + " " + String::num(token.plog) + " " + text);
+						//continue;
 					}
-					auto text = whisper_full_get_token_text(speech_to_text_obj->context_instance, i, j);
 					msg.text += text;
 				}
 			}
@@ -565,7 +560,7 @@ void SpeechToText::run() {
 			} else {
 				msg.is_partial = true;
 			}
-
+			float time_end = Time::get_singleton()->get_ticks_msec() - time_started;
 			speech_to_text_obj->s_mutex.lock();
 			s_transcribed_msgs.insert(s_transcribed_msgs.end(), std::move(msg));
 
@@ -581,7 +576,7 @@ void SpeechToText::run() {
 				cur_transcribed_msg["text"] = cur_text.utf8(transcribed[i].text.c_str());
 				ret.push_back(cur_transcribed_msg);
 			};
-			speech_to_text_obj->call_deferred("emit_signal", "update_transcribed_msgs", ret);
+			speech_to_text_obj->call_deferred("emit_signal", "update_transcribed_msgs", time_end, ret);
 			speech_to_text_obj->s_mutex.unlock();
 		}
 	}
@@ -589,20 +584,42 @@ void SpeechToText::run() {
 
 void SpeechToText::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("add_audio_buffer", "buffer"), &SpeechToText::add_audio_buffer);
+	ClassDB::bind_method(D_METHOD("get_entropy_threshold"), &SpeechToText::get_entropy_threshold);
+	ClassDB::bind_method(D_METHOD("set_entropy_threshold", "entropy_threshold"), &SpeechToText::set_entropy_threshold);
+	ClassDB::bind_method(D_METHOD("is_translate"), &SpeechToText::is_translate);
+	ClassDB::bind_method(D_METHOD("set_translate", "translate"), &SpeechToText::set_translate);
+	ClassDB::bind_method(D_METHOD("is_speed_up"), &SpeechToText::is_speed_up);
+	ClassDB::bind_method(D_METHOD("set_speed_up", "speed_up"), &SpeechToText::set_speed_up);
+	ClassDB::bind_method(D_METHOD("get_freq_thold"), &SpeechToText::get_freq_thold);
+	ClassDB::bind_method(D_METHOD("set_freq_thold", "freq_thold"), &SpeechToText::set_freq_thold);
+	ClassDB::bind_method(D_METHOD("get_vad_thold"), &SpeechToText::get_vad_thold);
+	ClassDB::bind_method(D_METHOD("set_vad_thold", "vad_thold"), &SpeechToText::set_vad_thold);
+	ClassDB::bind_method(D_METHOD("get_max_tokens"), &SpeechToText::get_max_tokens);
+	ClassDB::bind_method(D_METHOD("set_max_tokens", "max_tokens"), &SpeechToText::set_max_tokens);
+	ClassDB::bind_method(D_METHOD("get_n_threads"), &SpeechToText::get_n_threads);
+	ClassDB::bind_method(D_METHOD("set_n_threads", "n_threads"), &SpeechToText::set_n_threads);
+
 	ClassDB::bind_method(D_METHOD("get_language"), &SpeechToText::get_language);
 	ClassDB::bind_method(D_METHOD("set_language", "language"), &SpeechToText::set_language);
 	ClassDB::bind_method(D_METHOD("get_language_model"), &SpeechToText::get_language_model);
 	ClassDB::bind_method(D_METHOD("set_language_model", "model"), &SpeechToText::set_language_model);
 	ClassDB::bind_method(D_METHOD("is_use_gpu"), &SpeechToText::is_use_gpu);
+	ClassDB::bind_method(D_METHOD("set_use_gpu", "use_gpu"), &SpeechToText::set_use_gpu);
 	ClassDB::bind_method(D_METHOD("start_listen"), &SpeechToText::start_listen);
 	ClassDB::bind_method(D_METHOD("run"), &SpeechToText::run);
 	ClassDB::bind_method(D_METHOD("stop_listen"), &SpeechToText::stop_listen);
-	ClassDB::bind_method(D_METHOD("set_use_gpu", "use_gpu"), &SpeechToText::set_use_gpu);
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "language", PROPERTY_HINT_ENUM, "Auto,English,Chinese,German,Spanish,Russian,Korean,French,Japanese,Portuguese,Turkish,Polish,Catalan,Dutch,Arabic,Swedish,Italian,Indonesian,Hindi,Finnish,Vietnamese,Hebrew,Ukrainian,Greek,Malay,Czech,Romanian,Danish,Hungarian,Tamil,Norwegian,Thai,Urdu,Croatian,Bulgarian,Lithuanian,Latin,Maori,Malayalam,Welsh,Slovak,Telugu,Persian,Latvian,Bengali,Serbian,Azerbaijani,Slovenian,Kannada,Estonian,Macedonian,Breton,Basque,Icelandic,Armenian,Nepali,Mongolian,Bosnian,Kazakh,Albanian,Swahili,Galician,Marathi,Punjabi,Sinhala,Khmer,Shona,Yoruba,Somali,Afrikaans,Occitan,Georgian,Belarusian,Tajik,Sindhi,Gujarati,Amharic,Yiddish,Lao,Uzbek,Faroese,Haitian_Creole,Pashto,Turkmen,Nynorsk,Maltese,Sanskrit,Luxembourgish,Myanmar,Tibetan,Tagalog,Malagasy,Assamese,Tatar,Hawaiian,Lingala,Hausa,Bashkir,Javanese,Sundanese,Cantonese"), "set_language", "get_language");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "language_model", PROPERTY_HINT_RESOURCE_TYPE, "WhisperResource"), "set_language_model", "get_language_model");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_gpu"), "set_use_gpu", "is_use_gpu");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "entropy_threshold"), "set_entropy_threshold", "get_entropy_threshold");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "translate"), "set_translate", "is_translate");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "speed_up"), "set_speed_up", "is_speed_up");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "freq_thold"), "set_freq_thold", "get_freq_thold");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "vad_thold"), "set_vad_thold", "get_vad_thold");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_tokens"), "set_max_tokens", "get_max_tokens");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "n_threads"), "set_n_threads", "get_n_threads");
 
-	ADD_SIGNAL(MethodInfo("update_transcribed_msgs", PropertyInfo(Variant::ARRAY, "transcribed_msgs")));
+	ADD_SIGNAL(MethodInfo("update_transcribed_msgs", PropertyInfo(Variant::INT, "process_time_ms"), PropertyInfo(Variant::ARRAY, "transcribed_msgs")));
 
 	BIND_CONSTANT(SPEECH_SETTING_SAMPLE_RATE);
 }

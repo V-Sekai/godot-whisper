@@ -2,7 +2,7 @@
 ## Node that does transcribing of real time audio. It requires a bus with a [AudioEffectCapture] and a [WhisperResource] language model.
 class_name CaptureStreamToText
 extends Node
-signal update_transcribed_msg(index: int, is_partial:bool, text: String)
+signal update_transcribed_msg(index: int, is_partial:bool, text: String, process_time: int)
 
 func _get_configuration_warnings():
 	if _speech_to_text_singleton.language_model == null:
@@ -51,30 +51,73 @@ func _http_request_completed(result, response_code, headers, body, file_path):
 
 var _last_index = 0
 
-var _speech_to_text_singleton:
+var _speech_to_text_singleton: SpeechToText:
 	get:
 		return Engine.get_singleton("SpeechToText")
 
 ## What language you would want to transcribe from.
 @export_enum("Auto","English","Chinese","German","Spanish","Russian","Korean","French","Japanese","Portuguese","Turkish","Polish","Catalan","Dutch","Arabic","Swedish","Italian","Indonesian","Hindi","Finnish","Vietnamese","Hebrew","Ukrainian","Greek","Malay","Czech","Romanian","Danish","Hungarian","Tamil","Norwegian","Thai","Urdu","Croatian","Bulgarian","Lithuanian","Latin","Maori","Malayalam","Welsh","Slovak","Telugu","Persian","Latvian","Bengali","Serbian","Azerbaijani","Slovenian","Kannada","Estonian","Macedonian","Breton","Basque","Icelandic","Armenian","Nepali","Mongolian","Bosnian","Kazakh","Albanian","Swahili","Galician","Marathi","Punjabi","Sinhala","Khmer","Shona","Yoruba","Somali","Afrikaans","Occitan","Georgian","Belarusian","Tajik","Sindhi","Gujarati","Amharic","Yiddish","Lao","Uzbek","Faroese","Haitian_Creole","Pashto","Turkmen","Nynorsk","Maltese","Sanskrit","Luxembourgish","Myanmar","Tibetan","Tagalog","Malagasy","Assamese","Tatar","Hawaiian","Lingala","Hausa","Bashkir","Javanese","Sundanese","Cantonese") var language:int = 1:
 	get:
-		return _speech_to_text_singleton.get_language()
+		return _speech_to_text_singleton.language
 	set(val):
-		_speech_to_text_singleton.set_language(val)
+		_speech_to_text_singleton.language = val
 
 ## The language model downloaded.
 @export var language_model: WhisperResource:
 	get:
-		return _speech_to_text_singleton.get_language_model()
+		return _speech_to_text_singleton.language_model
 	set(val):
-		_speech_to_text_singleton.set_language_model(val)
+		_speech_to_text_singleton.language_model = val
 
 ## If we should use gpu for transcribing.
 @export var use_gpu := true :
 	get:
-		return _speech_to_text_singleton.is_use_gpu()
+		return _speech_to_text_singleton.use_gpu
 	set(val):
-		_speech_to_text_singleton.set_use_gpu(val)
+		_speech_to_text_singleton.use_gpu = val
+
+@export var entropy_threshold := 2.8 :
+	get:
+		return _speech_to_text_singleton.entropy_threshold
+	set(val):
+		_speech_to_text_singleton.entropy_threshold = val
+
+@export var freq_thold := 200.0 :
+	get:
+		return _speech_to_text_singleton.freq_thold
+	set(val):
+		_speech_to_text_singleton.freq_thold = val
+
+@export var max_tokens := 32 :
+	get:
+		return _speech_to_text_singleton.max_tokens
+	set(val):
+		_speech_to_text_singleton.max_tokens = val
+
+@export var n_threads := 4 :
+	get:
+		return _speech_to_text_singleton.n_threads
+	set(val):
+		_speech_to_text_singleton.n_threads = val
+
+@export var speed_up := false :
+	get:
+		return _speech_to_text_singleton.speed_up
+	set(val):
+		_speech_to_text_singleton.speed_up = val
+
+@export var translate := false :
+	get:
+		return _speech_to_text_singleton.translate
+	set(val):
+		_speech_to_text_singleton.translate = val
+
+
+@export var vad_thold := 0.3 :
+	get:
+		return _speech_to_text_singleton.vad_thold
+	set(val):
+		_speech_to_text_singleton.vad_thold = val
 
 func _ready():
 	if Engine.is_editor_hint():
@@ -97,23 +140,28 @@ func _on_timer_timeout():
 	if is_running:
 		_speech_to_text_singleton.add_audio_buffer(buffer)
 
-func _update_transcribed_msgs_func(transcribed_msgs):
+func _remove_special_characters(message: String):
+	var special_characters = [ \
+		{ "start": "[", "end": "]" }, \
+		{ "start": "<", "end": ">" }]
+	for special_character in special_characters:
+		while(message.find(special_character["start"]) != -1):
+			var begin_character := message.find(special_character["start"])
+			var end_character := message.find(special_character["end"])
+			if end_character != -1:
+				message = message.substr(0, begin_character) + message.substr(end_character + 1)
+	return message
+
+func _update_transcribed_msgs_func(process_time_ms: int, transcribed_msgs: Array):
 	for transcribed_msg  in transcribed_msgs:
-		var cur_text = transcribed_msg["text"]
-		var token_index = cur_text.rfind("]")
-		if token_index!=-1:
-			cur_text = cur_text.substr(token_index+1)
-		
-		token_index = cur_text.find("<")
-		if token_index!=-1:
-			cur_text = cur_text.substr(0,token_index)
+		var cur_text = _remove_special_characters(transcribed_msg["text"])
 		
 		if transcribed_msg["is_partial"]==false:
 			if cur_text.ends_with("?") or cur_text.ends_with(",") or cur_text.ends_with("."):
 				pass
 			else:
 				cur_text = cur_text + "."
-		emit_signal("update_transcribed_msg", _last_index, transcribed_msg["is_partial"], cur_text)
+		update_transcribed_msg.emit(_last_index, transcribed_msg["is_partial"], cur_text, process_time_ms)
 		if transcribed_msg["is_partial"]==false:
 			_last_index+=1
 
