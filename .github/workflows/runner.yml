@@ -20,25 +20,31 @@ jobs:
         include:
           - platform: linux
             arch: x86_64
-            os: ubuntu-20.04
+            os: x86_64
+            opencl_arch: x64
           - platform: windows
             arch: x86_32
             os: windows-latest
+            opencl_arch: Win32
           - platform: windows
             arch: x86_64
             os: windows-latest
+            opencl_arch: x64
           - platform: macos
             arch: universal
             os: macos-latest
           - platform: android
             arch: arm64
             os: ubuntu-20.04
+            opencl_arch: arm64-v8a
           - platform: android
             arch: arm32
             os: ubuntu-20.04
+            opencl_arch: armv7-a
           - platform: android
             arch: x86_64
             os: ubuntu-20.04
+            opencl_arch: x86_64
           - platform: android
             arch: x86_32
             os: ubuntu-20.04
@@ -63,7 +69,7 @@ jobs:
           repository: KhronosGroup/OpenCL-SDK
           submodules: true
           fetch-depth: 0
-        if: matrix.platform == 'windows' || matrix.platform == 'linux'
+        if: matrix.platform == 'windows' || matrix.platform == 'linux' || matrix.platform == 'android'
 
       - name: Check OpenCL Cache
         id: opencl_cache
@@ -74,19 +80,13 @@ jobs:
           key: __${{ runner.os }}_${{ matrix.arch }}-opencl-v2021.06.30__${{ hashFiles('**/CMakeLists.txt') }}
           restore-keys: |
             __${{runner.os }}-opencl__
-        if: matrix.platform == 'windows' || matrix.platform == 'linux'
+        if: matrix.platform == 'windows' || matrix.platform == 'linux' || matrix.platform == 'android'
 
       - name: Build OpenCL
         run: |
-          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF -A Win32
+          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF -A ${{matrix.opencl_arch}}
           cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
-        if: matrix.platform == 'windows' && matrix.arch == 'x86_32'
-
-      - name: Build OpenCL
-        run: |
-          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF -A x64
-          cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
-        if: (matrix.platform == 'windows' || matrix.platform == 'linux' || matrix.platform == 'android') && matrix.arch == 'x86_64'
+        if: matrix.platform == 'windows' || matrix.platform == 'linux' || matrix.platform == 'android'
 
 
       - name: 🔗 GDExtension Build
