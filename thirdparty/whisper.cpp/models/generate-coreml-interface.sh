@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # This generates:
 #   - coreml/whisper-encoder-impl.h and coreml/whisper-encoder-impl.m
@@ -6,7 +6,7 @@
 #
 
 wd=$(dirname "$0")
-cd "$wd/../" || exit
+cd "$wd/../"
 
 python3 models/convert-whisper-to-coreml.py --model tiny.en
 
