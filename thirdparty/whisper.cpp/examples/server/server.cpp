@@ -40,30 +40,32 @@ struct server_params
 {
     std::string hostname = "127.0.0.1";
     std::string public_path = "examples/server/public";
+    std::string request_path = "";
 
     int32_t port          = 8080;
     int32_t read_timeout  = 600;
     int32_t write_timeout = 600;
-    
+
     bool ffmpeg_converter = false;
 };
 
 struct whisper_params {
-    int32_t n_threads    = std::min(4, (int32_t) std::thread::hardware_concurrency());
-    int32_t n_processors =  1;
-    int32_t offset_t_ms  =  0;
-    int32_t offset_n     =  0;
-    int32_t duration_ms  =  0;
-    int32_t progress_step =  5;
-    int32_t max_context  = -1;
-    int32_t max_len      =  0;
-    int32_t best_of      =  2;
-    int32_t beam_size    = -1;
+    int32_t n_threads     = std::min(4, (int32_t) std::thread::hardware_concurrency());
+    int32_t n_processors  = 1;
+    int32_t offset_t_ms   = 0;
+    int32_t offset_n      = 0;
+    int32_t duration_ms   = 0;
+    int32_t progress_step = 5;
+    int32_t max_context   = -1;
+    int32_t max_len       = 0;
+    int32_t best_of       = 2;
+    int32_t beam_size     = -1;
 
-    float word_thold    =  0.01f;
-    float entropy_thold =  2.40f;
-    float logprob_thold = -1.00f;
-    float userdef_temp  =  0.20f;
+    float word_thold      =  0.01f;
+    float entropy_thold   =  2.40f;
+    float logprob_thold   = -1.00f;
+    float temperature     =  0.00f;
+    float temperature_inc =  0.20f;
 
     bool speed_up        = false;
     bool debug_mode      = false;
@@ -160,6 +162,7 @@ void whisper_print_usage(int /*argc*/, char ** argv, const whisper_params & para
     fprintf(stderr, "  --host HOST,                   [%-7s] Hostname/ip-adress for the server\n", sparams.hostname.c_str());
     fprintf(stderr, "  --port PORT,                   [%-7d] Port number for the server\n", sparams.port);
     fprintf(stderr, "  --public PATH,                 [%-7s] Path to the public folder\n", sparams.public_path.c_str());
+    fprintf(stderr, "  --request-path PATH,           [%-7s] Request path for all requests\n", sparams.request_path.c_str());
     fprintf(stderr, "  --convert,                     [%-7s] Convert audio to WAV, requires ffmpeg on the server", sparams.ffmpeg_converter ? "true" : "false");
     fprintf(stderr, "\n");
 }
@@ -207,6 +210,7 @@ bool whisper_params_parse(int argc, char ** argv, whisper_params & params, serve
         else if (                  arg == "--port")            { sparams.port        = std::stoi(argv[++i]); }
         else if (                  arg == "--host")            { sparams.hostname    = argv[++i]; }
         else if (                  arg == "--public")          { sparams.public_path = argv[++i]; }
+        else if (                  arg == "--request-path")    { sparams.request_path = argv[++i]; }
         else if (                  arg == "--convert")         { sparams.ffmpeg_converter     = true; }
         else {
             fprintf(stderr, "error: unknown argument: %s\n", arg.c_str());
@@ -393,36 +397,102 @@ std::string output_str(struct whisper_context * ctx, const whisper_params & para
     return result.str();
 }
 
+bool parse_str_to_bool(const std::string & s) {
+    if (s == "true" || s == "1" || s == "yes" || s == "y") {
+        return true;
+    }
+    return false;
+}
+
 void get_req_parameters(const Request & req, whisper_params & params)
 {
-    // user model configu.has_fileion
-    if (req.has_file("offset-t"))
+    if (req.has_file("offset_t"))
     {
-        params.offset_t_ms = std::stoi(req.get_file_value("offset-t").content);
+        params.offset_t_ms = std::stoi(req.get_file_value("offset_t").content);
     }
-    if (req.has_file("offset-n"))
+    if (req.has_file("offset_n"))
     {
-        params.offset_n = std::stoi(req.get_file_value("offset-n").content);
+        params.offset_n = std::stoi(req.get_file_value("offset_n").content);
     }
     if (req.has_file("duration"))
     {
         params.duration_ms = std::stoi(req.get_file_value("duration").content);
     }
-    if (req.has_file("max-context"))
+    if (req.has_file("max_context"))
     {
-        params.max_context = std::stoi(req.get_file_value("max-context").content);
+        params.max_context = std::stoi(req.get_file_value("max_context").content);
+    }
+    if (req.has_file("max_len"))
+    {
+        params.max_len = std::stoi(req.get_file_value("max_len").content);
+    }
+    if (req.has_file("best_of"))
+    {
+        params.best_of = std::stoi(req.get_file_value("best_of").content);
+    }
+    if (req.has_file("beam_size"))
+    {
+        params.beam_size = std::stoi(req.get_file_value("beam_size").content);
+    }
+    if (req.has_file("word_thold"))
+    {
+        params.word_thold = std::stof(req.get_file_value("word_thold").content);
+    }
+    if (req.has_file("entropy_thold"))
+    {
+        params.entropy_thold = std::stof(req.get_file_value("entropy_thold").content);
+    }
+    if (req.has_file("logprob_thold"))
+    {
+        params.logprob_thold = std::stof(req.get_file_value("logprob_thold").content);
+    }
+    if (req.has_file("debug_mode"))
+    {
+        params.debug_mode = parse_str_to_bool(req.get_file_value("debug_mode").content);
+    }
+    if (req.has_file("translate"))
+    {
+        params.translate = parse_str_to_bool(req.get_file_value("translate").content);
+    }
+    if (req.has_file("diarize"))
+    {
+        params.diarize = parse_str_to_bool(req.get_file_value("diarize").content);
+    }
+    if (req.has_file("tinydiarize"))
+    {
+        params.tinydiarize = parse_str_to_bool(req.get_file_value("tinydiarize").content);
+    }
+    if (req.has_file("split_on_word"))
+    {
+        params.split_on_word = parse_str_to_bool(req.get_file_value("split_on_word").content);
+    }
+    if (req.has_file("no_timestamps"))
+    {
+        params.no_timestamps = parse_str_to_bool(req.get_file_value("no_timestamps").content);
+    }
+    if (req.has_file("language"))
+    {
+        params.language = req.get_file_value("language").content;
+    }
+    if (req.has_file("detect_language"))
+    {
+        params.detect_language = parse_str_to_bool(req.get_file_value("detect_language").content);
     }
     if (req.has_file("prompt"))
     {
         params.prompt = req.get_file_value("prompt").content;
     }
-    if (req.has_file("response-format"))
+    if (req.has_file("response_format"))
     {
-        params.response_format = req.get_file_value("response-format").content;
+        params.response_format = req.get_file_value("response_format").content;
     }
     if (req.has_file("temperature"))
     {
-        params.userdef_temp = std::stof(req.get_file_value("temperature").content);
+        params.temperature = std::stof(req.get_file_value("temperature").content);
+    }
+    if (req.has_file("temperature_inc"))
+    {
+        params.temperature_inc = std::stof(req.get_file_value("temperature_inc").content);
     }
 }
 
@@ -475,13 +545,16 @@ int main(int argc, char ** argv) {
 
     std::string const default_content = "<html>hello</html>";
 
+    // store default params so we can reset after each inference request
+    whisper_params default_params = params;
+
     // this is only called if no index.html is found in the public --path
-    svr.Get("/", [&default_content](const Request &, Response &res){
+    svr.Get(sparams.request_path + "/", [&default_content](const Request &, Response &res){
         res.set_content(default_content, "text/html");
         return false;
     });
 
-    svr.Post("/inference", [&](const Request &req, Response &res){
+    svr.Post(sparams.request_path + "/inference", [&](const Request &req, Response &res){
         // acquire whisper model mutex lock
         whisper_mutex.lock();
 
@@ -513,7 +586,7 @@ int main(int argc, char ** argv) {
         temp_file.close();
 
         // if file is not wav, convert to wav
-        
+
         if (sparams.ffmpeg_converter) {
             std::string error_resp = "{\"error\":\"Failed to execute ffmpeg command.\"}";
             const bool is_converted = convert_to_wav(temp_filename, error_resp);
@@ -589,6 +662,7 @@ int main(int argc, char ** argv) {
             wparams.duration_ms      = params.duration_ms;
 
             wparams.thold_pt         = params.word_thold;
+            wparams.max_len          = params.max_len == 0 ? 60 : params.max_len;
             wparams.split_on_word    = params.split_on_word;
 
             wparams.speed_up         = params.speed_up;
@@ -601,9 +675,12 @@ int main(int argc, char ** argv) {
             wparams.greedy.best_of        = params.best_of;
             wparams.beam_search.beam_size = params.beam_size;
 
-            wparams.temperature_inc  = params.userdef_temp;
+            wparams.temperature      = params.temperature;
+            wparams.temperature_inc  = params.temperature_inc;
             wparams.entropy_thold    = params.entropy_thold;
             wparams.logprob_thold    = params.logprob_thold;
+
+            wparams.no_timestamps    = params.no_timestamps;
 
             whisper_print_user_data user_data = { &params, &pcmf32s, 0 };
 
@@ -713,10 +790,13 @@ int main(int argc, char ** argv) {
                             "application/json");
         }
 
+        // reset params to thier defaults
+        params = default_params;
+
         // return whisper model mutex lock
         whisper_mutex.unlock();
     });
-    svr.Post("/load", [&](const Request &req, Response &res){
+    svr.Post(sparams.request_path + "/load", [&](const Request &req, Response &res){
         whisper_mutex.lock();
         if (!req.has_file("model"))
         {
@@ -772,11 +852,11 @@ int main(int argc, char ** argv) {
         res.status = 500;
     });
 
-    svr.set_error_handler([](const Request &, Response &res) {
+    svr.set_error_handler([](const Request &req, Response &res) {
         if (res.status == 400) {
             res.set_content("Invalid request", "text/plain");
         } else if (res.status != 500) {
-            res.set_content("File Not Found", "text/plain");
+            res.set_content("File Not Found (" + req.path + ")", "text/plain");
             res.status = 404;
         }
     });
