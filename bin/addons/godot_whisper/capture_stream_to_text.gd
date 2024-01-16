@@ -129,7 +129,7 @@ func _add_timer():
 	var timer_node = Timer.new()
 	timer_node.one_shot = false
 	timer_node.autostart = true
-	timer_node.wait_time = 0.5
+	timer_node.wait_time = 1.0
 	add_child(timer_node)
 	timer_node.connect("timeout",self._on_timer_timeout)
 
