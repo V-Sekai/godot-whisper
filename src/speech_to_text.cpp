@@ -406,7 +406,7 @@ void SpeechToText::run() {
 	whisper_params.duration_ms = 0;
 	whisper_params.print_timestamps = false;
 	whisper_params.translate = speech_to_text_obj->params.translate;
-	whisper_params.single_segment = true;
+	whisper_params.single_segment = false;
 	whisper_params.no_timestamps = false;
 	whisper_params.token_timestamps = true;
 	whisper_params.max_tokens = speech_to_text_obj->params.max_tokens;
