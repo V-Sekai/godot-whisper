@@ -129,7 +129,7 @@ func _add_timer():
 	var timer_node = Timer.new()
 	timer_node.one_shot = false
 	timer_node.autostart = true
-	timer_node.wait_time = 1
+	timer_node.wait_time = 1.0
 	add_child(timer_node)
 	timer_node.connect("timeout",self._on_timer_timeout)
 
@@ -140,7 +140,16 @@ func _on_timer_timeout():
 	if is_running:
 		_speech_to_text_singleton.add_audio_buffer(buffer)
 
-func _remove_special_characters(message: String):
+func _remove_special_characters(message: String, is_partial: bool):
+	if is_partial == false:
+		if message.ends_with("[_END_]"):
+			message = message.trim_suffix("[_END_]")
+		else:
+			var end_character := message.find("[_TT_")
+			if end_character != -1:
+				message = message.substr(0, end_character) + "{SPLIT}" + message.substr(end_character)
+				
+	
 	var special_characters = [ \
 		{ "start": "[", "end": "]" }, \
 		{ "start": "<", "end": ">" }]
@@ -150,18 +159,28 @@ func _remove_special_characters(message: String):
 			var end_character := message.find(special_character["end"])
 			if end_character != -1:
 				message = message.substr(0, begin_character) + message.substr(end_character + 1)
+	
+	message = message.trim_suffix("{SPLIT}")
 	return message
 
 func _update_transcribed_msgs_func(process_time_ms: int, transcribed_msgs: Array):
 	for transcribed_msg  in transcribed_msgs:
-		var cur_text = _remove_special_characters(transcribed_msg["text"])
-		
+		var cur_text = _remove_special_characters(transcribed_msg["text"], transcribed_msg["is_partial"])
 		if transcribed_msg["is_partial"]==false:
 			if cur_text.ends_with("?") or cur_text.ends_with(",") or cur_text.ends_with("."):
 				pass
 			else:
 				cur_text = cur_text + "."
-		update_transcribed_msg.emit(_last_index, transcribed_msg["is_partial"], cur_text, process_time_ms)
+				
+		if transcribed_msg["is_partial"]==false:
+			var split_character := cur_text.find("{SPLIT}")
+			if split_character!=-1:
+				update_transcribed_msg.emit(_last_index, transcribed_msg["is_partial"], cur_text.substr(0, split_character), process_time_ms)
+				update_transcribed_msg.emit(_last_index+1, true, cur_text.substr(split_character+7), process_time_ms)
+			else:
+				update_transcribed_msg.emit(_last_index, transcribed_msg["is_partial"], cur_text, process_time_ms)
+		else:
+			update_transcribed_msg.emit(_last_index, transcribed_msg["is_partial"], cur_text, process_time_ms)
 		if transcribed_msg["is_partial"]==false:
 			_last_index+=1
 
