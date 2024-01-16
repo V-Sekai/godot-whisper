@@ -398,7 +398,7 @@ void SpeechToText::run() {
 	SpeechToText *speech_to_text_obj = SpeechToText::get_singleton();
 	whisper_full_params whisper_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
 	// See here for example https://github.com/ggerganov/whisper.cpp/blob/master/examples/stream/stream.cpp#L302
-	whisper_params.max_len = 1;
+	whisper_params.max_len = 0;
 	whisper_params.print_progress = false;
 	whisper_params.print_special = false;
 	whisper_params.print_realtime = false;
@@ -408,7 +408,7 @@ void SpeechToText::run() {
 	whisper_params.translate = speech_to_text_obj->params.translate;
 	whisper_params.single_segment = true;
 	whisper_params.no_timestamps = false;
-	whisper_params.token_timestamps = false;
+	whisper_params.token_timestamps = true;
 	whisper_params.max_tokens = speech_to_text_obj->params.max_tokens;
 	whisper_params.language = speech_to_text_obj->params.language.c_str();
 	whisper_params.n_threads = speech_to_text_obj->params.n_threads;
@@ -510,6 +510,7 @@ void SpeechToText::run() {
 		{
 			transcribed_msg msg;
 			const int n_segments = whisper_full_n_segments(speech_to_text_obj->context_instance);
+			int64_t last_t = 0;
 			for (int i = 0; i < n_segments; ++i) {
 				const int n_tokens = whisper_full_n_tokens(speech_to_text_obj->context_instance, i);
 				for (int j = 0; j < n_tokens; j++) {
@@ -523,6 +524,12 @@ void SpeechToText::run() {
 					if (token.plog < -1.0) {
 						//WARN_PRINT("Skipping token low plog " + String::num(token.p) + " " + String::num(token.plog) + " " + text);
 						//continue;
+					}
+					if (String(text).begins_with("[_TT_") && last_t == 0) {
+						if (j > 0) {
+							auto last_token = whisper_full_get_token_data(speech_to_text_obj->context_instance, i, j - 1);
+							last_t = last_token.t1;
+						}
 					}
 					msg.text += text;
 				}
@@ -545,18 +552,33 @@ void SpeechToText::run() {
 			 * Clear audio buffer when the size exceeds iteration threshold or
 			 * speech end is detected.
 			 */
+			if (speech_has_end) {
+				msg.text += "[_END_]";
+			}
+
 			if (pcmf32.size() > n_samples_iter_threshold || speech_has_end) {
 				const auto t_now = Time::get_singleton()->get_ticks_msec();
 				const auto t_diff = t_now - speech_to_text_obj->t_last_iter;
 				speech_to_text_obj->t_last_iter = t_now;
-
 				msg.is_partial = false;
 				/**
 				 * Keep the last few samples in the audio buffer, so the next
 				 * iteration has a smoother start.
 				 */
-				std::vector<float> last(pcmf32.end() - n_samples_keep_iter, pcmf32.end());
-				pcmf32 = std::move(last);
+				if (last_t == 0 || speech_has_end) {
+					std::vector<float> last(pcmf32.end() - n_samples_keep_iter, pcmf32.end());
+					pcmf32 = std::move(last);
+				} else {
+					int target_index = int(last_t / 100.0 * WHISPER_SAMPLE_RATE);
+					if (target_index >= pcmf32.size()) {
+						std::vector<float> last(pcmf32.end() - n_samples_keep_iter, pcmf32.end());
+						pcmf32 = std::move(last);
+					} else {
+						std::vector<float> last(pcmf32.begin() + target_index, pcmf32.end());
+						pcmf32 = std::move(last);
+					}
+				}
+
 			} else {
 				msg.is_partial = true;
 			}
