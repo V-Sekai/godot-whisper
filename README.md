@@ -25,25 +25,74 @@
 <img src="whisper_cpp.gif"/>
 </p>
 
+## Features
+
+- Realtime audio transcribe.
+- Audio transcribe with recorded audio.
+- Runs on separate thread.
+
 ## How to install
 
 Go to a github release, copy paste the addons folder to the demo folder. Restart godot editor.
 
-## SpeechToText
+## Requirements
 
-`SpeechToText` Node has a `transcribe` which gets a buffer that it transcribes.
+- Sconstruct(if you want to build locally)
+- A language model, can be downloaded in godot editor.
+
 
 ## CaptureStreamToText
 
-`CaptureStreamToText` - extends SpeechToText and runs transcribe function every 5 seconds.
+`CaptureStreamToText` - node that uses SpeechToText and runs transcribe function every 1 seconds.
 
-## Main thread
+Also has helper to download language model. Exposes all properties from singleton and configures them.
 
-The transcribe can block the main thread. It should run in about 0.5 seconds every 5 seconds, but check for yourself.
+## Separate thread
+
+The transcribe runs on a separate thread, as to not block main thread.
 
 ## Language Model
 
 Go to a `CaptureStreamToText` node, select a Language Model to Download and click Download. You might have to alt tab editor or restart for asset to appear. Then, select `language_model` property.
+
+## SpeechToText
+
+`SpeechToText` Singleton has some configurable properties for transcribing:
+
+```
+float entropy_threshold [default: 2.8]
+float freq_thold [default: 200.0]
+int language [default: 1]
+WhisperResource language_model
+int max_tokens [default: 32]
+int n_threads [default: 4]
+bool speed_up [default: false]
+bool translate [default: false]
+bool use_gpu [default: true]
+float vad_thold [default: 0.3]
+```
+
+And a function to add audio data:
+
+```
+add_audio_buffer(buffer: PackedVector2Array)
+```
+
+As well as a signal for when there is new data transcribed:
+
+```
+update_transcribed_msgs(process_time_ms: int, transcribed_msgs: Array)
+```
+
+In order to start the transcribing, use the start_listen and stop_listen methods.
+
+## How to build
+
+```
+scons target=template_release generate_bindings=no arch=universal precision=single
+rm -rf demo/addons
+cp -rf bin/addons demo/addons
+```
 
 ## Contributors ✨
 
