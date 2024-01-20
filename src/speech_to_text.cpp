@@ -566,14 +566,6 @@ void SpeechToText::run() {
 					auto token = whisper_full_get_token_data(speech_to_text_obj->context_instance, i, j);
 					auto text = whisper_full_get_token_text(speech_to_text_obj->context_instance, i, j);
 					// Idea from https://github.com/yum-food/TaSTT/blob/dbb2f72792e2af3ff220313f84bf76a9a1ddbeb4/Scripts/transcribe_v2.py#L457C17-L462C25
-					if (token.p > 0.6 && token.plog < -0.5) {
-						WARN_PRINT("Skipping token " + String::num(token.p) + " " + String::num(token.plog) + " " + text);
-						continue;
-					}
-					if (token.plog < -1.0) {
-						WARN_PRINT("Skipping token low plog " + String::num(token.p) + " " + String::num(token.plog) + " " + text);
-						continue;
-					}
 					if (find_delete_target_t == false) {
 						String cur_text = String(text);
 						if (cur_text.begins_with("[_TT_") || cur_text == "," || cur_text == "." || cur_text == "?" || cur_text == "!" || cur_text == "，" || cur_text == "。" || cur_text == "？" || cur_text == "！") {
@@ -650,8 +642,7 @@ void SpeechToText::run() {
 			for (int i = 0; i < transcribed.size(); i++) {
 				Dictionary cur_transcribed_msg;
 				cur_transcribed_msg["is_partial"] = transcribed[i].is_partial;
-				String cur_text;
-				cur_transcribed_msg["text"] = cur_text.utf8(transcribed[i].text.c_str());
+				cur_transcribed_msg["text"] = String::utf8(transcribed[i].text.c_str());
 				ret.push_back(cur_transcribed_msg);
 			};
 			speech_to_text_obj->call_deferred("emit_signal", "update_transcribed_msgs", time_end, ret);
