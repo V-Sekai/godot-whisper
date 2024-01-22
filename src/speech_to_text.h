@@ -183,7 +183,7 @@ public:
 	std::vector<float> s_queued_pcmf32;
 	std::vector<transcribed_msg> s_transcribed_msgs;
 	Mutex s_mutex; // for accessing shared variables from both main thread and worker thread
-	Thread worker;
+	Thread *worker = nullptr;
 	void run();
 
 	_FORCE_INLINE_ void set_entropy_threshold(float entropy_threshold) { params.entropy_threshold = entropy_threshold; }

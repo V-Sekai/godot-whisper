@@ -112,17 +112,20 @@ SpeechToText::SpeechToText() {
 }
 
 void SpeechToText::start_listen() {
-	if (is_running == false) {
-		is_running = true;
-		worker.start(Callable(this, StringName("run")), Thread::Priority::PRIORITY_NORMAL);
+	if (this->worker == nullptr) {
+		this->worker = memnew(Thread);
+	}
+	if (this->is_running == false) {
+		this->is_running = true;
+		this->worker->start(Callable(this, StringName("run")), Thread::Priority::PRIORITY_NORMAL);
 		t_last_iter = Time::get_singleton()->get_ticks_msec();
 	}
 }
 
 void SpeechToText::stop_listen() {
-	is_running = false;
-	if (worker.is_started()) {
-		worker.wait_to_finish();
+	this->is_running = false;
+	if (this->worker != nullptr) {
+		this->worker = nullptr;
 	}
 }
 
