@@ -352,6 +352,7 @@ void SpeechToText::set_language_model(Ref<WhisperResource> p_model) {
 
 void SpeechToText::load_model() {
 	whisper_free(context_instance);
+	UtilityFunctions::print(whisper_print_system_info());
 	if (model.is_null()) {
 		return;
 	}
@@ -360,7 +361,6 @@ void SpeechToText::load_model() {
 		return;
 	}
 	context_instance = whisper_init_from_buffer_with_params((void *)(data.ptr()), data.size(), context_parameters);
-	UtilityFunctions::print(whisper_print_system_info());
 }
 
 void SpeechToText::set_use_gpu(bool use_gpu) {
@@ -403,8 +403,7 @@ void SpeechToText::add_audio_buffer(PackedVector2Array buffer) {
 	s_mutex.unlock();
 }
 
-/** Run Whisper in its own thread to not block the main thread. */
-void SpeechToText::run() {
+whisper_full_params SpeechToText::_get_whisper_params() {
 	SpeechToText *speech_to_text_obj = SpeechToText::get_singleton();
 	whisper_full_params whisper_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
 	// See here for example https://github.com/ggerganov/whisper.cpp/blob/master/examples/stream/stream.cpp#L302
@@ -430,14 +429,19 @@ void SpeechToText::run() {
 	whisper_params.entropy_thold = speech_to_text_obj->params.entropy_threshold;
 	whisper_params.temperature = 0.0;
 	whisper_params.no_context = true;
-
 	/**
 	 * Experimental optimization: Reduce audio_ctx to 15s (half of the chunk
 	 * size whisper is designed for) to speed up 2x.
 	 * https://github.com/ggerganov/whisper.cpp/issues/137#issuecomment-1318412267
 	 */
 	whisper_params.audio_ctx = 768;
+	return whisper_params;
+}
 
+/** Run Whisper in its own thread to not block the main thread. */
+void SpeechToText::run() {
+	SpeechToText *speech_to_text_obj = SpeechToText::get_singleton();
+	whisper_full_params whisper_params = _get_whisper_params();
 	speech_to_text_obj->full_params = whisper_params;
 
 	/* When more than this amount of audio received, run an iteration. */
@@ -479,45 +483,25 @@ void SpeechToText::run() {
 	/* Audio buffer */
 	std::vector<float> pcmf32;
 
-	int empty_iter_count = 0;
-	bool need_close_segment = false;
 	/* Processing loop */
 	while (speech_to_text_obj->is_running) {
-		{
-			speech_to_text_obj->s_mutex.lock();
-			need_close_segment = false;
-			if (speech_to_text_obj->s_queued_pcmf32.size() < WHISPER_SAMPLE_RATE) {
-				empty_iter_count += 1;
-				if (empty_iter_count >= 20 && pcmf32.size() > 0) {
-					need_close_segment = true;
-					empty_iter_count = 0;
-				} else {
-					empty_iter_count = empty_iter_count % 20;
-					speech_to_text_obj->s_mutex.unlock();
-					OS::get_singleton()->delay_msec(50);
-					continue;
-				}
-			}
-			speech_to_text_obj->s_mutex.unlock();
-		}
-		{
-			speech_to_text_obj->s_mutex.lock();
-			if (speech_to_text_obj->s_queued_pcmf32.size() > 2 * n_samples_iter_threshold) {
-				WARN_PRINT("Too much audio is going to be processed, result may not come out in real time");
-			}
-			speech_to_text_obj->s_mutex.unlock();
-		}
-		{
-			speech_to_text_obj->s_mutex.lock();
-			pcmf32.insert(pcmf32.end(), speech_to_text_obj->s_queued_pcmf32.begin(), speech_to_text_obj->s_queued_pcmf32.end());
-			speech_to_text_obj->s_queued_pcmf32.clear();
-			speech_to_text_obj->s_mutex.unlock();
-		}
-
 		if (!speech_to_text_obj->context_instance) {
 			ERR_PRINT("Context instance is null");
 			continue;
 		}
+		speech_to_text_obj->s_mutex.lock();
+		if (speech_to_text_obj->s_queued_pcmf32.size() < WHISPER_SAMPLE_RATE) {
+			speech_to_text_obj->s_mutex.unlock();
+			OS::get_singleton()->delay_msec(50);
+			continue;
+		}
+		if (speech_to_text_obj->s_queued_pcmf32.size() > 2 * n_samples_iter_threshold) {
+			WARN_PRINT("Too much audio is going to be processed, result may not come out in real time");
+		}
+		pcmf32.insert(pcmf32.end(), speech_to_text_obj->s_queued_pcmf32.begin(), speech_to_text_obj->s_queued_pcmf32.end());
+		speech_to_text_obj->s_queued_pcmf32.clear();
+		speech_to_text_obj->s_mutex.unlock();
+
 		float time_started = Time::get_singleton()->get_ticks_msec();
 		{
 			whisper_params.duration_ms = pcmf32.size() * 1000.0f / WHISPER_SAMPLE_RATE;
@@ -542,12 +526,6 @@ void SpeechToText::run() {
 				if (speech_has_end) {
 					printf("speech end detected\n");
 				}
-			}
-			if (need_close_segment) {
-				if (vad_simple(pcmf32, WHISPER_SAMPLE_RATE, 0, vad_thold, freq_thold, false)) {
-					msg.text = "";
-				}
-				speech_has_end = true;
 			}
 			const int n_segments = whisper_full_n_segments(speech_to_text_obj->context_instance);
 			int64_t delete_target_t = 0;

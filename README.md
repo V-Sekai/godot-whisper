@@ -30,6 +30,8 @@
 - Realtime audio transcribe.
 - Audio transcribe with recorded audio.
 - Runs on separate thread.
+- Metal for Apple devices.
+- OpenCL for rest.
 
 ## How to install
 

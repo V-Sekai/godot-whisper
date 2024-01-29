@@ -76,6 +76,7 @@ text = "Stop"
 script = ExtResource("1_36edp")
 language_model_to_download = "base.en"
 language_model = ExtResource("4_yv420")
+transcribing_interval = 10.0
 
 [connection signal="pressed" from="HBoxContainer/StartButton" to="CaptureStreamToText" method="start_listen"]
 [connection signal="pressed" from="HBoxContainer/StopButton" to="CaptureStreamToText" method="stop_listen"]

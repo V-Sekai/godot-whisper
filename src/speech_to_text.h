@@ -21,11 +21,6 @@
 
 using namespace godot;
 
-struct transcribed_msg {
-	std::string text;
-	bool is_partial;
-};
-
 class SpeechToText : public Node {
 public:
 	enum Language {
@@ -161,6 +156,8 @@ private:
 	whisper_context *context_instance = nullptr;
 	int t_last_iter;
 
+	whisper_full_params _get_whisper_params();
+
 protected:
 	static void _bind_methods();
 
@@ -181,7 +178,6 @@ public:
 
 	std::atomic<bool> is_running;
 	std::vector<float> s_queued_pcmf32;
-	std::vector<transcribed_msg> s_transcribed_msgs;
 	Mutex s_mutex; // for accessing shared variables from both main thread and worker thread
 	Thread worker;
 	void run();
