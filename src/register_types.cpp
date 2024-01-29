@@ -6,10 +6,9 @@
 
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
 
 static Ref<ResourceFormatLoaderWhisper> whisper_loader;
-
-static SpeechToText *SpeechToTextPtr;
 
 void register_setting(
 		const String &p_name,
@@ -32,6 +31,23 @@ void register_setting(
 	project_settings->set_initial_value(p_name, p_value);
 }
 
+void whisper_callback(enum ggml_log_level level, const char * text, void * user_data) {
+	switch (level) {
+		case GGML_LOG_LEVEL_ERROR: {
+			ERR_PRINT(text);
+		}break;
+		case GGML_LOG_LEVEL_WARN: {
+			WARN_PRINT(text);
+		}break;
+		case GGML_LOG_LEVEL_INFO: {
+			UtilityFunctions::print(text);
+		}break;
+		case GGML_LOG_LEVEL_DEBUG: {
+			UtilityFunctions::print(text);
+		}break;
+	}
+}
+
 void initialize_whisper_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
@@ -39,23 +55,27 @@ void initialize_whisper_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_CLASS(SpeechToText);
 	GDREGISTER_CLASS(WhisperResource);
 	GDREGISTER_CLASS(ResourceFormatLoaderWhisper);
+	whisper_log_set(whisper_callback, nullptr);
+	
 	whisper_loader.instantiate();
 	ResourceLoader::get_singleton()->add_resource_format_loader(whisper_loader);
 
 	// register settings
-	register_setting("audio/input/transcribe/")
-	ProjectSettings *project_settings = ProjectSettings::get_singleton()
-
-	SpeechToTextPtr = memnew(SpeechToText);
-	Engine::get_singleton()->register_singleton("SpeechToText", SpeechToText::get_singleton());
+	register_setting("audio/input/transcribe/entropy_treshold", 2.8, PROPERTY_HINT_NONE, {});
+	register_setting("audio/input/transcribe/freq_treshold", 200, PROPERTY_HINT_NONE, {});
+	register_setting("audio/input/transcribe/max_tokens", 32, PROPERTY_HINT_NONE, {});
+	register_setting("audio/input/transcribe/n_threads", 4, PROPERTY_HINT_NONE, {});
+	register_setting("audio/input/transcribe/speed_up", false, PROPERTY_HINT_NONE, {});
+	register_setting("audio/input/transcribe/translate", false, PROPERTY_HINT_NONE, {});
+	register_setting("audio/input/transcribe/vad_treshold", 0.3, PROPERTY_HINT_NONE, {});
+	register_setting("audio/input/transcribe/use_gpu", true, PROPERTY_HINT_NONE, {});
+	register_setting("audio/input/transcribe/sample_rate", 16000, PROPERTY_HINT_NONE, {});
 }
 
 void uninitialize_whisper_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-	Engine::get_singleton()->unregister_singleton("SpeechToText");
-	memdelete(SpeechToTextPtr);
 
 	ResourceLoader::get_singleton()->remove_resource_format_loader(whisper_loader);
 	whisper_loader.unref();

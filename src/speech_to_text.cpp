@@ -8,6 +8,7 @@
 #include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/core/memory.hpp>
 #include <godot_cpp/variant/packed_vector2_array.hpp>
+#include <godot_cpp/variant/array.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <string>
 #include <vector>
@@ -48,7 +49,7 @@ void _vector2_array_to_float_array(const uint32_t &p_mix_frame_count,
 	}
 }
 
-void high_pass_filter(std::vector<float> &data, float cutoff, float sample_rate) {
+void _high_pass_filter(std::vector<float> &data, float cutoff, float sample_rate) {
 	const float rc = 1.0f / (2.0f * Math_PI * cutoff);
 	const float dt = 1.0f / sample_rate;
 	const float alpha = dt / (rc + dt);
@@ -62,7 +63,7 @@ void high_pass_filter(std::vector<float> &data, float cutoff, float sample_rate)
 }
 
 /** Check if speech is ending. */
-bool vad_simple(std::vector<float> &pcmf32, int sample_rate, int last_ms, float vad_thold, float freq_thold, bool verbose) {
+bool _vad_simple(std::vector<float> &pcmf32, int sample_rate, int last_ms, float vad_thold, float freq_thold, bool verbose) {
 	const int n_samples = pcmf32.size();
 	const int n_samples_last = (sample_rate * last_ms) / 1000;
 
@@ -72,7 +73,7 @@ bool vad_simple(std::vector<float> &pcmf32, int sample_rate, int last_ms, float 
 	}
 
 	if (freq_thold > 0.0f) {
-		high_pass_filter(pcmf32, freq_thold, sample_rate);
+		_high_pass_filter(pcmf32, freq_thold, sample_rate);
 	}
 
 	float energy_all = 0.0f;
@@ -101,44 +102,25 @@ bool vad_simple(std::vector<float> &pcmf32, int sample_rate, int last_ms, float 
 	return true;
 }
 
-SpeechToText *SpeechToText::singleton = nullptr;
-
-SpeechToText *SpeechToText::get_singleton() {
-	return singleton;
-}
-
 SpeechToText::SpeechToText() {
-	singleton = this;
+	thread.instantiate();
+	call_deferred("connect", "completed",
+			callable_mp(this, &SpeechToText::completed));
 }
 
-void SpeechToText::start_listen() {
-	if (is_running == false) {
-		is_running = true;
-		worker.start(Callable(this, StringName("run")), Thread::Priority::PRIORITY_NORMAL);
-		t_last_iter = Time::get_singleton()->get_ticks_msec();
-	}
-}
-
-void SpeechToText::stop_listen() {
-	is_running = false;
-	if (worker.is_started()) {
-		worker.wait_to_finish();
-	}
+void SpeechToText::completed(const Array &p_result) {
+	thread->wait_to_finish();
 }
 
 void SpeechToText::set_language(int p_language) {
 	language = (Language)p_language;
-	params.language = language_to_code(language);
-	if (is_running) {
-		this->full_params.language = params.language.c_str();
-	}
 }
 
 int SpeechToText::get_language() {
 	return language;
 }
 
-std::string SpeechToText::language_to_code(Language language) {
+std::string SpeechToText::_language_to_code(Language language) {
 	switch (language) {
 		case Auto:
 			return "auto";
@@ -347,10 +329,10 @@ std::string SpeechToText::language_to_code(Language language) {
 
 void SpeechToText::set_language_model(Ref<WhisperResource> p_model) {
 	model = p_model;
-	load_model();
+	_load_model();
 }
 
-void SpeechToText::load_model() {
+void SpeechToText::_load_model() {
 	whisper_free(context_instance);
 	UtilityFunctions::print(whisper_print_system_info());
 	if (model.is_null()) {
@@ -360,51 +342,44 @@ void SpeechToText::load_model() {
 	if (data.is_empty()) {
 		return;
 	}
-	context_instance = whisper_init_from_buffer_with_params((void *)(data.ptr()), data.size(), context_parameters);
-}
-
-void SpeechToText::set_use_gpu(bool use_gpu) {
-	context_parameters.use_gpu = use_gpu;
-	load_model();
+	const whisper_context_params context_params{
+		_is_use_gpu()
+	};
+	context_instance = whisper_init_from_buffer_with_params((void *)(data.ptr()), data.size(), context_params);
 }
 
 SpeechToText::~SpeechToText() {
-	singleton = nullptr;
-	stop_listen();
+	if (thread->is_alive()) {
+		thread->wait_to_finish();
+	}
 	whisper_free(context_instance);
 }
 /** Add audio data in PCM f32 format. */
-void SpeechToText::add_audio_buffer(PackedVector2Array buffer) {
-	s_mutex.lock();
+std::vector<float> SpeechToText::_add_audio_buffer(PackedVector2Array buffer) {
 	int buffer_len = buffer.size();
 	float *buffer_float = (float *)memalloc(sizeof(float) * buffer_len);
-	float *resampled_float = (float *)memalloc(sizeof(float) * buffer_len * SPEECH_SETTING_SAMPLE_RATE / AudioServer::get_singleton()->get_mix_rate());
+	float *resampled_float = (float *)memalloc(sizeof(float) * buffer_len * _get_speech_sample_rate() / AudioServer::get_singleton()->get_mix_rate());
 	_vector2_array_to_float_array(buffer_len, buffer.ptr(), buffer_float);
 	// Speaker frame.
 	int result_size = _resample_audio_buffer(
 			buffer_float, // Pointer to source buffer
 			buffer_len, // Size of source buffer * sizeof(float)
 			AudioServer::get_singleton()->get_mix_rate(), // Source sample rate
-			SPEECH_SETTING_SAMPLE_RATE, // Target sample rate
+			_get_speech_sample_rate(), // Target sample rate
 			resampled_float);
 
 	std::vector<float> data(resampled_float, resampled_float + result_size);
 
 	const int vad_last_ms = 0;
-	const float vad_thold = params.vad_thold;
-	const float freq_thold = params.freq_thold;
-	bool is_empty_array = vad_simple(data, WHISPER_SAMPLE_RATE, vad_last_ms, vad_thold, freq_thold, false);
+	const float vad_thold = _get_vad_thold();
+	const float freq_thold = _get_freq_thold();
 
-	if (is_empty_array == false) {
-		s_queued_pcmf32.insert(s_queued_pcmf32.end(), data.begin(), data.end());
-	}
 	memfree(buffer_float);
 	memfree(resampled_float);
-	s_mutex.unlock();
+	return data;
 }
 
 whisper_full_params SpeechToText::_get_whisper_params() {
-	SpeechToText *speech_to_text_obj = SpeechToText::get_singleton();
 	whisper_full_params whisper_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
 	// See here for example https://github.com/ggerganov/whisper.cpp/blob/master/examples/stream/stream.cpp#L302
 	whisper_params.max_len = 0;
@@ -414,19 +389,19 @@ whisper_full_params SpeechToText::_get_whisper_params() {
 	// This is set later on based on how much frames we can process
 	whisper_params.duration_ms = 0;
 	whisper_params.print_timestamps = false;
-	whisper_params.translate = speech_to_text_obj->params.translate;
+	whisper_params.translate = _is_translate();
 	whisper_params.single_segment = false;
 	whisper_params.no_timestamps = false;
 	whisper_params.token_timestamps = true;
-	whisper_params.max_tokens = speech_to_text_obj->params.max_tokens;
-	whisper_params.language = speech_to_text_obj->params.language.c_str();
-	whisper_params.n_threads = speech_to_text_obj->params.n_threads;
-	whisper_params.speed_up = speech_to_text_obj->params.speed_up;
+	whisper_params.max_tokens = _get_max_tokens();
+	whisper_params.language = _language_to_code(language).c_str();
+	whisper_params.n_threads = _get_n_threads();
+	whisper_params.speed_up = _is_speed_up();
 	whisper_params.prompt_tokens = nullptr;
 	whisper_params.prompt_n_tokens = 0;
 	whisper_params.suppress_non_speech_tokens = true;
 	whisper_params.suppress_blank = true;
-	whisper_params.entropy_thold = speech_to_text_obj->params.entropy_threshold;
+	whisper_params.entropy_thold = _get_entropy_threshold();
 	whisper_params.temperature = 0.0;
 	whisper_params.no_context = true;
 	/**
@@ -439,10 +414,9 @@ whisper_full_params SpeechToText::_get_whisper_params() {
 }
 
 /** Run Whisper in its own thread to not block the main thread. */
-void SpeechToText::run() {
-	SpeechToText *speech_to_text_obj = SpeechToText::get_singleton();
-	whisper_full_params whisper_params = _get_whisper_params();
-	speech_to_text_obj->full_params = whisper_params;
+void SpeechToText::transcribe(PackedVector2Array buffer) {
+	std::vector<float> pcmf32 = _add_audio_buffer(buffer);
+	whisper_full_params full_params = _get_whisper_params();
 
 	/* When more than this amount of audio received, run an iteration. */
 	const int trigger_ms = 400;
@@ -477,42 +451,23 @@ void SpeechToText::run() {
 	// Keep the last 0.5s of an iteration to the next one for better
 	// transcription at begin/end.
 	const int n_samples_keep_iter = WHISPER_SAMPLE_RATE * 0.5;
-	const float vad_thold = speech_to_text_obj->params.vad_thold;
-	const float freq_thold = speech_to_text_obj->params.freq_thold;
+	const float vad_thold = _get_vad_thold();
+	const float freq_thold = _get_freq_thold();
 
-	/* Audio buffer */
-	std::vector<float> pcmf32;
-
-	/* Processing loop */
-	while (speech_to_text_obj->is_running) {
-		if (!speech_to_text_obj->context_instance) {
+		if (!context_instance) {
 			ERR_PRINT("Context instance is null");
-			continue;
+			call_deferred("emit_signal", "update_transcribed_msgs", 0, Array());
+			return;
 		}
-		speech_to_text_obj->s_mutex.lock();
-		if (speech_to_text_obj->s_queued_pcmf32.size() < WHISPER_SAMPLE_RATE) {
-			speech_to_text_obj->s_mutex.unlock();
-			OS::get_singleton()->delay_msec(50);
-			continue;
-		}
-		if (speech_to_text_obj->s_queued_pcmf32.size() > 2 * n_samples_iter_threshold) {
-			WARN_PRINT("Too much audio is going to be processed, result may not come out in real time");
-		}
-		pcmf32.insert(pcmf32.end(), speech_to_text_obj->s_queued_pcmf32.begin(), speech_to_text_obj->s_queued_pcmf32.end());
-		speech_to_text_obj->s_queued_pcmf32.clear();
-		speech_to_text_obj->s_mutex.unlock();
 
 		float time_started = Time::get_singleton()->get_ticks_msec();
-		{
-			whisper_params.duration_ms = pcmf32.size() * 1000.0f / WHISPER_SAMPLE_RATE;
-			int ret = whisper_full(speech_to_text_obj->context_instance, speech_to_text_obj->full_params, pcmf32.data(), pcmf32.size());
+			full_params.duration_ms = pcmf32.size() * 1000.0f / WHISPER_SAMPLE_RATE;
+			int ret = whisper_full(context_instance, full_params, pcmf32.data(), pcmf32.size());
 			if (ret != 0) {
 				ERR_PRINT("Failed to process audio, returned " + rtos(ret));
-				continue;
+				call_deferred("emit_signal", "update_transcribed_msgs", 0, Array());
+				return;
 			}
-		}
-		{
-			transcribed_msg msg;
 			/**
 			 * Simple VAD from the "stream" example in whisper.cpp
 			 * https://github.com/ggerganov/whisper.cpp/blob/231bebca7deaf32d268a8b207d15aa859e52dbbe/examples/stream/stream.cpp#L378
@@ -521,78 +476,46 @@ void SpeechToText::run() {
 			/* Need enough accumulated audio to do VAD. */
 			if ((int)pcmf32.size() >= n_samples_vad_window) {
 				std::vector<float> pcmf32_window(pcmf32.end() - n_samples_vad_window, pcmf32.end());
-				speech_has_end = vad_simple(pcmf32_window, WHISPER_SAMPLE_RATE, vad_last_ms,
+				speech_has_end = _vad_simple(pcmf32_window, WHISPER_SAMPLE_RATE, vad_last_ms,
 						vad_thold, freq_thold, false);
 				if (speech_has_end) {
 					printf("speech end detected\n");
 				}
 			}
-			const int n_segments = whisper_full_n_segments(speech_to_text_obj->context_instance);
-			int64_t delete_target_t = 0;
-			bool find_delete_target_t = false;
-			int64_t target_index = 0;
-
-			int64_t half_t = 0;
-			if (n_segments > 0) {
-				const int cur_n_tokens = whisper_full_n_tokens(speech_to_text_obj->context_instance, n_segments - 1);
-				auto cur_last_token = whisper_full_get_token_data(speech_to_text_obj->context_instance, n_segments - 1, cur_n_tokens - 1);
-				half_t = cur_last_token.t1 * 1.0 / 2.0;
-			}
+			const int n_segments = whisper_full_n_segments(context_instance);
+			Array return_value;
 			for (int i = 0; i < n_segments; ++i) {
-				const int n_tokens = whisper_full_n_tokens(speech_to_text_obj->context_instance, i);
+				const int n_tokens = whisper_full_n_tokens(context_instance, i);
 				for (int j = 0; j < n_tokens; j++) {
-					auto token = whisper_full_get_token_data(speech_to_text_obj->context_instance, i, j);
-					auto text = whisper_full_get_token_text(speech_to_text_obj->context_instance, i, j);
-					// Idea from https://github.com/yum-food/TaSTT/blob/dbb2f72792e2af3ff220313f84bf76a9a1ddbeb4/Scripts/transcribe_v2.py#L457C17-L462C25
-					if (find_delete_target_t == false) {
-						String cur_text = String(text);
-						if (cur_text.begins_with("[_TT_") || cur_text == "," || cur_text == "." || cur_text == "?" || cur_text == "!" || cur_text == "，" || cur_text == "。" || cur_text == "？" || cur_text == "！") {
-							if (token.t1 < half_t) {
-								delete_target_t = token.t1;
-								target_index = msg.text.size() + cur_text.length();
-								msg.text += text;
-							} else {
-								if (delete_target_t == 0) {
-									delete_target_t = token.t1;
-									msg.text += text;
-									if (speech_has_end == false) {
-										msg.text += "{SPLIT}";
-									}
-
-								} else {
-									if (speech_has_end == false) {
-										msg.text.insert(target_index, "{SPLIT}");
-									}
-									msg.text += text;
-								}
-								find_delete_target_t = true;
-							}
-						} else {
-							msg.text += text;
-						}
-					} else {
-						msg.text += text;
-					}
+					auto token = whisper_full_get_token_data(context_instance, i, j);
+					auto text = whisper_full_get_token_text(context_instance, i, j);
+					Dictionary dict;
+					dict["text"] = String::utf8(text);
+					dict["id"] = token.id;
+					dict["p"] = token.p;
+					dict["plog"] = token.plog;
+					dict["pt"] = token.pt;
+					dict["ptsum"] = token.ptsum;
+					dict["t0"] = token.t0;
+					dict["t1"] = token.t1;
+					dict["tid"] = token.tid;
+					dict["vlen"] = token.vlen;
+					return_value.push_back(dict);
 				}
 			}
-			if (delete_target_t != 0 && find_delete_target_t == false) {
-				msg.text.insert(target_index, "{SPLIT}");
-				find_delete_target_t = true;
-			}
-
+			bool is_partial = false;
 			/**
 			 * Clear audio buffer when the size exceeds iteration threshold or
 			 * speech end is detected.
 			 */
 			if (pcmf32.size() > n_samples_iter_threshold * 0.66 || speech_has_end) {
-				const auto t_now = Time::get_singleton()->get_ticks_msec();
-				const auto t_diff = t_now - speech_to_text_obj->t_last_iter;
-				speech_to_text_obj->t_last_iter = t_now;
-				msg.is_partial = false;
 				/**
 				 * Keep the last few samples in the audio buffer, so the next
 				 * iteration has a smoother start.
 				 */
+				std::vector<float> last(pcmf32.end(), pcmf32.end());
+				pcmf32 = std::move(last);
+				/*
 				if (delete_target_t == 0 || speech_has_end) {
 					std::vector<float> last(pcmf32.end(), pcmf32.end());
 					pcmf32 = std::move(last);
@@ -605,68 +528,24 @@ void SpeechToText::run() {
 						std::vector<float> last(pcmf32.begin() + target_index, pcmf32.end());
 						pcmf32 = std::move(last);
 					}
-				}
+				}*/
 			} else {
-				msg.is_partial = true;
+				is_partial = true;
 			}
 			float time_end = Time::get_singleton()->get_ticks_msec() - time_started;
-			speech_to_text_obj->s_mutex.lock();
-			s_transcribed_msgs.insert(s_transcribed_msgs.end(), std::move(msg));
-			std::vector<transcribed_msg> transcribed;
-			transcribed = std::move(s_transcribed_msgs);
-			s_transcribed_msgs.clear();
 
-			Array ret;
-			for (int i = 0; i < transcribed.size(); i++) {
-				Dictionary cur_transcribed_msg;
-				cur_transcribed_msg["is_partial"] = transcribed[i].is_partial;
-				cur_transcribed_msg["text"] = String::utf8(transcribed[i].text.c_str());
-				ret.push_back(cur_transcribed_msg);
-			};
-			speech_to_text_obj->call_deferred("emit_signal", "update_transcribed_msgs", time_end, ret);
-			speech_to_text_obj->s_mutex.unlock();
-		}
-	}
+			call_deferred("emit_signal", "update_transcribed_msgs", time_end, return_value);
 }
 
 void SpeechToText::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("add_audio_buffer", "buffer"), &SpeechToText::add_audio_buffer);
-	ClassDB::bind_method(D_METHOD("get_entropy_threshold"), &SpeechToText::get_entropy_threshold);
-	ClassDB::bind_method(D_METHOD("set_entropy_threshold", "entropy_threshold"), &SpeechToText::set_entropy_threshold);
-	ClassDB::bind_method(D_METHOD("is_translate"), &SpeechToText::is_translate);
-	ClassDB::bind_method(D_METHOD("set_translate", "translate"), &SpeechToText::set_translate);
-	ClassDB::bind_method(D_METHOD("is_speed_up"), &SpeechToText::is_speed_up);
-	ClassDB::bind_method(D_METHOD("set_speed_up", "speed_up"), &SpeechToText::set_speed_up);
-	ClassDB::bind_method(D_METHOD("get_freq_thold"), &SpeechToText::get_freq_thold);
-	ClassDB::bind_method(D_METHOD("set_freq_thold", "freq_thold"), &SpeechToText::set_freq_thold);
-	ClassDB::bind_method(D_METHOD("get_vad_thold"), &SpeechToText::get_vad_thold);
-	ClassDB::bind_method(D_METHOD("set_vad_thold", "vad_thold"), &SpeechToText::set_vad_thold);
-	ClassDB::bind_method(D_METHOD("get_max_tokens"), &SpeechToText::get_max_tokens);
-	ClassDB::bind_method(D_METHOD("set_max_tokens", "max_tokens"), &SpeechToText::set_max_tokens);
-	ClassDB::bind_method(D_METHOD("get_n_threads"), &SpeechToText::get_n_threads);
-	ClassDB::bind_method(D_METHOD("set_n_threads", "n_threads"), &SpeechToText::set_n_threads);
-
 	ClassDB::bind_method(D_METHOD("get_language"), &SpeechToText::get_language);
 	ClassDB::bind_method(D_METHOD("set_language", "language"), &SpeechToText::set_language);
 	ClassDB::bind_method(D_METHOD("get_language_model"), &SpeechToText::get_language_model);
 	ClassDB::bind_method(D_METHOD("set_language_model", "model"), &SpeechToText::set_language_model);
-	ClassDB::bind_method(D_METHOD("is_use_gpu"), &SpeechToText::is_use_gpu);
-	ClassDB::bind_method(D_METHOD("set_use_gpu", "use_gpu"), &SpeechToText::set_use_gpu);
-	ClassDB::bind_method(D_METHOD("start_listen"), &SpeechToText::start_listen);
-	ClassDB::bind_method(D_METHOD("run"), &SpeechToText::run);
-	ClassDB::bind_method(D_METHOD("stop_listen"), &SpeechToText::stop_listen);
+	ClassDB::bind_method(D_METHOD("transcribe", "buffer"), &SpeechToText::transcribe);
+	
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "language", PROPERTY_HINT_ENUM, "Auto,English,Chinese,German,Spanish,Russian,Korean,French,Japanese,Portuguese,Turkish,Polish,Catalan,Dutch,Arabic,Swedish,Italian,Indonesian,Hindi,Finnish,Vietnamese,Hebrew,Ukrainian,Greek,Malay,Czech,Romanian,Danish,Hungarian,Tamil,Norwegian,Thai,Urdu,Croatian,Bulgarian,Lithuanian,Latin,Maori,Malayalam,Welsh,Slovak,Telugu,Persian,Latvian,Bengali,Serbian,Azerbaijani,Slovenian,Kannada,Estonian,Macedonian,Breton,Basque,Icelandic,Armenian,Nepali,Mongolian,Bosnian,Kazakh,Albanian,Swahili,Galician,Marathi,Punjabi,Sinhala,Khmer,Shona,Yoruba,Somali,Afrikaans,Occitan,Georgian,Belarusian,Tajik,Sindhi,Gujarati,Amharic,Yiddish,Lao,Uzbek,Faroese,Haitian_Creole,Pashto,Turkmen,Nynorsk,Maltese,Sanskrit,Luxembourgish,Myanmar,Tibetan,Tagalog,Malagasy,Assamese,Tatar,Hawaiian,Lingala,Hausa,Bashkir,Javanese,Sundanese,Cantonese"), "set_language", "get_language");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "language_model", PROPERTY_HINT_RESOURCE_TYPE, "WhisperResource"), "set_language_model", "get_language_model");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_gpu"), "set_use_gpu", "is_use_gpu");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "entropy_threshold"), "set_entropy_threshold", "get_entropy_threshold");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "translate"), "set_translate", "is_translate");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "speed_up"), "set_speed_up", "is_speed_up");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "freq_thold"), "set_freq_thold", "get_freq_thold");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "vad_thold"), "set_vad_thold", "get_vad_thold");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_tokens"), "set_max_tokens", "get_max_tokens");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "n_threads"), "set_n_threads", "get_n_threads");
 
-	ADD_SIGNAL(MethodInfo("update_transcribed_msgs", PropertyInfo(Variant::INT, "process_time_ms"), PropertyInfo(Variant::ARRAY, "transcribed_msgs")));
-
-	BIND_CONSTANT(SPEECH_SETTING_SAMPLE_RATE);
+	ADD_SIGNAL(MethodInfo("completed", PropertyInfo(Variant::ARRAY, "result", PROPERTY_HINT_ARRAY_TYPE)));
 }

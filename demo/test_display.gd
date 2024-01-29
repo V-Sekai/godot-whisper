@@ -4,7 +4,7 @@ extends RichTextLabel
 func update_text():
 	text = str(last_process_time) + "\n" + completed_text + "[color=green]" + partial_text + "[/color]"
 
-func _process(delta):
+func _process(_delta):
 	update_text()
 
 var completed_text = ""

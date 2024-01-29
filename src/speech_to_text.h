@@ -14,6 +14,7 @@
 
 #include <libsamplerate/src/samplerate.h>
 #include <whisper.cpp/whisper.h>
+#include <godot_cpp/classes/project_settings.hpp>
 
 #include <atomic>
 #include <string>
@@ -127,86 +128,38 @@ public:
 		Cantonese
 	};
 
-	static SpeechToText *singleton;
-
 private:
 	GDCLASS(SpeechToText, Node);
-
-	struct whisper_params {
-		int32_t n_threads = MIN(4, (int32_t)OS::get_singleton()->get_processor_count());
-		int32_t max_tokens = 32;
-
-		float vad_thold = 0.3f;
-		float freq_thold = 200.0f;
-
-		bool speed_up = false;
-		bool translate = false;
-		bool no_fallback = false;
-
-		std::string language = "en";
-		std::string model = "./addons/godot_whisper/models/ggml-tiny.en.bin";
-
-		float entropy_threshold = 2.8f;
-	};
+	Ref<Thread> thread;
 	Language language = English;
 	Ref<WhisperResource> model;
-	whisper_params params;
-	whisper_full_params full_params;
-	whisper_context_params context_parameters{ true };
 	whisper_context *context_instance = nullptr;
-	int t_last_iter;
 
 	whisper_full_params _get_whisper_params();
 
+	_FORCE_INLINE_ bool _is_use_gpu() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/use_gpu"); }
+	_FORCE_INLINE_ float _get_entropy_threshold() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/entropy_treshold"); }
+	_FORCE_INLINE_ bool _is_translate() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/freq_treshold"); }
+	_FORCE_INLINE_ bool _is_speed_up() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/max_tokens"); }
+	_FORCE_INLINE_ float _get_freq_thold() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/n_threads"); }
+	_FORCE_INLINE_ float _get_vad_thold() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/speed_up"); }
+	_FORCE_INLINE_ int _get_max_tokens() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/translate"); }
+	_FORCE_INLINE_ int _get_n_threads() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/vad_treshold"); }
+	void _load_model();
+	std::vector<float> _add_audio_buffer(PackedVector2Array buffer);
+	_FORCE_INLINE_ int _get_speech_sample_rate() {return ProjectSettings::get_singleton()->get("audio/input/transcribe/sample_rate");}
+	std::string _language_to_code(Language language);
 protected:
 	static void _bind_methods();
 
 public:
-	enum {
-		SPEECH_SETTING_SAMPLE_RATE = 16000,
-	};
-	static SpeechToText *get_singleton();
-	std::string language_to_code(Language language);
+	void transcribe(PackedVector2Array buffer);
 	void set_language(int p_language);
 	int get_language();
 	void set_language_model(Ref<WhisperResource> p_model);
 	_FORCE_INLINE_ Ref<WhisperResource> get_language_model() { return model; }
-	_FORCE_INLINE_ void set_use_gpu(bool use_gpu);
-	_FORCE_INLINE_ bool is_use_gpu() { return context_parameters.use_gpu; }
 	SpeechToText();
 	~SpeechToText();
-
-	std::atomic<bool> is_running;
-	std::vector<float> s_queued_pcmf32;
-	Mutex s_mutex; // for accessing shared variables from both main thread and worker thread
-	Thread worker;
-	void run();
-
-	_FORCE_INLINE_ void set_entropy_threshold(float entropy_threshold) { params.entropy_threshold = entropy_threshold; }
-	_FORCE_INLINE_ float get_entropy_threshold() { return params.entropy_threshold; }
-
-	_FORCE_INLINE_ void set_translate(bool translate) { params.translate = translate; }
-	_FORCE_INLINE_ bool is_translate() { return params.translate; }
-
-	_FORCE_INLINE_ void set_speed_up(bool speed_up) { params.speed_up = speed_up; }
-	_FORCE_INLINE_ bool is_speed_up() { return params.speed_up; }
-
-	_FORCE_INLINE_ void set_freq_thold(float freq_thold) { params.freq_thold = freq_thold; }
-	_FORCE_INLINE_ float get_freq_thold() { return params.freq_thold; }
-
-	_FORCE_INLINE_ void set_vad_thold(float vad_thold) { params.vad_thold = vad_thold; }
-	_FORCE_INLINE_ float get_vad_thold() { return params.vad_thold; }
-
-	_FORCE_INLINE_ void set_max_tokens(int max_tokens) { params.max_tokens = max_tokens; }
-	_FORCE_INLINE_ int get_max_tokens() { return params.max_tokens; }
-
-	_FORCE_INLINE_ void set_n_threads(int n_threads) { params.n_threads = n_threads; }
-	_FORCE_INLINE_ int get_n_threads() { return params.n_threads; }
-
-	void add_audio_buffer(PackedVector2Array buffer);
-	void start_listen();
-	void stop_listen();
-	void load_model();
 };
 
 #endif // SPEECH_TO_TEXT_H
