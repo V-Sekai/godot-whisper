@@ -31,20 +31,20 @@ void register_setting(
 	project_settings->set_initial_value(p_name, p_value);
 }
 
-void whisper_callback(enum ggml_log_level level, const char * text, void * user_data) {
+void whisper_callback(enum ggml_log_level level, const char *text, void *user_data) {
 	switch (level) {
 		case GGML_LOG_LEVEL_ERROR: {
 			ERR_PRINT(text);
-		}break;
+		} break;
 		case GGML_LOG_LEVEL_WARN: {
 			WARN_PRINT(text);
-		}break;
+		} break;
 		case GGML_LOG_LEVEL_INFO: {
 			UtilityFunctions::print(text);
-		}break;
+		} break;
 		case GGML_LOG_LEVEL_DEBUG: {
 			UtilityFunctions::print(text);
-		}break;
+		} break;
 	}
 }
 
@@ -56,7 +56,7 @@ void initialize_whisper_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_CLASS(WhisperResource);
 	GDREGISTER_CLASS(ResourceFormatLoaderWhisper);
 	whisper_log_set(whisper_callback, nullptr);
-	
+
 	whisper_loader.instantiate();
 	ResourceLoader::get_singleton()->add_resource_format_loader(whisper_loader);
 

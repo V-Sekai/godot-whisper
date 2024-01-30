@@ -130,7 +130,6 @@ public:
 
 private:
 	GDCLASS(SpeechToText, Node);
-	Ref<Thread> thread;
 	Language language = English;
 	Ref<WhisperResource> model;
 	whisper_context *context_instance = nullptr;
@@ -147,13 +146,16 @@ private:
 	_FORCE_INLINE_ int _get_n_threads() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/vad_treshold"); }
 	void _load_model();
 	std::vector<float> _add_audio_buffer(PackedVector2Array buffer);
-	_FORCE_INLINE_ int _get_speech_sample_rate() {return ProjectSettings::get_singleton()->get("audio/input/transcribe/sample_rate");}
+	_FORCE_INLINE_ int _get_speech_sample_rate() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/sample_rate"); }
 	std::string _language_to_code(Language language);
+
 protected:
 	static void _bind_methods();
 
 public:
-	void transcribe(PackedVector2Array buffer);
+	bool voice_activity_detection(PackedFloat32Array buffer);
+	PackedFloat32Array resample(PackedVector2Array buffer);
+	Array transcribe(PackedFloat32Array buffer);
 	void set_language(int p_language);
 	int get_language();
 	void set_language_model(Ref<WhisperResource> p_model);

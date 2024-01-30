@@ -78,4 +78,3 @@ script = ExtResource("1_36edp")
 
 [connection signal="pressed" from="HBoxContainer/StartButton" to="CaptureStreamToText" method="start_listen"]
 [connection signal="pressed" from="HBoxContainer/StopButton" to="CaptureStreamToText" method="stop_listen"]
-[connection signal="update_transcribed_msg" from="CaptureStreamToText" to="Panel/Label" method="_on_capture_stream_to_text_update_transcribed_msg"]
