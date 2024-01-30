@@ -377,7 +377,7 @@ whisper_full_params SpeechToText::_get_whisper_params() {
 	whisper_params.duration_ms = 0;
 	whisper_params.print_timestamps = false;
 	whisper_params.translate = _is_translate();
-	whisper_params.single_segment = false;
+	whisper_params.single_segment = true;
 	whisper_params.no_timestamps = false;
 	whisper_params.token_timestamps = true;
 	whisper_params.max_tokens = _get_max_tokens();
@@ -427,17 +427,12 @@ Array SpeechToText::transcribe(PackedFloat32Array buffer) {
 	Array return_value;
 	whisper_full_params full_params = _get_whisper_params();
 
-	// Keep the last 0.5s of an iteration to the next one for better
-	// transcription at begin/end.
-	const int n_samples_keep_iter = WHISPER_SAMPLE_RATE * 0.5;
-
 	if (!context_instance) {
 		ERR_PRINT("Context instance is null");
 		return Array();
 	}
 
-	float time_started = Time::get_singleton()->get_ticks_msec();
-	full_params.duration_ms = buffer.size() * 1000.0f / WHISPER_SAMPLE_RATE;
+	//full_params.duration_ms = buffer.size() * 1000.0f / WHISPER_SAMPLE_RATE;
 	int ret = whisper_full(context_instance, full_params, buffer.ptr(), buffer.size());
 	if (ret != 0) {
 		ERR_PRINT("Failed to process audio, returned " + rtos(ret));

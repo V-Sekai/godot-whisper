@@ -138,12 +138,12 @@ private:
 
 	_FORCE_INLINE_ bool _is_use_gpu() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/use_gpu"); }
 	_FORCE_INLINE_ float _get_entropy_threshold() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/entropy_treshold"); }
-	_FORCE_INLINE_ bool _is_translate() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/freq_treshold"); }
-	_FORCE_INLINE_ bool _is_speed_up() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/max_tokens"); }
-	_FORCE_INLINE_ float _get_freq_thold() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/n_threads"); }
-	_FORCE_INLINE_ float _get_vad_thold() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/speed_up"); }
-	_FORCE_INLINE_ int _get_max_tokens() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/translate"); }
-	_FORCE_INLINE_ int _get_n_threads() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/vad_treshold"); }
+	_FORCE_INLINE_ bool _is_translate() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/translate"); }
+	_FORCE_INLINE_ bool _is_speed_up() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/speed_up"); }
+	_FORCE_INLINE_ float _get_freq_thold() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/freq_treshold"); }
+	_FORCE_INLINE_ float _get_vad_thold() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/vad_treshold"); }
+	_FORCE_INLINE_ int _get_max_tokens() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/max_tokens"); }
+	_FORCE_INLINE_ int _get_n_threads() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/n_threads"); }
 	void _load_model();
 	std::vector<float> _add_audio_buffer(PackedVector2Array buffer);
 	_FORCE_INLINE_ int _get_speech_sample_rate() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/sample_rate"); }
