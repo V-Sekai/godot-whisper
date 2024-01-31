@@ -399,6 +399,9 @@ whisper_full_params SpeechToText::_get_whisper_params() {
 	//whisper_params.audio_ctx = 768;
 	whisper_params.language = _language_to_code(language).c_str();
 	whisper_params.audio_ctx = 0;
+	whisper_params.token_timestamps = true;
+	whisper_params.suppress_non_speech_tokens = true;
+	whisper_params.max_tokens = _get_max_tokens();
 	return whisper_params;
 }
 

@@ -64,7 +64,6 @@ void initialize_whisper_module(ModuleInitializationLevel p_level) {
 	register_setting("audio/input/transcribe/entropy_treshold", 2.8, PROPERTY_HINT_NONE, {});
 	register_setting("audio/input/transcribe/freq_treshold", 200, PROPERTY_HINT_NONE, {});
 	register_setting("audio/input/transcribe/max_tokens", 32, PROPERTY_HINT_NONE, {});
-	register_setting("audio/input/transcribe/speed_up", false, PROPERTY_HINT_NONE, {});
 	register_setting("audio/input/transcribe/vad_treshold", 0.3, PROPERTY_HINT_NONE, {});
 	register_setting("audio/input/transcribe/use_gpu", true, PROPERTY_HINT_NONE, {});
 	register_setting("audio/input/transcribe/sample_rate", 16000, PROPERTY_HINT_NONE, {});
