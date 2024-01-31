@@ -16,7 +16,8 @@
 uint32_t _resample_audio_buffer(
 		const float *p_src, const uint32_t p_src_frame_count,
 		const uint32_t p_src_samplerate, const uint32_t p_target_samplerate,
-		float *p_dst) {
+		float *p_dst,
+		SpeechToText::InterpolatorType interpolator_type) {
 	if (p_src_samplerate != p_target_samplerate) {
 		SRC_DATA src_data;
 
@@ -28,7 +29,7 @@ uint32_t _resample_audio_buffer(
 		src_data.output_frames = int(p_src_frame_count * src_data.src_ratio);
 
 		src_data.end_of_input = 0;
-		int error = src_simple(&src_data, SRC_SINC_BEST_QUALITY, 1);
+		int error = src_simple(&src_data, interpolator_type, 1);
 		if (error != 0) {
 			ERR_PRINT(String(src_strerror(error)));
 			return 0;
@@ -345,10 +346,11 @@ SpeechToText::~SpeechToText() {
 	whisper_free(context_instance);
 }
 
-PackedFloat32Array SpeechToText::resample(PackedVector2Array buffer) {
+PackedFloat32Array SpeechToText::resample(PackedVector2Array buffer, SpeechToText::InterpolatorType interpolator_type) {
 	int buffer_len = buffer.size();
 	float *buffer_float = (float *)memalloc(sizeof(float) * buffer_len);
 	float *resampled_float = (float *)memalloc(sizeof(float) * buffer_len * _get_speech_sample_rate() / AudioServer::get_singleton()->get_mix_rate());
+
 	_vector2_array_to_float_array(buffer_len, buffer.ptr(), buffer_float);
 	// Speaker frame.
 	int result_size = _resample_audio_buffer(
@@ -356,7 +358,8 @@ PackedFloat32Array SpeechToText::resample(PackedVector2Array buffer) {
 			buffer_len, // Size of source buffer * sizeof(float)
 			AudioServer::get_singleton()->get_mix_rate(), // Source sample rate
 			_get_speech_sample_rate(), // Target sample rate
-			resampled_float);
+			resampled_float,
+			interpolator_type);
 
 	PackedFloat32Array array;
 	array.resize(result_size);
@@ -369,20 +372,17 @@ PackedFloat32Array SpeechToText::resample(PackedVector2Array buffer) {
 whisper_full_params SpeechToText::_get_whisper_params() {
 	whisper_full_params whisper_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
 	// See here for example https://github.com/ggerganov/whisper.cpp/blob/master/examples/stream/stream.cpp#L302
-	whisper_params.max_len = 0;
+	/*whisper_params.max_len = 0;
 	whisper_params.print_progress = false;
 	whisper_params.print_special = false;
 	whisper_params.print_realtime = false;
 	// This is set later on based on how much frames we can process
 	whisper_params.duration_ms = 0;
 	whisper_params.print_timestamps = false;
-	whisper_params.translate = _is_translate();
 	whisper_params.single_segment = true;
 	whisper_params.no_timestamps = false;
 	whisper_params.token_timestamps = true;
 	whisper_params.max_tokens = _get_max_tokens();
-	whisper_params.language = _language_to_code(language).c_str();
-	whisper_params.n_threads = _get_n_threads();
 	whisper_params.speed_up = _is_speed_up();
 	whisper_params.prompt_tokens = nullptr;
 	whisper_params.prompt_n_tokens = 0;
@@ -396,7 +396,9 @@ whisper_full_params SpeechToText::_get_whisper_params() {
 	 * size whisper is designed for) to speed up 2x.
 	 * https://github.com/ggerganov/whisper.cpp/issues/137#issuecomment-1318412267
 	 */
-	whisper_params.audio_ctx = 768;
+	//whisper_params.audio_ctx = 768;
+	whisper_params.language = _language_to_code(language).c_str();
+	whisper_params.audio_ctx = 0;
 	return whisper_params;
 }
 
@@ -431,8 +433,7 @@ Array SpeechToText::transcribe(PackedFloat32Array buffer) {
 		ERR_PRINT("Context instance is null");
 		return Array();
 	}
-
-	//full_params.duration_ms = buffer.size() * 1000.0f / WHISPER_SAMPLE_RATE;
+	full_params.duration_ms = buffer.size() * 1000.0f / WHISPER_SAMPLE_RATE;
 	int ret = whisper_full(context_instance, full_params, buffer.ptr(), buffer.size());
 	if (ret != 0) {
 		ERR_PRINT("Failed to process audio, returned " + rtos(ret));
@@ -470,6 +471,114 @@ void SpeechToText::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("transcribe", "buffer"), &SpeechToText::transcribe);
 	ClassDB::bind_method(D_METHOD("voice_activity_detection", "buffer"), &SpeechToText::voice_activity_detection);
 	ClassDB::bind_method(D_METHOD("resample", "buffer"), &SpeechToText::resample);
+
+	BIND_ENUM_CONSTANT(SRC_SINC_BEST_QUALITY);
+	BIND_ENUM_CONSTANT(SRC_SINC_MEDIUM_QUALITY);
+	BIND_ENUM_CONSTANT(SRC_SINC_FASTEST);
+	BIND_ENUM_CONSTANT(SRC_ZERO_ORDER_HOLD);
+	BIND_ENUM_CONSTANT(SRC_LINEAR);
+
+	BIND_ENUM_CONSTANT(Auto);
+	BIND_ENUM_CONSTANT(English);
+	BIND_ENUM_CONSTANT(Chinese);
+	BIND_ENUM_CONSTANT(German);
+	BIND_ENUM_CONSTANT(Spanish);
+	BIND_ENUM_CONSTANT(Russian);
+	BIND_ENUM_CONSTANT(Korean);
+	BIND_ENUM_CONSTANT(French);
+	BIND_ENUM_CONSTANT(Japanese);
+	BIND_ENUM_CONSTANT(Portuguese);
+	BIND_ENUM_CONSTANT(Turkish);
+	BIND_ENUM_CONSTANT(Polish);
+	BIND_ENUM_CONSTANT(Catalan);
+	BIND_ENUM_CONSTANT(Dutch);
+	BIND_ENUM_CONSTANT(Arabic);
+	BIND_ENUM_CONSTANT(Swedish);
+	BIND_ENUM_CONSTANT(Italian);
+	BIND_ENUM_CONSTANT(Indonesian);
+	BIND_ENUM_CONSTANT(Hindi);
+	BIND_ENUM_CONSTANT(Finnish);
+	BIND_ENUM_CONSTANT(Vietnamese);
+	BIND_ENUM_CONSTANT(Hebrew);
+	BIND_ENUM_CONSTANT(Ukrainian);
+	BIND_ENUM_CONSTANT(Greek);
+	BIND_ENUM_CONSTANT(Malay);
+	BIND_ENUM_CONSTANT(Czech);
+	BIND_ENUM_CONSTANT(Romanian);
+	BIND_ENUM_CONSTANT(Danish);
+	BIND_ENUM_CONSTANT(Hungarian);
+	BIND_ENUM_CONSTANT(Tamil);
+	BIND_ENUM_CONSTANT(Norwegian);
+	BIND_ENUM_CONSTANT(Thai);
+	BIND_ENUM_CONSTANT(Urdu);
+	BIND_ENUM_CONSTANT(Croatian);
+	BIND_ENUM_CONSTANT(Bulgarian);
+	BIND_ENUM_CONSTANT(Lithuanian);
+	BIND_ENUM_CONSTANT(Latin);
+	BIND_ENUM_CONSTANT(Maori);
+	BIND_ENUM_CONSTANT(Malayalam);
+	BIND_ENUM_CONSTANT(Welsh);
+	BIND_ENUM_CONSTANT(Slovak);
+	BIND_ENUM_CONSTANT(Telugu);
+	BIND_ENUM_CONSTANT(Persian);
+	BIND_ENUM_CONSTANT(Latvian);
+	BIND_ENUM_CONSTANT(Bengali);
+	BIND_ENUM_CONSTANT(Serbian);
+	BIND_ENUM_CONSTANT(Azerbaijani);
+	BIND_ENUM_CONSTANT(Slovenian);
+	BIND_ENUM_CONSTANT(Kannada);
+	BIND_ENUM_CONSTANT(Estonian);
+	BIND_ENUM_CONSTANT(Macedonian);
+	BIND_ENUM_CONSTANT(Breton);
+	BIND_ENUM_CONSTANT(Basque);
+	BIND_ENUM_CONSTANT(Icelandic);
+	BIND_ENUM_CONSTANT(Armenian);
+	BIND_ENUM_CONSTANT(Nepali);
+	BIND_ENUM_CONSTANT(Mongolian);
+	BIND_ENUM_CONSTANT(Bosnian);
+	BIND_ENUM_CONSTANT(Kazakh);
+	BIND_ENUM_CONSTANT(Albanian);
+	BIND_ENUM_CONSTANT(Swahili);
+	BIND_ENUM_CONSTANT(Galician);
+	BIND_ENUM_CONSTANT(Marathi);
+	BIND_ENUM_CONSTANT(Punjabi);
+	BIND_ENUM_CONSTANT(Sinhala);
+	BIND_ENUM_CONSTANT(Khmer);
+	BIND_ENUM_CONSTANT(Shona);
+	BIND_ENUM_CONSTANT(Yoruba);
+	BIND_ENUM_CONSTANT(Somali);
+	BIND_ENUM_CONSTANT(Afrikaans);
+	BIND_ENUM_CONSTANT(Occitan);
+	BIND_ENUM_CONSTANT(Georgian);
+	BIND_ENUM_CONSTANT(Belarusian);
+	BIND_ENUM_CONSTANT(Tajik);
+	BIND_ENUM_CONSTANT(Sindhi);
+	BIND_ENUM_CONSTANT(Gujarati);
+	BIND_ENUM_CONSTANT(Amharic);
+	BIND_ENUM_CONSTANT(Yiddish);
+	BIND_ENUM_CONSTANT(Lao);
+	BIND_ENUM_CONSTANT(Uzbek);
+	BIND_ENUM_CONSTANT(Faroese);
+	BIND_ENUM_CONSTANT(Haitian_Creole);
+	BIND_ENUM_CONSTANT(Pashto);
+	BIND_ENUM_CONSTANT(Turkmen);
+	BIND_ENUM_CONSTANT(Nynorsk);
+	BIND_ENUM_CONSTANT(Maltese);
+	BIND_ENUM_CONSTANT(Sanskrit);
+	BIND_ENUM_CONSTANT(Luxembourgish);
+	BIND_ENUM_CONSTANT(Myanmar);
+	BIND_ENUM_CONSTANT(Tibetan);
+	BIND_ENUM_CONSTANT(Tagalog);
+	BIND_ENUM_CONSTANT(Malagasy);
+	BIND_ENUM_CONSTANT(Assamese);
+	BIND_ENUM_CONSTANT(Tatar);
+	BIND_ENUM_CONSTANT(Hawaiian);
+	BIND_ENUM_CONSTANT(Lingala);
+	BIND_ENUM_CONSTANT(Hausa);
+	BIND_ENUM_CONSTANT(Bashkir);
+	BIND_ENUM_CONSTANT(Javanese);
+	BIND_ENUM_CONSTANT(Sundanese);
+	BIND_ENUM_CONSTANT(Cantonese);
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "language", PROPERTY_HINT_ENUM, "Auto,English,Chinese,German,Spanish,Russian,Korean,French,Japanese,Portuguese,Turkish,Polish,Catalan,Dutch,Arabic,Swedish,Italian,Indonesian,Hindi,Finnish,Vietnamese,Hebrew,Ukrainian,Greek,Malay,Czech,Romanian,Danish,Hungarian,Tamil,Norwegian,Thai,Urdu,Croatian,Bulgarian,Lithuanian,Latin,Maori,Malayalam,Welsh,Slovak,Telugu,Persian,Latvian,Bengali,Serbian,Azerbaijani,Slovenian,Kannada,Estonian,Macedonian,Breton,Basque,Icelandic,Armenian,Nepali,Mongolian,Bosnian,Kazakh,Albanian,Swahili,Galician,Marathi,Punjabi,Sinhala,Khmer,Shona,Yoruba,Somali,Afrikaans,Occitan,Georgian,Belarusian,Tajik,Sindhi,Gujarati,Amharic,Yiddish,Lao,Uzbek,Faroese,Haitian_Creole,Pashto,Turkmen,Nynorsk,Maltese,Sanskrit,Luxembourgish,Myanmar,Tibetan,Tagalog,Malagasy,Assamese,Tatar,Hawaiian,Lingala,Hausa,Bashkir,Javanese,Sundanese,Cantonese"), "set_language", "get_language");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "language_model", PROPERTY_HINT_RESOURCE_TYPE, "WhisperResource"), "set_language_model", "get_language_model");
