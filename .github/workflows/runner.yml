@@ -33,27 +33,27 @@ jobs:
           - platform: macos
             arch: universal
             os: macos-latest
-          - platform: android
-            arch: arm64
-            os: ubuntu-20.04
-            opencl_arch: arm64-v8a
-          - platform: android
-            arch: arm32
-            os: ubuntu-20.04
-            opencl_arch: armv7-a
-          - platform: android
-            arch: x86_64
-            os: ubuntu-20.04
-            opencl_arch: x86_64
-          - platform: android
-            arch: x86_32
-            os: ubuntu-20.04
+          #- platform: android
+          #  arch: arm64
+          #  os: ubuntu-20.04
+          #  opencl_arch: arm64-v8a
+          #- platform: android
+          #  arch: arm32
+          #  os: ubuntu-20.04
+          #  opencl_arch: armv7-a
+          #- platform: android
+          #  arch: x86_64
+          #  os: ubuntu-20.04
+          #  opencl_arch: x86_64
+          #- platform: android
+          #  arch: x86_32
+          #  os: ubuntu-20.04
           - platform: ios
             arch: arm64
             os: macos-latest
-          - platform: web
-            arch: wasm32
-            os: ubuntu-20.04
+          #- platform: web
+          #  arch: wasm32
+          #  os: ubuntu-20.04
 
     runs-on: ${{ matrix.os }}
     steps:
