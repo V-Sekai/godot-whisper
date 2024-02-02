@@ -112,7 +112,7 @@ jobs:
         if: ${{ matrix.platform == 'macos' }}
         uses: ughuuu/godot-cpp-template/.github/actions/sign@add-more-stuff/options-to-build
         with:
-          bin-path: bin/addons/godot_whisper/bin/libgodot_whisper.macos.template_release.universal.framework
+          FRAMEWORK_PATH: bin/addons/godot_whisper/bin/libgodot_whisper.macos.template_release.universal.framework
           APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
           APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
           APPLE_DEV_PASSWORD: ${{ secrets.APPLE_DEV_PASSWORD }}
