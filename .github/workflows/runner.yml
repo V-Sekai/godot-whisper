@@ -18,10 +18,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: linux
-            arch: x86_64
-            os: ubuntu-latest
-            opencl_arch: x64
+          #- platform: linux
+          #  arch: x86_64
+          #  os: ubuntu-latest
+          #  opencl_arch: x64
           - platform: windows
             arch: x86_32
             os: windows-latest
@@ -109,7 +109,7 @@ jobs:
           enable-clang-lint: true
           bin-path: bin
       - name: Mac Sign
-        if: ${{ matrix.platform == 'macos' }}
+        if: ${{ matrix.platform == 'macos' && secrets.APPLE_CERT_BASE64 != '' }}
         uses: ughuuu/godot-cpp-template/.github/actions/sign@add-more-stuff/options-to-build
         with:
           FRAMEWORK_PATH: bin/addons/godot_whisper/bin/libgodot_whisper.macos.template_release.universal.framework
