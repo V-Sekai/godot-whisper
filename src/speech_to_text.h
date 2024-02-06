@@ -134,8 +134,6 @@ private:
 	Ref<WhisperResource> model;
 	whisper_context *context_instance = nullptr;
 
-	whisper_full_params _get_whisper_params();
-
 	_FORCE_INLINE_ bool _is_use_gpu() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/use_gpu"); }
 	_FORCE_INLINE_ float _get_entropy_threshold() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/entropy_treshold"); }
 	_FORCE_INLINE_ float _get_freq_thold() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/freq_treshold"); }

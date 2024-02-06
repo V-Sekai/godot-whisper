@@ -350,7 +350,6 @@ PackedFloat32Array SpeechToText::resample(PackedVector2Array buffer, SpeechToTex
 	int buffer_len = buffer.size();
 	float *buffer_float = (float *)memalloc(sizeof(float) * buffer_len);
 	float *resampled_float = (float *)memalloc(sizeof(float) * buffer_len * _get_speech_sample_rate() / AudioServer::get_singleton()->get_mix_rate());
-	ERR_PRINT("size of " + rtos(sizeof(float) * buffer_len * _get_speech_sample_rate() / AudioServer::get_singleton()->get_mix_rate()));
 	_vector2_array_to_float_array(buffer_len, buffer.ptr(), buffer_float);
 	// Speaker frame.
 	int result_size = _resample_audio_buffer(
@@ -360,46 +359,12 @@ PackedFloat32Array SpeechToText::resample(PackedVector2Array buffer, SpeechToTex
 			_get_speech_sample_rate(), // Target sample rate
 			resampled_float,
 			interpolator_type);
-	ERR_PRINT("speaker frame " + rtos(result_size));
 	PackedFloat32Array array;
 	array.resize(result_size);
 	std::memcpy(array.ptrw(), resampled_float, result_size);
 	memfree(buffer_float);
 	memfree(resampled_float);
 	return array;
-}
-
-whisper_full_params SpeechToText::_get_whisper_params() {
-	whisper_full_params whisper_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
-	// See here for example https://github.com/ggerganov/whisper.cpp/blob/master/examples/stream/stream.cpp#L302
-	/*whisper_params.max_len = 0;
-	// This is set later on based on how much frames we can process
-	whisper_params.duration_ms = 0;
-	whisper_params.single_segment = true;
-	whisper_params.no_timestamps = false;
-	whisper_params.token_timestamps = true;
-	whisper_params.max_tokens = _get_max_tokens();
-	whisper_params.prompt_tokens = nullptr;
-	whisper_params.prompt_n_tokens = 0;
-	whisper_params.suppress_non_speech_tokens = true;
-	whisper_params.suppress_blank = true;
-	whisper_params.entropy_thold = _get_entropy_threshold();
-	whisper_params.temperature = 0.0;
-	whisper_params.no_context = true;
-	/**
-	 * Experimental optimization: Reduce audio_ctx to 15s (half of the chunk
-	 * size whisper is designed for) to speed up 2x.
-	 * https://github.com/ggerganov/whisper.cpp/issues/137#issuecomment-1318412267
-	 */
-	whisper_params.language = _language_to_code(language).c_str();
-	//whisper_params.audio_ctx = 0;
-	whisper_params.audio_ctx = 768;
-	whisper_params.token_timestamps = true;
-	whisper_params.suppress_non_speech_tokens = true;
-	whisper_params.single_segment = true;
-	whisper_params.max_tokens = _get_max_tokens();
-	whisper_params.entropy_thold = _get_entropy_threshold();
-	return whisper_params;
 }
 
 bool SpeechToText::voice_activity_detection(PackedFloat32Array buffer) {
@@ -427,14 +392,29 @@ bool SpeechToText::voice_activity_detection(PackedFloat32Array buffer) {
 
 Array SpeechToText::transcribe(PackedFloat32Array buffer) {
 	Array return_value;
-	whisper_full_params full_params = _get_whisper_params();
+	whisper_full_params whisper_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+	/**
+	 * Experimental optimization: Reduce audio_ctx to 15s (half of the chunk
+	 * size whisper is designed for) to speed up 2x.
+	 * https://github.com/ggerganov/whisper.cpp/issues/137#issuecomment-1318412267
+	 */
+	whisper_params.language = _language_to_code(language).c_str();
+	//whisper_params.audio_ctx = 0;
+	whisper_params.audio_ctx = 768;
+	whisper_params.single_segment = true;
+	whisper_params.token_timestamps = true;
+	whisper_params.suppress_non_speech_tokens = true;
+	whisper_params.single_segment = true;
+	whisper_params.max_tokens = _get_max_tokens();
+	whisper_params.entropy_thold = _get_entropy_threshold();
+	whisper_params.suppress_blank = true;
 
 	if (!context_instance) {
 		ERR_PRINT("Context instance is null");
 		return Array();
 	}
-	full_params.duration_ms = buffer.size() * 1000.0f / WHISPER_SAMPLE_RATE;
-	int ret = whisper_full(context_instance, full_params, buffer.ptr(), buffer.size());
+	whisper_params.duration_ms = buffer.size() * 1000.0f / WHISPER_SAMPLE_RATE;
+	int ret = whisper_full(context_instance, whisper_params, buffer.ptr(), buffer.size());
 	if (ret != 0) {
 		ERR_PRINT("Failed to process audio, returned " + rtos(ret));
 		return Array();

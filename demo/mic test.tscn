@@ -1,9 +1,10 @@
-[gd_scene load_steps=6 format=3 uid="uid://dibqfutwftm8j"]
+[gd_scene load_steps=7 format=3 uid="uid://dibqfutwftm8j"]
 
 [ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="1_36edp"]
 [ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-small.en.bin" id="3_10f57"]
 [ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="3_l8fmi"]
 [ext_resource type="Script" path="res://test_display.gd" id="3_r84sk"]
+[ext_resource type="Script" path="res://addons/godot_whisper/audio_stream_to_text.gd" id="5_5es8e"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_rhq81"]
 
@@ -76,6 +77,12 @@ text = "Stop"
 language_model = ExtResource("3_10f57")
 script = ExtResource("1_36edp")
 language_model_to_download = "small.en"
+
+[node name="AudioStreamToText" type="SpeechToText" parent="."]
+language_model = ExtResource("3_10f57")
+script = ExtResource("5_5es8e")
+audio_stream = ExtResource("3_l8fmi")
+text = " And so my fellow Americans, ask not what your country can do for you. Ask what you can do for your country."
 
 [connection signal="pressed" from="HBoxContainer/StartButton" to="CaptureStreamToText" method="start_listen"]
 [connection signal="pressed" from="HBoxContainer/StopButton" to="CaptureStreamToText" method="stop_listen"]
