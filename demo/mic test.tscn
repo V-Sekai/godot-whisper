@@ -1,6 +1,7 @@
-[gd_scene load_steps=7 format=3 uid="uid://dibqfutwftm8j"]
+[gd_scene load_steps=8 format=3 uid="uid://dibqfutwftm8j"]
 
 [ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="1_36edp"]
+[ext_resource type="Script" path="res://StartButton.gd" id="3_iker1"]
 [ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="3_l8fmi"]
 [ext_resource type="Script" path="res://test_display.gd" id="3_r84sk"]
 [ext_resource type="Script" path="res://addons/godot_whisper/audio_stream_to_text.gd" id="5_5es8e"]
@@ -63,25 +64,20 @@ Takes sample every 5s and transcribes below."
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
 
-[node name="StartButton" type="Button" parent="HBoxContainer"]
+[node name="CheckBox" type="CheckBox" parent="HBoxContainer" node_paths=PackedStringArray("capture_stream_to_text")]
 layout_mode = 2
-size_flags_horizontal = 3
-text = "Start"
-
-[node name="StopButton" type="Button" parent="HBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Stop"
+button_pressed = true
+text = "Running"
+script = ExtResource("3_iker1")
+capture_stream_to_text = NodePath("../../CaptureStreamToText")
 
 [node name="CaptureStreamToText" type="SpeechToText" parent="."]
 language_model = ExtResource("5_kgeb3")
 script = ExtResource("1_36edp")
+recording = null
 
 [node name="AudioStreamToText" type="SpeechToText" parent="."]
 language_model = ExtResource("5_kgeb3")
 script = ExtResource("5_5es8e")
 audio_stream = ExtResource("3_l8fmi")
 text = " And so my fellow Americans ask not what your country can do for you, ask what you can do for your country."
-
-[connection signal="pressed" from="HBoxContainer/StartButton" to="CaptureStreamToText" method="start_listen"]
-[connection signal="pressed" from="HBoxContainer/StopButton" to="CaptureStreamToText" method="stop_listen"]

@@ -3,6 +3,7 @@
 class_name CaptureStreamToText
 extends StreamToText
 
+@export var recording := true
 ## The interval at which transcribing is done.
 @export var transcribe_interval := 1.0
 ## The record bus has to have a AudioEffectCapture at index specified by [member audio_effect_capture_index]
@@ -30,15 +31,9 @@ func _add_timer():
 var _accumulated_frames: PackedVector2Array
 
 func _on_timer_timeout():
-	if Engine.is_editor_hint():
+	if Engine.is_editor_hint() || !recording:
 		return
 	var start_time = Time.get_ticks_msec()
-	var cur_frames_available = _effect_capture.get_frames_available()
-	if cur_frames_available > 0:
-		_accumulated_frames.append_array(_effect_capture.get_buffer(cur_frames_available))
-		_effect_capture.clear_buffer()
-	else:
-		return
 	var resampled = resample(_accumulated_frames, SpeechToText.SRC_SINC_FASTEST)
 	var tokens = transcribe(resampled)
 	var total_time = resampled.size() / SpeechToText.SPEECH_SETTING_SAMPLE_RATE
@@ -72,3 +67,9 @@ func _remove_special_characters(message: String, is_partial: bool):
 			var end_character = begin_character + len(special_character)
 			message = message.substr(0, begin_character) + message.substr(end_character + 1)
 	return message
+
+func _process(delta):
+	if Engine.is_editor_hint():
+		return
+	var buffer: PackedVector2Array = _effect_capture.get_buffer(_effect_capture.get_frames_available())
+	_accumulated_frames.append_array(buffer)
