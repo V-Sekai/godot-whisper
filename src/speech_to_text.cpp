@@ -94,10 +94,10 @@ bool _vad_simple(PackedFloat32Array &pcmf32, int sample_rate, int last_ms, float
 	}
 
 	if (verbose) {
-		fprintf(stderr, "%s: energy_all: %f, energy_last: %f, vad_thold: %f, freq_thold: %f\n", __func__, energy_all, energy_last, vad_thold, freq_thold);
+		UtilityFunctions::print(rtos(energy_all), " ", rtos(energy_last), " ",rtos(vad_thold), " ",rtos(freq_thold));
 	}
 
-	if ((energy_all < 0.0001f && energy_last < 0.0001f) == false || energy_last > vad_thold * energy_all) {
+	if (!(energy_all < 0.0001f && energy_last < 0.0001f) || energy_last > vad_thold * energy_all) {
 		return false;
 	}
 	return true;
@@ -349,7 +349,8 @@ SpeechToText::~SpeechToText() {
 PackedFloat32Array SpeechToText::resample(PackedVector2Array buffer, SpeechToText::InterpolatorType interpolator_type) {
 	int64_t buffer_len = buffer.size();
 	float *buffer_float = (float *)memalloc(sizeof(float) * buffer_len);
-	float *resampled_float = (float *)memalloc(sizeof(float) * buffer_len * WHISPER_SAMPLE_RATE / AudioServer::get_singleton()->get_mix_rate());
+	uint32_t expected_size = buffer_len * WHISPER_SAMPLE_RATE / AudioServer::get_singleton()->get_mix_rate();
+	float *resampled_float = (float *)memalloc(sizeof(float) * expected_size);
 	_vector2_array_to_float_array(buffer_len, buffer.ptr(), buffer_float);
 	// Speaker frame.
 	uint32_t result_size = _resample_audio_buffer(
@@ -359,9 +360,12 @@ PackedFloat32Array SpeechToText::resample(PackedVector2Array buffer, SpeechToTex
 			WHISPER_SAMPLE_RATE, // Target sample rate
 			resampled_float,
 			interpolator_type);
+	if (result_size != expected_size) {
+		ERR_PRINT("size differ exp: " + rtos(expected_size) + " res: " + rtos(result_size));
+	}
 	PackedFloat32Array array;
 	array.resize(result_size);
-	std::memcpy(array.ptrw(), resampled_float, result_size);
+	std::memcpy(array.ptrw(), resampled_float, result_size * sizeof(float));
 	memfree(buffer_float);
 	memfree(resampled_float);
 	return array;
@@ -399,7 +403,7 @@ Array SpeechToText::transcribe(PackedFloat32Array buffer) {
 	 * https://github.com/ggerganov/whisper.cpp/issues/137#issuecomment-1318412267
 	 */
 	whisper_params.language = _language_to_code(language).c_str();
-	whisper_params.audio_ctx = 768;
+	//whisper_params.audio_ctx = 768;
 	whisper_params.split_on_word = true;
 	whisper_params.token_timestamps = true;
 	whisper_params.suppress_non_speech_tokens = true;
@@ -411,7 +415,7 @@ Array SpeechToText::transcribe(PackedFloat32Array buffer) {
 		ERR_PRINT("Context instance is null");
 		return Array();
 	}
-	whisper_params.duration_ms = buffer.size() * 1000.0f / WHISPER_SAMPLE_RATE;
+	//whisper_params.duration_ms = buffer.size() * 1000.0f / WHISPER_SAMPLE_RATE;
 	int ret = whisper_full(context_instance, whisper_params, buffer.ptr(), buffer.size());
 	if (ret != 0) {
 		ERR_PRINT("Failed to process audio, returned " + rtos(ret));

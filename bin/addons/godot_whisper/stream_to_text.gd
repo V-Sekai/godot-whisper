@@ -1,5 +1,5 @@
 @tool
-## Node that handles downloading [WhisperResource] resources needed for [SpeechToText]
+## Node that handles downloading resources needed for [SpeechToText]
 class_name StreamToText
 extends SpeechToText
 

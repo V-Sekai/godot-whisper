@@ -52,8 +52,6 @@ func _remove_special_characters(message: String):
 			if end_character != -1:
 				message = message.substr(0, begin_character) + message.substr(end_character + 1)
 
-	message = message.trim_suffix("{SPLIT}")
-	
 	var hallucinatory_character = [". you."]
 	for special_character in hallucinatory_character:
 		while(message.find(special_character) != -1):

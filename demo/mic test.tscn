@@ -24,11 +24,11 @@ grow_vertical = 2
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_rhq81")
+autoplay = true
 bus = &"Record"
 
 [node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("3_l8fmi")
-autoplay = true
 bus = &"Record"
 
 [node name="Panel" type="Panel" parent="."]
@@ -74,10 +74,12 @@ capture_stream_to_text = NodePath("../../CaptureStreamToText")
 [node name="CaptureStreamToText" type="SpeechToText" parent="."]
 language_model = ExtResource("5_kgeb3")
 script = ExtResource("1_36edp")
-recording = null
+transcribe_interval = 1.0
 
 [node name="AudioStreamToText" type="SpeechToText" parent="."]
 language_model = ExtResource("5_kgeb3")
 script = ExtResource("5_5es8e")
 audio_stream = ExtResource("3_l8fmi")
 text = " And so my fellow Americans ask not what your country can do for you, ask what you can do for your country."
+
+[connection signal="transcribed_msg" from="CaptureStreamToText" to="Panel/Label" method="_on_capture_stream_to_text_transcribed_msg"]
