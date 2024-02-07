@@ -94,7 +94,7 @@ bool _vad_simple(PackedFloat32Array &pcmf32, int sample_rate, int last_ms, float
 	}
 
 	if (verbose) {
-		UtilityFunctions::print(rtos(energy_all), " ", rtos(energy_last), " ",rtos(vad_thold), " ",rtos(freq_thold));
+		UtilityFunctions::print(rtos(energy_all), " ", rtos(energy_last), " ", rtos(vad_thold), " ", rtos(freq_thold));
 	}
 
 	if (!(energy_all < 0.0001f && energy_last < 0.0001f) || energy_last > vad_thold * energy_all) {
@@ -561,7 +561,7 @@ void SpeechToText::_bind_methods() {
 	BIND_ENUM_CONSTANT(Javanese);
 	BIND_ENUM_CONSTANT(Sundanese);
 	BIND_ENUM_CONSTANT(Cantonese);
-	
+
 	BIND_ENUM_CONSTANT(SPEECH_SETTING_SAMPLE_RATE);
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "language", PROPERTY_HINT_ENUM, "Auto,English,Chinese,German,Spanish,Russian,Korean,French,Japanese,Portuguese,Turkish,Polish,Catalan,Dutch,Arabic,Swedish,Italian,Indonesian,Hindi,Finnish,Vietnamese,Hebrew,Ukrainian,Greek,Malay,Czech,Romanian,Danish,Hungarian,Tamil,Norwegian,Thai,Urdu,Croatian,Bulgarian,Lithuanian,Latin,Maori,Malayalam,Welsh,Slovak,Telugu,Persian,Latvian,Bengali,Serbian,Azerbaijani,Slovenian,Kannada,Estonian,Macedonian,Breton,Basque,Icelandic,Armenian,Nepali,Mongolian,Bosnian,Kazakh,Albanian,Swahili,Galician,Marathi,Punjabi,Sinhala,Khmer,Shona,Yoruba,Somali,Afrikaans,Occitan,Georgian,Belarusian,Tajik,Sindhi,Gujarati,Amharic,Yiddish,Lao,Uzbek,Faroese,Haitian_Creole,Pashto,Turkmen,Nynorsk,Maltese,Sanskrit,Luxembourgish,Myanmar,Tibetan,Tagalog,Malagasy,Assamese,Tatar,Hawaiian,Lingala,Hausa,Bashkir,Javanese,Sundanese,Cantonese"), "set_language", "get_language");

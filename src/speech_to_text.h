@@ -154,7 +154,7 @@ public:
 		SRC_ZERO_ORDER_HOLD = 3,
 		SRC_LINEAR = 4,
 	};
-	enum SpeechSamplingRate{
+	enum SpeechSamplingRate {
 		SPEECH_SETTING_SAMPLE_RATE = WHISPER_SAMPLE_RATE
 	};
 	bool voice_activity_detection(PackedFloat32Array buffer);
