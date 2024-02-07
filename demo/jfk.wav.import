@@ -14,8 +14,8 @@ dest_files=["res://.godot/imported/jfk.wav-99b211ad611429cfeea8ae6a5a364feb.samp
 
 force/8_bit=false
 force/mono=false
-force/max_rate=true
-force/max_rate_hz=16000.0
+force/max_rate=false
+force/max_rate_hz=44100.0
 edit/trim=false
 edit/normalize=false
 edit/loop_mode=2

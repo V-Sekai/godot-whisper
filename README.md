@@ -42,51 +42,27 @@ Go to a github release, copy paste the addons folder to the demo folder. Restart
 - Sconstruct(if you want to build locally)
 - A language model, can be downloaded in godot editor.
 
+## AudioStreamToText
+
+`AudioStreamToText` - this node can be used in editor to check transcribing. Simply add a WAV audio source and click start_transcribe button.
+
+Normal times for this, using tiny.en model are about 0.3s. This only does transcribing.
 
 ## CaptureStreamToText
 
-`CaptureStreamToText` - node that uses SpeechToText and runs transcribe function every 1 seconds.
-
-Also has helper to download language model. Exposes all properties from singleton and configures them.
-
-## Separate thread
-
-The transcribe runs on a separate thread, as to not block main thread.
+This runs also resampling on the audio(in case mix rate is not exactly 16000 it will process the audio to 16000). Then it runs every transcribe_interval transcribe function.
 
 ## Language Model
 
-Go to a `CaptureStreamToText` node, select a Language Model to Download and click Download. You might have to alt tab editor or restart for asset to appear. Then, select `language_model` property.
+Go to any `StreamToText` node, select a Language Model to Download and click Download. You might have to alt tab editor or restart for asset to appear. Then, select `language_model` property.
 
-## SpeechToText
+## Global settings
 
-`SpeechToText` Singleton has some configurable properties for transcribing:
+Go to Project -> Project Settings -> General -> Audio -> Input (Check Advance Settings).
 
-```
-float entropy_threshold [default: 2.8]
-float freq_thold [default: 200.0]
-int language [default: 1]
-WhisperResource language_model
-int max_tokens [default: 32]
-int n_threads [default: 4]
-bool speed_up [default: false]
-bool translate [default: false]
-bool use_gpu [default: true]
-float vad_thold [default: 0.3]
-```
+You will see a bunch of settings there.
 
-And a function to add audio data:
-
-```
-add_audio_buffer(buffer: PackedVector2Array)
-```
-
-As well as a signal for when there is new data transcribed:
-
-```
-update_transcribed_msgs(process_time_ms: int, transcribed_msgs: Array)
-```
-
-In order to start the transcribing, use the start_listen and stop_listen methods.
+Also, as doing microphone transcribing requires the data to be at a 16000 sampling rate, you can change the audio driver mix rate to 16000: `audio/driver/mix_rate`. This way the resampling won't need to do any work, winning you some valuable 50-100ms for larger audio, but at the price of audio quality.
 
 ## How to build
 

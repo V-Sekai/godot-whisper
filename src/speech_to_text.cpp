@@ -347,18 +347,20 @@ SpeechToText::~SpeechToText() {
 }
 
 PackedFloat32Array SpeechToText::resample(PackedVector2Array buffer, SpeechToText::InterpolatorType interpolator_type) {
-	int buffer_len = buffer.size();
+	int64_t buffer_len = buffer.size();
 	float *buffer_float = (float *)memalloc(sizeof(float) * buffer_len);
-	float *resampled_float = (float *)memalloc(sizeof(float) * buffer_len * _get_speech_sample_rate() / AudioServer::get_singleton()->get_mix_rate());
+	float *resampled_float = (float *)memalloc(sizeof(float) * buffer_len * WHISPER_SAMPLE_RATE / AudioServer::get_singleton()->get_mix_rate());
 	_vector2_array_to_float_array(buffer_len, buffer.ptr(), buffer_float);
 	// Speaker frame.
-	int result_size = _resample_audio_buffer(
+	uint32_t result_size = _resample_audio_buffer(
 			buffer_float, // Pointer to source buffer
 			buffer_len, // Size of source buffer * sizeof(float)
 			AudioServer::get_singleton()->get_mix_rate(), // Source sample rate
-			_get_speech_sample_rate(), // Target sample rate
+			WHISPER_SAMPLE_RATE, // Target sample rate
 			resampled_float,
 			interpolator_type);
+	ERR_PRINT("result " + rtos(result_size));
+	ERR_PRINT("buffer_len " + rtos(buffer_len * WHISPER_SAMPLE_RATE / AudioServer::get_singleton()->get_mix_rate()));
 	PackedFloat32Array array;
 	array.resize(result_size);
 	std::memcpy(array.ptrw(), resampled_float, result_size);
@@ -399,15 +401,13 @@ Array SpeechToText::transcribe(PackedFloat32Array buffer) {
 	 * https://github.com/ggerganov/whisper.cpp/issues/137#issuecomment-1318412267
 	 */
 	whisper_params.language = _language_to_code(language).c_str();
-	//whisper_params.audio_ctx = 0;
 	whisper_params.audio_ctx = 768;
-	whisper_params.single_segment = true;
+	whisper_params.split_on_word = true;
 	whisper_params.token_timestamps = true;
 	whisper_params.suppress_non_speech_tokens = true;
 	whisper_params.single_segment = true;
 	whisper_params.max_tokens = _get_max_tokens();
 	whisper_params.entropy_thold = _get_entropy_threshold();
-	whisper_params.suppress_blank = true;
 
 	if (!context_instance) {
 		ERR_PRINT("Context instance is null");
@@ -559,6 +559,8 @@ void SpeechToText::_bind_methods() {
 	BIND_ENUM_CONSTANT(Javanese);
 	BIND_ENUM_CONSTANT(Sundanese);
 	BIND_ENUM_CONSTANT(Cantonese);
+	
+	BIND_ENUM_CONSTANT(SPEECH_SETTING_SAMPLE_RATE);
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "language", PROPERTY_HINT_ENUM, "Auto,English,Chinese,German,Spanish,Russian,Korean,French,Japanese,Portuguese,Turkish,Polish,Catalan,Dutch,Arabic,Swedish,Italian,Indonesian,Hindi,Finnish,Vietnamese,Hebrew,Ukrainian,Greek,Malay,Czech,Romanian,Danish,Hungarian,Tamil,Norwegian,Thai,Urdu,Croatian,Bulgarian,Lithuanian,Latin,Maori,Malayalam,Welsh,Slovak,Telugu,Persian,Latvian,Bengali,Serbian,Azerbaijani,Slovenian,Kannada,Estonian,Macedonian,Breton,Basque,Icelandic,Armenian,Nepali,Mongolian,Bosnian,Kazakh,Albanian,Swahili,Galician,Marathi,Punjabi,Sinhala,Khmer,Shona,Yoruba,Somali,Afrikaans,Occitan,Georgian,Belarusian,Tajik,Sindhi,Gujarati,Amharic,Yiddish,Lao,Uzbek,Faroese,Haitian_Creole,Pashto,Turkmen,Nynorsk,Maltese,Sanskrit,Luxembourgish,Myanmar,Tibetan,Tagalog,Malagasy,Assamese,Tatar,Hawaiian,Lingala,Hausa,Bashkir,Javanese,Sundanese,Cantonese"), "set_language", "get_language");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "language_model", PROPERTY_HINT_RESOURCE_TYPE, "WhisperResource"), "set_language_model", "get_language_model");

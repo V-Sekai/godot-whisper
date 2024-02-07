@@ -18,9 +18,9 @@ config/icon="res://icon.png"
 [audio]
 
 driver/enable_input=true
+driver/mix_rate=16000
 enable_audio_input=true
 mix_rate=48000
-driver/text_to_speech=false
 
 [display]
 

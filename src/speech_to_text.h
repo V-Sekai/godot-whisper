@@ -141,7 +141,6 @@ private:
 	_FORCE_INLINE_ int _get_max_tokens() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/max_tokens"); }
 	void _load_model();
 	std::vector<float> _add_audio_buffer(PackedVector2Array buffer);
-	_FORCE_INLINE_ int _get_speech_sample_rate() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/sample_rate"); }
 	std::string _language_to_code(Language language);
 
 protected:
@@ -155,6 +154,9 @@ public:
 		SRC_ZERO_ORDER_HOLD = 3,
 		SRC_LINEAR = 4,
 	};
+	enum SpeechSamplingRate{
+		SPEECH_SETTING_SAMPLE_RATE = WHISPER_SAMPLE_RATE
+	};
 	bool voice_activity_detection(PackedFloat32Array buffer);
 	PackedFloat32Array resample(PackedVector2Array buffer, SpeechToText::InterpolatorType interpolator_type);
 	Array transcribe(PackedFloat32Array buffer);
@@ -166,6 +168,7 @@ public:
 	~SpeechToText();
 };
 
+VARIANT_ENUM_CAST(SpeechToText::SpeechSamplingRate);
 VARIANT_ENUM_CAST(SpeechToText::InterpolatorType);
 VARIANT_ENUM_CAST(SpeechToText::Language);
 
