@@ -76,14 +76,12 @@ text = "Stop"
 [node name="CaptureStreamToText" type="SpeechToText" parent="."]
 language_model = ExtResource("5_kgeb3")
 script = ExtResource("1_36edp")
-transcribe_interval = 0.4
-language_model_to_download = "small.en"
 
 [node name="AudioStreamToText" type="SpeechToText" parent="."]
 language_model = ExtResource("5_kgeb3")
 script = ExtResource("5_5es8e")
 audio_stream = ExtResource("3_l8fmi")
-text = " And so my fellow Americans ask not what your country can do for you ask what you can do for your country."
+text = " And so my fellow Americans ask not what your country can do for you, ask what you can do for your country."
 
 [connection signal="pressed" from="HBoxContainer/StartButton" to="CaptureStreamToText" method="start_listen"]
 [connection signal="pressed" from="HBoxContainer/StopButton" to="CaptureStreamToText" method="stop_listen"]
