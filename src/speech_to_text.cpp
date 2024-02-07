@@ -359,8 +359,6 @@ PackedFloat32Array SpeechToText::resample(PackedVector2Array buffer, SpeechToTex
 			WHISPER_SAMPLE_RATE, // Target sample rate
 			resampled_float,
 			interpolator_type);
-	ERR_PRINT("result " + rtos(result_size));
-	ERR_PRINT("buffer_len " + rtos(buffer_len * WHISPER_SAMPLE_RATE / AudioServer::get_singleton()->get_mix_rate()));
 	PackedFloat32Array array;
 	array.resize(result_size);
 	std::memcpy(array.ptrw(), resampled_float, result_size);
