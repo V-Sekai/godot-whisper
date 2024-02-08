@@ -1,0 +1,52 @@
+name: Build iOS
+on:
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  group: ci-${{github.actor}}-${{github.head_ref || github.run_number}}-${{github.ref}}
+  cancel-in-progress: true
+
+env:
+  OpenCL_ROOT: "${{ github.workspace }}/OpenCL-SDK"
+  OpenCL_INCLUDE_DIR: "${{ github.workspace }}/OpenCL-SDK/build/install/include"
+  OpenCL_LIBRARY: "${{ github.workspace }}/OpenCL-SDK/install/lib/OpenCL.lib"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ios
+            precision: single
+            arch: arm64
+            os: macos-latest
+
+          - platform: ios
+            precision: double
+            arch: arm64
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: 🔗 GDExtension Build
+        uses: ughuuu/godot-cpp-template/.github/actions/build@add-more-stuff/options-to-build
+        with:
+          platform: ${{ matrix.platform }}
+          arch: ${{ matrix.arch }}
+          godot-cpp-location: godot-cpp
+          float-precision: ${{ matrix.precision }}
+          build-target-type: template_release
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: GDExtension
+          path: |
+            ${{ github.workspace }}/bin/**

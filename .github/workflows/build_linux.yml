@@ -1,0 +1,72 @@
+name: Build Linux
+on:
+  workflow_dispatch:
+  workflow_call:
+
+env:
+  OpenCL_ROOT: "${{ github.workspace }}/OpenCL-SDK"
+  OpenCL_INCLUDE_DIR: "${{ github.workspace }}/OpenCL-SDK/build/install/include"
+  OpenCL_LIBRARY: "${{ github.workspace }}/OpenCL-SDK/install/lib/OpenCL.lib"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux
+            precision: single
+            arch: x86_64
+            os: ubuntu-latest
+            opencl_arch: x64
+
+          - platform: linux
+            precision: double
+            arch: x86_64
+            os: ubuntu-latest
+            opencl_arch: x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - uses: actions/checkout@v3
+        with:
+          path: ${{ github.workspace }}/OpenCL-SDK
+          repository: KhronosGroup/OpenCL-SDK
+          submodules: true
+          fetch-depth: 0
+
+      - name: Check OpenCL Cache
+        id: opencl_cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            OpenCL-SDK
+          key: __${{ runner.os }}_${{ matrix.arch }}-opencl-v2021.06.30__${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            __${{runner.os }}-opencl__
+
+      - name: Build OpenCL
+        run: |
+          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF
+          cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
+
+      - name: 🔗 GDExtension Build
+        uses: ughuuu/godot-cpp-template/.github/actions/build@add-more-stuff/options-to-build
+        with:
+          platform: ${{ matrix.platform }}
+          arch: ${{ matrix.arch }}
+          godot-cpp-location: godot-cpp
+          float-precision: ${{ matrix.precision }}
+          build-target-type: template_release
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: GDExtension
+          path: |
+            ${{ github.workspace }}/bin/**

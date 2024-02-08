@@ -1,0 +1,168 @@
+name: Build Web
+on:
+  workflow_dispatch:
+  workflow_call:
+
+env:
+  OpenCL_ROOT: "${{ github.workspace }}/OpenCL-SDK"
+  OpenCL_INCLUDE_DIR: "${{ github.workspace }}/OpenCL-SDK/build/install/include"
+  OpenCL_LIBRARY: "${{ github.workspace }}/OpenCL-SDK/install/lib/OpenCL.lib"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux
+            precision: single
+            arch: x86_64
+            os: ubuntu-latest
+            opencl_arch: x64
+          - platform: windows
+            precision: single
+            arch: x86_32
+            os: windows-latest
+            opencl_arch: Win32
+          - platform: windows
+            precision: single
+            arch: x86_64
+            os: windows-latest
+            opencl_arch: x64
+          - platform: macos
+            precision: single
+            arch: universal
+            os: macos-latest
+          - platform: android
+            precision: single
+            arch: arm64
+            os: ubuntu-20.04
+            opencl_arch: arm64-v8a
+          - platform: android
+            precision: single
+            arch: arm32
+            os: ubuntu-20.04
+            opencl_arch: armv7-a
+          - platform: android
+            precision: single
+            arch: x86_64
+            os: ubuntu-20.04
+            opencl_arch: x86_64
+          - platform: android
+            precision: single
+            arch: x86_32
+            os: ubuntu-20.04
+          - platform: ios
+            precision: single
+            arch: arm64
+            os: macos-latest
+          - platform: web
+            precision: single
+            arch: wasm32
+            os: ubuntu-20.04
+
+          - platform: linux
+            precision: double
+            arch: x86_64
+            os: ubuntu-latest
+            opencl_arch: x64
+          - platform: windows
+            precision: double
+            arch: x86_32
+            os: windows-latest
+            opencl_arch: Win32
+          - platform: windows
+            precision: double
+            arch: x86_64
+            os: windows-latest
+            opencl_arch: x64
+          - platform: macos
+            precision: double
+            arch: universal
+            os: macos-latest
+          - platform: android
+            precision: double
+            arch: arm64
+            os: ubuntu-20.04
+            opencl_arch: arm64-v8a
+          - platform: android
+            precision: double
+            arch: arm32
+            os: ubuntu-20.04
+            opencl_arch: armv7-a
+          - platform: android
+            precision: double
+            arch: x86_64
+            os: ubuntu-20.04
+            opencl_arch: x86_64
+          - platform: android
+            precision: double
+            arch: x86_32
+            os: ubuntu-20.04
+          - platform: ios
+            precision: double
+            arch: arm64
+            os: macos-latest
+          - platform: web
+            precision: double
+            arch: wasm32
+            os: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - uses: actions/checkout@v3
+        with:
+          path: ${{ github.workspace }}/OpenCL-SDK
+          repository: KhronosGroup/OpenCL-SDK
+          submodules: true
+          fetch-depth: 0
+        if: matrix.platform == 'windows' || matrix.platform == 'linux' || matrix.platform == 'android'
+
+      - name: Check OpenCL Cache
+        id: opencl_cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            OpenCL-SDK
+          key: __${{ runner.os }}_${{ matrix.arch }}-opencl-v2021.06.30__${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            __${{runner.os }}-opencl__
+        if: matrix.platform == 'windows' || matrix.platform == 'linux' || matrix.platform == 'android'
+
+      - name: Build OpenCL
+        run: |
+          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF -A ${{matrix.opencl_arch}}
+          cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
+        if: matrix.platform == 'windows' || matrix.platform == 'linux' || matrix.platform == 'android'
+
+      - name: 🔗 GDExtension Build
+        uses: ughuuu/godot-cpp-template/.github/actions/build@add-more-stuff/options-to-build
+        with:
+          platform: ${{ matrix.platform }}
+          arch: ${{ matrix.arch }}
+          godot-cpp-location: godot-cpp
+          float-precision: ${{ matrix.precision }}
+          build-target-type: template_release
+      - name: Mac Sign
+        if: ${{ matrix.platform == 'macos'}}
+        uses: ughuuu/godot-cpp-template/.github/actions/sign@add-more-stuff/options-to-build
+        with:
+          FRAMEWORK_PATH: bin/addons/godot_whisper/bin/libgodot_whisper.macos.template_release.universal.framework
+          APPLE_CERT_BASE64: ${{ secrets.PROD_MACOS_CERTIFICATE }}
+          APPLE_CERT_PASSWORD: ${{ secrets.PROD_MACOS_CERTIFICATE_PWD }}
+          APPLE_DEV_PASSWORD: ${{ secrets.PROD_MACOS_NOTARIZATION_PWD }}
+          APPLE_DEV_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_APPLE_ID }}
+          APPLE_DEV_TEAM_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_TEAM_ID }}
+          APPLE_DEV_APP_ID: ${{ secrets.PROD_MACOS_APPLE_DEV_APP_ID }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: GDExtension
+          path: |
+            ${{ github.workspace }}/bin/**
