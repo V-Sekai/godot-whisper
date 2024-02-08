@@ -14,28 +14,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: windows
-            precision: single
+          - precision: single
             arch: x86_32
-            os: windows-latest
             opencl_arch: Win32
-          - platform: windows
-            precision: single
+          - precision: single
             arch: x86_64
-            os: windows-latest
             opencl_arch: x64
-
-          - platform: windows
-            precision: double
+          - precision: double
             arch: x86_32
-            os: windows-latest
             opencl_arch: Win32
-          - platform: windows
-            precision: double
+          - precision: double
             arch: x86_64
-            os: windows-latest
             opencl_arch: x64
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -68,7 +59,7 @@ jobs:
       - name: 🔗 GDExtension Build
         uses: ughuuu/godot-cpp-template/.github/actions/build@add-more-stuff/options-to-build
         with:
-          platform: ${{ matrix.platform }}
+          platform: windows
           arch: ${{ matrix.arch }}
           godot-cpp-location: godot-cpp
           float-precision: ${{ matrix.precision }}

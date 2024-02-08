@@ -9,18 +9,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: macos
-            precision: single
+          - precision: single
             mac_precision_extension:
             arch: universal
-            os: macos-latest
-
-          - platform: macos
-            precision: double
+          - precision: double
             mac_precision_extension: double
             arch: universal
-            os: macos-latest
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -30,7 +25,7 @@ jobs:
       - name: 🔗 GDExtension Build
         uses: ughuuu/godot-cpp-template/.github/actions/build@add-more-stuff/options-to-build
         with:
-          platform: ${{ matrix.platform }}
+          platform: macos
           arch: ${{ matrix.arch }}
           godot-cpp-location: godot-cpp
           float-precision: ${{ matrix.precision }}
