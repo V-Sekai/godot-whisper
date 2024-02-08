@@ -45,3 +45,4 @@ jobs:
           name: GDExtension
           path: |
             ${{ github.workspace }}/bin/**
+          if-no-files-found: error
