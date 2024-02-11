@@ -141,7 +141,7 @@ private:
 	_FORCE_INLINE_ int _get_max_tokens() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/max_tokens"); }
 	void _load_model();
 	std::vector<float> _add_audio_buffer(PackedVector2Array buffer);
-	const char *  _language_to_code(Language language);
+	const char *_language_to_code(Language language);
 
 protected:
 	static void _bind_methods();
