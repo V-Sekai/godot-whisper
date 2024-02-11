@@ -32,7 +32,7 @@ jobs:
           build-target-type: template_release
       - name: Mac Sign
         uses: ughuuu/godot-cpp-template/.github/actions/sign@add-more-stuff/options-to-build
-        if : ${{ env.PROD_MACOS_CERTIFICATE != '' }}
+        if : ${{ env.PROD_MACOS_CERTIFICATE != '' && false }}
         with:
           FRAMEWORK_PATH: bin/addons/godot_whisper/bin/libgodot_whisper.macos.template_release.${{ matrix.mac_precision_extension }}.universal.framework
           APPLE_CERT_BASE64: ${{ secrets.PROD_MACOS_CERTIFICATE }}
