@@ -31,12 +31,14 @@ func get_text():
 		AudioStreamWAV.FORMAT_16_BITS:
 			for i in data.size() / 2:
 				data_float.append((data.decode_s16(i * 2) / 32768.0))
-	var tokens = transcribe(data_float)
+	var tokens = transcribe(data_float, initial_prompt)
+	var full_text = tokens.pop_front()
 	var text : String
 	for token in tokens:
 		if token["plog"] > 0:
 			continue
 		text += token["text"]
+	text = full_text
 	print("Transcribe: " + str((Time.get_ticks_msec() - start_time)/ 1000.0))
 	print(text)
 	return _remove_special_characters(text)

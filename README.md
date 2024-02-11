@@ -52,6 +52,12 @@ Normal times for this, using tiny.en model are about 0.3s. This only does transc
 
 This runs also resampling on the audio(in case mix rate is not exactly 16000 it will process the audio to 16000). Then it runs every transcribe_interval transcribe function.
 
+## Initial Prompt
+
+For Chinese, if you want to select between Traditional and Simplified, you need to provide an initial prompt with the one you want, and then the model should keep that same one going. See [Whisper Discussion #277](https://github.com/openai/whisper/discussions/277).
+
+Also, if you have problems with punctuation, you can give it an initial prompt with punctuation. See [Whisper Discussion #194](https://github.com/openai/whisper/discussions/194).
+
 ## Language Model
 
 Go to any `StreamToText` node, select a Language Model to Download and click Download. You might have to alt tab editor or restart for asset to appear. Then, select `language_model` property.

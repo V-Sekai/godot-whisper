@@ -114,7 +114,7 @@ int SpeechToText::get_language() {
 	return language;
 }
 
-std::string SpeechToText::_language_to_code(Language language) {
+const char * SpeechToText::_language_to_code(Language language) {
 	switch (language) {
 		case Auto:
 			return "auto";
@@ -394,36 +394,35 @@ bool SpeechToText::voice_activity_detection(PackedFloat32Array buffer) {
 	return false;
 }
 
-Array SpeechToText::transcribe(PackedFloat32Array buffer) {
+Array SpeechToText::transcribe(PackedFloat32Array buffer, String initial_prompt) {
 	Array return_value;
 	whisper_full_params whisper_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
-	/**
-	 * Experimental optimization: Reduce audio_ctx to 15s (half of the chunk
-	 * size whisper is designed for) to speed up 2x.
-	 * https://github.com/ggerganov/whisper.cpp/issues/137#issuecomment-1318412267
-	 */
-	whisper_params.language = _language_to_code(language).c_str();
-	//whisper_params.audio_ctx = 768;
+	whisper_params.language = _language_to_code(language);
+	whisper_params.audio_ctx = 768;
 	whisper_params.split_on_word = true;
 	whisper_params.token_timestamps = true;
 	whisper_params.suppress_non_speech_tokens = true;
 	whisper_params.single_segment = true;
 	whisper_params.max_tokens = _get_max_tokens();
 	whisper_params.entropy_thold = _get_entropy_threshold();
+	whisper_params.initial_prompt = initial_prompt.utf8().get_data();
 
 	if (!context_instance) {
 		ERR_PRINT("Context instance is null");
 		return Array();
 	}
-	//whisper_params.duration_ms = buffer.size() * 1000.0f / WHISPER_SAMPLE_RATE;
+	whisper_params.duration_ms = buffer.size() * 1000.0f / WHISPER_SAMPLE_RATE;
 	int ret = whisper_full(context_instance, whisper_params, buffer.ptr(), buffer.size());
 	if (ret != 0) {
 		ERR_PRINT("Failed to process audio, returned " + rtos(ret));
 		return Array();
 	}
 	const int n_segments = whisper_full_n_segments(context_instance);
+	String full_text;
 	for (int i = 0; i < n_segments; ++i) {
 		const int n_tokens = whisper_full_n_tokens(context_instance, i);
+		auto segment_text = whisper_full_get_segment_text(context_instance, i);
+		full_text += String::utf8(segment_text);
 		for (int j = 0; j < n_tokens; j++) {
 			auto token = whisper_full_get_token_data(context_instance, i, j);
 			auto text = whisper_full_get_token_text(context_instance, i, j);
@@ -441,6 +440,7 @@ Array SpeechToText::transcribe(PackedFloat32Array buffer) {
 			return_value.push_back(dict);
 		}
 	}
+	return_value.push_front(full_text);
 
 	return return_value;
 }
@@ -450,7 +450,7 @@ void SpeechToText::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_language", "language"), &SpeechToText::set_language);
 	ClassDB::bind_method(D_METHOD("get_language_model"), &SpeechToText::get_language_model);
 	ClassDB::bind_method(D_METHOD("set_language_model", "model"), &SpeechToText::set_language_model);
-	ClassDB::bind_method(D_METHOD("transcribe", "buffer"), &SpeechToText::transcribe);
+	ClassDB::bind_method(D_METHOD("transcribe", "buffer", "initial_prompt"), &SpeechToText::transcribe);
 	ClassDB::bind_method(D_METHOD("voice_activity_detection", "buffer"), &SpeechToText::voice_activity_detection);
 	ClassDB::bind_method(D_METHOD("resample", "buffer"), &SpeechToText::resample);
 

@@ -12,13 +12,15 @@ signal transcribed_msg(is_partial, new_text)
 			_ready()
 	get:
 		return recording
-## The interval at which transcribing is done.
+## The interval at which transcribing is done. Use a value bigger than the time it takes to transcribe (eg. depends on model).
 @export var transcribe_interval := 0.3
 ## The record bus has to have a AudioEffectCapture at index specified by [member audio_effect_capture_index]
 @export var record_bus := "Record"
 ## The index where the [AudioEffectCapture] is located at in the [member record_bus]
 @export var audio_effect_capture_index := 0
-## Download the model specified in the [member language_model_to_download]
+
+## Character to consider when ending a sentence.
+@export var punctuation_characters := ".!?;。；？！"
 
 @onready var _idx = AudioServer.get_bus_index(record_bus)
 @onready var _effect_capture := AudioServer.get_bus_effect(_idx, audio_effect_capture_index) as AudioEffectCapture
@@ -39,7 +41,11 @@ func transcribe_thread():
 		var start_time = Time.get_ticks_msec()
 		_accumulated_frames.append_array(_effect_capture.get_buffer(_effect_capture.get_frames_available()))		
 		var resampled = resample(_accumulated_frames, SpeechToText.SRC_SINC_FASTEST)
-		var tokens = transcribe(resampled)
+		if resampled.size() <= 0:
+			OS.delay_msec(transcribe_interval * 1000)
+			continue
+		var tokens = transcribe(resampled, initial_prompt)
+		var full_text = tokens.pop_front()
 		var mix_rate : int = ProjectSettings.get_setting("audio/driver/mix_rate")
 		var total_time = resampled.size() / SpeechToText.SPEECH_SETTING_SAMPLE_RATE
 		var finish_sentence = false
@@ -50,17 +56,20 @@ func transcribe_thread():
 		for token in tokens:
 			text += token["text"]
 		text = _remove_special_characters(text)
-		if _has_terminating_characters(text, ".!?"):
+		if _has_terminating_characters(text, punctuation_characters):
 			finish_sentence = true
-		if total_time < 3:
+		if total_time < 4:
 			finish_sentence = false
 		if finish_sentence:
 			_accumulated_frames = _accumulated_frames.slice(_accumulated_frames.size() - (0.2 * mix_rate))
-		call_deferred("emit_signal", "transcribed_msg", finish_sentence, text)
+		call_deferred("emit_signal", "transcribed_msg", finish_sentence, full_text)
 		var time_processing = (Time.get_ticks_msec() - start_time)
 		# Sleep remaining time
-		OS.delay_msec(transcribe_interval * 1000 - time_processing)
+		var interval_sleep = transcribe_interval * 1000 - time_processing
+		if interval_sleep > 0:
+			OS.delay_msec(interval_sleep)
 		print(text)
+		print(full_text)
 		print("Transcribe " + str(time_processing/ 1000.0) + " s")
 
 func _has_terminating_characters(message: String, characters: String):
@@ -88,6 +97,8 @@ func _remove_special_characters(message: String):
 			message = message.substr(0, begin_character) + message.substr(end_character + 1)
 	return message
 
-func _process(delta):
-	if Engine.is_editor_hint():
-		return
+func _notification(what):
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		recording = false
+		if thread.is_alive():
+			thread.wait_to_finish()
