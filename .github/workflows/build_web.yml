@@ -60,7 +60,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: GDExtension
+          name: Godot_Whisper
           path: |
             ${{ github.workspace }}/bin/**
           if-no-files-found: error
