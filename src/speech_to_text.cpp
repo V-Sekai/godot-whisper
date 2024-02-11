@@ -114,7 +114,7 @@ int SpeechToText::get_language() {
 	return language;
 }
 
-const char * SpeechToText::_language_to_code(Language language) {
+const char *SpeechToText::_language_to_code(Language language) {
 	switch (language) {
 		case Auto:
 			return "auto";
