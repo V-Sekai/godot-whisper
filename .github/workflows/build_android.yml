@@ -3,11 +3,6 @@ on:
   workflow_dispatch:
   workflow_call:
 
-env:
-  OpenCL_ROOT: "${{ github.workspace }}/OpenCL-SDK"
-  OpenCL_INCLUDE_DIR: "${{ github.workspace }}/OpenCL-SDK/build/install/include"
-  OpenCL_LIBRARY: "${{ github.workspace }}/OpenCL-SDK/install/lib/OpenCL.lib"
-
 jobs:
   build:
     strategy:
