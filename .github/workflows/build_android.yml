@@ -1,0 +1,52 @@
+name: Build Android
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - precision: single
+            arch: arm64
+          #- precision: single
+          #  arch: arm32
+          - precision: single
+            arch: x86_64
+          #- precision: single
+          #  arch: x86_32
+
+          - precision: double
+            arch: arm64
+          #- precision: double
+          #  arch: arm32
+          - precision: double
+            arch: x86_64
+          #- precision: double
+          #  arch: x86_32
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: 🔗 GDExtension Build
+        uses: ughuuu/godot-cpp-template/.github/actions/build@add-more-stuff/options-to-build
+        with:
+          platform: android
+          arch: ${{ matrix.arch }}
+          godot-cpp-location: godot-cpp
+          float-precision: ${{ matrix.precision }}
+          build-target-type: template_release
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: GDExtension
+          path: |
+            ${{ github.workspace }}/bin/**
+          if-no-files-found: error

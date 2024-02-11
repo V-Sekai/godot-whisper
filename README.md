@@ -25,25 +25,58 @@
 <img src="whisper_cpp.gif"/>
 </p>
 
+## Features
+
+- Realtime audio transcribe.
+- Audio transcribe with recorded audio.
+- Runs on separate thread.
+- Metal for Apple devices.
+- OpenCL for rest.
+
 ## How to install
 
 Go to a github release, copy paste the addons folder to the demo folder. Restart godot editor.
 
-## SpeechToText
+## Requirements
 
-`SpeechToText` Node has a `transcribe` which gets a buffer that it transcribes.
+- Sconstruct(if you want to build locally)
+- A language model, can be downloaded in godot editor.
+
+## AudioStreamToText
+
+`AudioStreamToText` - this node can be used in editor to check transcribing. Simply add a WAV audio source and click start_transcribe button.
+
+Normal times for this, using tiny.en model are about 0.3s. This only does transcribing.
 
 ## CaptureStreamToText
 
-`CaptureStreamToText` - extends SpeechToText and runs transcribe function every 5 seconds.
+This runs also resampling on the audio(in case mix rate is not exactly 16000 it will process the audio to 16000). Then it runs every transcribe_interval transcribe function.
 
-## Main thread
+## Initial Prompt
 
-The transcribe can block the main thread. It should run in about 0.5 seconds every 5 seconds, but check for yourself.
+For Chinese, if you want to select between Traditional and Simplified, you need to provide an initial prompt with the one you want, and then the model should keep that same one going. See [Whisper Discussion #277](https://github.com/openai/whisper/discussions/277).
+
+Also, if you have problems with punctuation, you can give it an initial prompt with punctuation. See [Whisper Discussion #194](https://github.com/openai/whisper/discussions/194).
 
 ## Language Model
 
-Go to a `CaptureStreamToText` node, select a Language Model to Download and click Download. You might have to alt tab editor or restart for asset to appear. Then, select `language_model` property.
+Go to any `StreamToText` node, select a Language Model to Download and click Download. You might have to alt tab editor or restart for asset to appear. Then, select `language_model` property.
+
+## Global settings
+
+Go to Project -> Project Settings -> General -> Audio -> Input (Check Advance Settings).
+
+You will see a bunch of settings there.
+
+Also, as doing microphone transcribing requires the data to be at a 16000 sampling rate, you can change the audio driver mix rate to 16000: `audio/driver/mix_rate`. This way the resampling won't need to do any work, winning you some valuable 50-100ms for larger audio, but at the price of audio quality.
+
+## How to build
+
+```
+scons target=template_release generate_bindings=no arch=universal precision=single
+rm -rf demo/addons
+cp -rf bin/addons demo/addons
+```
 
 ## Contributors ✨
 

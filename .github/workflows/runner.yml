@@ -1,45 +1,27 @@
-name: 🔗 Builds
-on: 
-  push:
-  workflow_dispatch:
+name: Builds
 
-concurrency:
-  group: ci-${{github.actor}}-${{github.head_ref || github.run_number}}-${{github.ref}}
-  cancel-in-progress: true
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - "main"
 
 jobs:
-  static-checks:
-    name: 📊 Static checks
-    uses: ./.github/workflows/static_checks.yml
-
-  android-build:
-    name: 🤖 Android
-    needs: static-checks
-    uses: ./.github/workflows/android_builds.yml
-
-  ios-build:
-    name: 🍏 iOS
-    needs: static-checks
-    uses: ./.github/workflows/ios_builds.yml
-
-  linux-build:
-    name: 🐧 Linux
-    needs: static-checks
-    uses: ./.github/workflows/linux_builds.yml
-
-  macos-build:
-    name: 🍎 macOS
-    needs: static-checks
-    uses: ./.github/workflows/macos_builds.yml
-    secrets: inherit
-
-  windows-build:
-    name: 🏁 Windows
-    needs: static-checks
-    uses: ./.github/workflows/windows_builds.yml
-
-# TODO reenable
-#  web-build:
-#    name: 🌐 Web Builds
-#    needs: static-checks
-#    uses: ./.github/workflows/web_builds.yml
+  lint:
+    uses: ./.github/workflows/lint.yml
+  build_android:
+    needs: [lint]
+    uses: ./.github/workflows/build_android.yml
+  build_ios:
+    needs: [lint]
+    uses: ./.github/workflows/build_ios.yml
+  build_linux:
+    needs: [lint]
+    uses: ./.github/workflows/build_linux.yml
+  build_macos:
+    needs: [lint]
+    uses: ./.github/workflows/build_macos.yml
+  build_windows:
+    needs: [lint]
+    uses: ./.github/workflows/build_windows.yml

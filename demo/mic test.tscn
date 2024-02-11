@@ -1,9 +1,12 @@
-[gd_scene load_steps=6 format=3 uid="uid://dibqfutwftm8j"]
+[gd_scene load_steps=9 format=3 uid="uid://dibqfutwftm8j"]
 
 [ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="1_36edp"]
-[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-tiny.en.bin" id="2_bbq8o"]
+[ext_resource type="Script" path="res://StartButton.gd" id="3_iker1"]
 [ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="3_l8fmi"]
 [ext_resource type="Script" path="res://test_display.gd" id="3_r84sk"]
+[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-base.bin" id="4_k0kxn"]
+[ext_resource type="Script" path="res://addons/godot_whisper/audio_stream_to_text.gd" id="5_5es8e"]
+[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-tiny.en.bin" id="6_m2t7y"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_rhq81"]
 
@@ -22,11 +25,11 @@ grow_vertical = 2
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_rhq81")
+autoplay = true
 bus = &"Record"
 
 [node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("3_l8fmi")
-autoplay = true
 bus = &"Record"
 
 [node name="Panel" type="Panel" parent="."]
@@ -62,21 +65,24 @@ Takes sample every 5s and transcribes below."
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
 
-[node name="StartButton" type="Button" parent="HBoxContainer"]
+[node name="CheckBox" type="CheckBox" parent="HBoxContainer" node_paths=PackedStringArray("capture_stream_to_text")]
 layout_mode = 2
-size_flags_horizontal = 3
-text = "Start"
+button_pressed = true
+text = "Running"
+script = ExtResource("3_iker1")
+capture_stream_to_text = NodePath("../../CaptureStreamToText")
 
-[node name="StopButton" type="Button" parent="HBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Stop"
-
-[node name="CaptureStreamToText" type="Node" parent="."]
+[node name="CaptureStreamToText" type="SpeechToText" parent="."]
+language = 4
+language_model = ExtResource("4_k0kxn")
 script = ExtResource("1_36edp")
-language_model = ExtResource("2_bbq8o")
-use_gpu = true
+transcribe_interval = 0.8
+language_model_to_download = "base"
 
-[connection signal="pressed" from="HBoxContainer/StartButton" to="CaptureStreamToText" method="start_listen"]
-[connection signal="pressed" from="HBoxContainer/StopButton" to="CaptureStreamToText" method="stop_listen"]
-[connection signal="update_transcribed_msg" from="CaptureStreamToText" to="Panel/Label" method="_on_capture_stream_to_text_update_transcribed_msg"]
+[node name="AudioStreamToText" type="SpeechToText" parent="."]
+language_model = ExtResource("6_m2t7y")
+script = ExtResource("5_5es8e")
+audio_stream = ExtResource("3_l8fmi")
+text = " And so my fellow Americans ask not what your country can do for you ask what you can do for your country."
+
+[connection signal="transcribed_msg" from="CaptureStreamToText" to="Panel/Label" method="_on_capture_stream_to_text_transcribed_msg"]

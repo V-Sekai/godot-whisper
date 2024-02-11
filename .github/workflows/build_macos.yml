@@ -1,0 +1,53 @@
+name: Build MacOS
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - precision: single
+            mac_precision_extension:
+            arch: universal
+          - precision: double
+            mac_precision_extension: double
+            arch: universal
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
+      - name: 🔗 GDExtension Build
+        uses: ughuuu/godot-cpp-template/.github/actions/build@add-more-stuff/options-to-build
+        with:
+          platform: macos
+          arch: ${{ matrix.arch }}
+          godot-cpp-location: godot-cpp
+          float-precision: ${{ matrix.precision }}
+          build-target-type: template_release
+      - name: Mac Sign
+        uses: ughuuu/godot-cpp-template/.github/actions/sign@add-more-stuff/options-to-build
+        if : ${{ env.PROD_MACOS_CERTIFICATE != '' && false }}
+        with:
+          FRAMEWORK_PATH: bin/addons/godot_whisper/bin/libgodot_whisper.macos.template_release.${{ matrix.mac_precision_extension }}.universal.framework
+          APPLE_CERT_BASE64: ${{ secrets.PROD_MACOS_CERTIFICATE }}
+          APPLE_CERT_PASSWORD: ${{ secrets.PROD_MACOS_CERTIFICATE_PWD }}
+          APPLE_DEV_PASSWORD: ${{ secrets.PROD_MACOS_NOTARIZATION_PWD }}
+          APPLE_DEV_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_APPLE_ID }}
+          APPLE_DEV_TEAM_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_TEAM_ID }}
+          APPLE_DEV_APP_ID: ${{ secrets.PROD_MACOS_APPLE_DEV_APP_ID }}
+        env:
+          PROD_MACOS_CERTIFICATE: secrets.PROD_MACOS_CERTIFICATE
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: GDExtension
+          path: |
+            ${{ github.workspace }}/bin/**
+          if-no-files-found: error
