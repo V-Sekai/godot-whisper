@@ -2,6 +2,19 @@ name: Build MacOS
 on:
   workflow_dispatch:
   workflow_call:
+    secrets:
+      APPLE_CERT_BASE64:
+        required: true
+      APPLE_CERT_PASSWORD:
+        required: true
+      APPLE_DEV_PASSWORD:
+        required: true
+      APPLE_DEV_ID:
+        required: true
+      APPLE_DEV_TEAM_ID:
+        required: true
+      APPLE_DEV_APP_ID:
+        required: true
 
 jobs:
   build:
