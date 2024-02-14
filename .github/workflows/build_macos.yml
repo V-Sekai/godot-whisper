@@ -32,7 +32,6 @@ jobs:
           build-target-type: template_release
       - name: Mac Sign
         uses: ughuuu/godot-cpp-template/.github/actions/sign@add-more-stuff/options-to-build
-        if : ${{ env.APPLE_CERT_BASE64 != '' && false }}
         with:
           FRAMEWORK_PATH: bin/addons/godot_whisper/bin/libgodot_whisper.macos.template_release.${{ matrix.mac_precision_extension }}.universal.framework
           APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
@@ -41,8 +40,6 @@ jobs:
           APPLE_DEV_ID: ${{ secrets.APPLE_DEV_ID }}
           APPLE_DEV_TEAM_ID: ${{ secrets.APPLE_DEV_TEAM_ID }}
           APPLE_DEV_APP_ID: ${{ secrets.APPLE_DEV_APP_ID }}
-        env:
-          APPLE_CERT_BASE64: secrets.APPLE_CERT_BASE64
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
