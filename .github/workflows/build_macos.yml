@@ -26,7 +26,7 @@ jobs:
             mac_precision_extension:
             arch: universal
           - precision: double
-            mac_precision_extension: double
+            mac_precision_extension: .double
             arch: universal
     runs-on: macos-latest
     steps:
@@ -53,7 +53,7 @@ jobs:
       - name: Mac Sign
         uses: ughuuu/godot-cpp-template/.github/actions/sign@add-more-stuff/options-to-build
         with:
-          FRAMEWORK_PATH: bin/addons/godot_whisper/bin/libgodot_whisper.macos.template_release.${{ matrix.mac_precision_extension }}.universal.framework
+          FRAMEWORK_PATH: bin/addons/godot_whisper/bin/libgodot_whisper.macos.template_release${{ matrix.mac_precision_extension }}.universal.framework
           APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
           APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
           APPLE_DEV_PASSWORD: ${{ secrets.APPLE_DEV_PASSWORD }}
