@@ -43,8 +43,7 @@ if env["platform"] == "macos" or env["platform"] == "ios":
             "GGML_USE_METAL",
             # Debug logs
             "GGML_METAL_NDEBUG",
-            "GGML_USE_ACCELERATE",
-            "GGML_METAL_EMBED_LIBRARY"
+            "GGML_USE_ACCELERATE"
         ]
     )
     sources.extend([
