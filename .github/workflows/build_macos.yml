@@ -56,7 +56,10 @@ jobs:
           APPLE_DEV_ID: ${{ secrets.APPLE_DEV_ID }}
           APPLE_DEV_TEAM_ID: ${{ secrets.APPLE_DEV_TEAM_ID }}
           APPLE_DEV_APP_ID: ${{ secrets.APPLE_DEV_APP_ID }}
-
+      - name: See output
+        run: |
+          echo ${{ steps.sign.outputs }}
+          echo ${{ steps.sign.outputs.path }}
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
@@ -65,3 +68,4 @@ jobs:
             ${{ github.workspace }}/bin/**
             ${{ steps.sign.outputs.path }}
           if-no-files-found: error
+          compression-level: 9
