@@ -28,7 +28,7 @@ jobs:
           - precision: double
             mac_precision_extension: .double
             arch: universal
-    runs-on: macos-13
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
