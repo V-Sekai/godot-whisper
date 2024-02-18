@@ -56,16 +56,11 @@ jobs:
           APPLE_DEV_ID: ${{ secrets.APPLE_DEV_ID }}
           APPLE_DEV_TEAM_ID: ${{ secrets.APPLE_DEV_TEAM_ID }}
           APPLE_DEV_APP_ID: ${{ secrets.APPLE_DEV_APP_ID }}
-      - name: See output
-        run: |
-          echo ${{ steps.sign.outputs }}
-          echo ${{ steps.sign.outputs.zip_path }}
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: Godot_Whisper
           path: |
             ${{ github.workspace }}/bin/**
-            ${{ steps.sign.outputs.zip_path }}
           if-no-files-found: error
           compression-level: 9
