@@ -9,11 +9,11 @@
 	<key>CFBundleExecutable</key>
 	<string>libgodot_whisper.macos.template_release.universal</string>
 	<key>CFBundleName</key>
-	<string>Godot Whisper</string>
+	<string>GodotWhisper</string>
 	<key>CFBundleDisplayName</key>
-	<string>Godot Whisper</string>
+	<string>GodotWhisper</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.godot-whisper.godot-whisper</string>
+	<string>com.appsinacup.godotwhisper</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright (c) Whisper contributors.</string>
 	<key>CFBundleVersion</key>
