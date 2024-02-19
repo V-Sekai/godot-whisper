@@ -64,5 +64,6 @@ jobs:
           name: Godot_Whisper
           path: |
             ${{ github.workspace }}/bin/**
+          overwrite: true
           if-no-files-found: error
           compression-level: 9
