@@ -28,7 +28,6 @@ sources.extend([
     Glob("thirdparty/whisper.cpp/whisper.cpp"),
 ])
 
-
 if env["platform"] == "macos" or env["platform"] == "ios":
     env.Append(LINKFLAGS=["-framework"])
     env.Append(LINKFLAGS=["Foundation"])

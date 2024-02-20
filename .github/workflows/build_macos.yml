@@ -2,6 +2,19 @@ name: Build MacOS
 on:
   workflow_dispatch:
   workflow_call:
+    secrets:
+      APPLE_CERT_BASE64:
+        required: true
+      APPLE_CERT_PASSWORD:
+        required: true
+      APPLE_DEV_PASSWORD:
+        required: true
+      APPLE_DEV_ID:
+        required: true
+      APPLE_DEV_TEAM_ID:
+        required: true
+      APPLE_DEV_APP_ID:
+        required: true
 
 jobs:
   build:
@@ -13,7 +26,7 @@ jobs:
             mac_precision_extension:
             arch: universal
           - precision: double
-            mac_precision_extension: double
+            mac_precision_extension: .double
             arch: universal
     runs-on: macos-latest
     steps:
@@ -30,24 +43,24 @@ jobs:
           godot-cpp-location: godot-cpp
           float-precision: ${{ matrix.precision }}
           build-target-type: template_release
-      - name: Mac Sign
-        uses: ughuuu/godot-cpp-template/.github/actions/sign@add-more-stuff/options-to-build
-        if : ${{ env.PROD_MACOS_CERTIFICATE != '' && false }}
-        with:
-          FRAMEWORK_PATH: bin/addons/godot_whisper/bin/libgodot_whisper.macos.template_release.${{ matrix.mac_precision_extension }}.universal.framework
-          APPLE_CERT_BASE64: ${{ secrets.PROD_MACOS_CERTIFICATE }}
-          APPLE_CERT_PASSWORD: ${{ secrets.PROD_MACOS_CERTIFICATE_PWD }}
-          APPLE_DEV_PASSWORD: ${{ secrets.PROD_MACOS_NOTARIZATION_PWD }}
-          APPLE_DEV_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_APPLE_ID }}
-          APPLE_DEV_TEAM_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_TEAM_ID }}
-          APPLE_DEV_APP_ID: ${{ secrets.PROD_MACOS_APPLE_DEV_APP_ID }}
-        env:
-          PROD_MACOS_CERTIFICATE: secrets.PROD_MACOS_CERTIFICATE
 
+      - name: Mac Sign
+        id: sign
+        uses: ughuuu/godot-cpp-template/.github/actions/sign@add-more-stuff/options-to-build
+        with:
+          FRAMEWORK_PATH: bin/addons/godot_whisper/bin/libgodot_whisper.macos.template_release${{ matrix.mac_precision_extension }}.universal.framework
+          SIGN_FLAGS: "--deep"
+          APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+          APPLE_DEV_PASSWORD: ${{ secrets.APPLE_DEV_PASSWORD }}
+          APPLE_DEV_ID: ${{ secrets.APPLE_DEV_ID }}
+          APPLE_DEV_TEAM_ID: ${{ secrets.APPLE_DEV_TEAM_ID }}
+          APPLE_DEV_APP_ID: ${{ secrets.APPLE_DEV_APP_ID }}
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: Godot_Whisper
           path: |
-            ${{ github.workspace }}/bin/**
+            ${{ github.workspace }}/bin/**/libgodot_whisper.macos.template_release${{ matrix.mac_precision_extension }}.universal.framework/**
           if-no-files-found: error
+          compression-level: 9
