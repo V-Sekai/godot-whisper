@@ -25,11 +25,11 @@ grow_vertical = 2
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_rhq81")
-autoplay = true
 bus = &"Record"
 
 [node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("3_l8fmi")
+autoplay = true
 bus = &"Record"
 
 [node name="Panel" type="Panel" parent="."]
