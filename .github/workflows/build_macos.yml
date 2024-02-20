@@ -56,12 +56,10 @@ jobs:
           APPLE_DEV_ID: ${{ secrets.APPLE_DEV_ID }}
           APPLE_DEV_TEAM_ID: ${{ secrets.APPLE_DEV_TEAM_ID }}
           APPLE_DEV_APP_ID: ${{ secrets.APPLE_DEV_APP_ID }}
-      - name: 'Tar files'
-        run: tar -cvf bin/bin${{ matrix.precision }}.tar ./bin/addons
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Godot_Whisper${{ matrix.precision }}
+          name: Godot_Whisper
           path: |
             ${{ github.workspace }}/bin/**
           if-no-files-found: error
