@@ -37,6 +37,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           path: ${{ github.workspace }}/OpenCL-SDK
+          branch: v2023.12.14
           repository: KhronosGroup/OpenCL-SDK
           submodules: true
           fetch-depth: 0
