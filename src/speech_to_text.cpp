@@ -399,6 +399,7 @@ Array SpeechToText::transcribe(PackedFloat32Array buffer, String initial_prompt)
 	whisper_full_params whisper_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
 	whisper_params.language = _language_to_code(language);
 	whisper_params.audio_ctx = 768;
+	whisper_params.speed_up = _get_speed_up();
 	whisper_params.split_on_word = true;
 	whisper_params.token_timestamps = true;
 	whisper_params.suppress_non_speech_tokens = true;

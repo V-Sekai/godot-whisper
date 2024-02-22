@@ -139,6 +139,7 @@ private:
 	_FORCE_INLINE_ float _get_freq_thold() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/freq_treshold"); }
 	_FORCE_INLINE_ float _get_vad_thold() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/vad_treshold"); }
 	_FORCE_INLINE_ int _get_max_tokens() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/max_tokens"); }
+	_FORCE_INLINE_ bool _get_speed_up() { return ProjectSettings::get_singleton()->get("audio/input/transcribe/speed_up_2x"); }
 	void _load_model();
 	std::vector<float> _add_audio_buffer(PackedVector2Array buffer);
 	const char *_language_to_code(Language language);
