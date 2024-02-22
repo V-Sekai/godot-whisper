@@ -54,7 +54,7 @@ jobs:
 
       - name: Build OpenCL
         run: |
-          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -T version=19.37 -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF -D BUILD_TESTING=OFF -D BUILD_DOCS=OFF -D BUILD_EXAMPLES=OFF -D BUILD_TESTS=OFF -D OPENCL_SDK_TEST_SAMPLES=OFF -A ${{matrix.opencl_arch}}
+          cmake -G "Visual Studio 17 2022" -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -T "v143,host=x64,version=19.37.32826" -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF -D BUILD_TESTING=OFF -D BUILD_DOCS=OFF -D BUILD_EXAMPLES=OFF -D BUILD_TESTS=OFF -D OPENCL_SDK_TEST_SAMPLES=OFF -A ${{matrix.opencl_arch}}
           cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
 
       - name: 🔗 GDExtension Build
