@@ -41,8 +41,9 @@ if env["platform"] == "macos" or env["platform"] == "ios":
         CPPDEFINES=[
             "GGML_USE_METAL",
             # Debug logs
-            "GGML_METAL_NDEBUG",
-            "GGML_USE_ACCELERATE"
+            #"GGML_METAL_NDEBUG",
+            "GGML_USE_ACCELERATE",
+            "GGML_METAL_PATH_RESOURCES=.."
         ]
     )
     sources.extend([
