@@ -14,6 +14,8 @@ signal transcribed_msg(is_partial, new_text)
 		return recording
 ## The interval at which transcribing is done. Use a value bigger than the time it takes to transcribe (eg. depends on model).
 @export var transcribe_interval := 0.3
+## How many tokens it's allowed to halucinate. Can provide useful info as it talks, but too much can provide useless text.
+@export var halucinating_count := 4
 ## The record bus has to have a AudioEffectCapture at index specified by [member audio_effect_capture_index]
 @export var record_bus := "Record"
 ## The index where the [AudioEffectCapture] is located at in the [member record_bus]
@@ -44,32 +46,46 @@ func transcribe_thread():
 		if resampled.size() <= 0:
 			OS.delay_msec(transcribe_interval * 1000)
 			continue
-		var tokens = transcribe(resampled, initial_prompt)
+		var total_time : float= (resampled.size() as float) / SpeechToText.SPEECH_SETTING_SAMPLE_RATE
+		var audio_ctx : int = total_time * 1500 / 30 + 128
+		# audio_ctx = 0
+		var tokens = transcribe(resampled, initial_prompt, audio_ctx)
 		var full_text = tokens.pop_front()
 		var mix_rate : int = ProjectSettings.get_setting("audio/driver/mix_rate")
-		var total_time = resampled.size() / SpeechToText.SPEECH_SETTING_SAMPLE_RATE
 		var finish_sentence = false
-		if total_time > 15:
+		if total_time > 10:
 			finish_sentence = true
 		var no_activity = voice_activity_detection(resampled)
 		var text : String
+		var last_t0 := -1
+		var last_t1 := -1
+		var halucinating := 0
 		for token in tokens:
+			if last_t0 == token["t0"] && last_t1 == token["t1"]:
+				halucinating += 1
+				# Halucinating, let a few halucinating characters as they can provide useful				
+				if halucinating >= halucinating_count:
+					break
 			text += token["text"]
+			last_t0 = token["t0"]
+			last_t1 = token["t1"]
 		text = _remove_special_characters(text)
 		if _has_terminating_characters(text, punctuation_characters):
 			finish_sentence = true
-		if total_time < 4:
+		if total_time < 3:
 			finish_sentence = false
 		if finish_sentence:
 			_accumulated_frames = _accumulated_frames.slice(_accumulated_frames.size() - (0.2 * mix_rate))
+		if halucinating >= halucinating_count:
+			full_text = text
 		call_deferred("emit_signal", "transcribed_msg", finish_sentence, full_text)
 		var time_processing = (Time.get_ticks_msec() - start_time)
 		# Sleep remaining time
 		var interval_sleep = transcribe_interval * 1000 - time_processing
 		if interval_sleep > 0:
 			OS.delay_msec(interval_sleep)
-		print(text)
-		print(full_text)
+		#print(text)
+		#print(full_text)
 		print("Transcribe " + str(time_processing/ 1000.0) + " s")
 
 func _has_terminating_characters(message: String, characters: String):

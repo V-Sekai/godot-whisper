@@ -394,11 +394,13 @@ bool SpeechToText::voice_activity_detection(PackedFloat32Array buffer) {
 	return false;
 }
 
-Array SpeechToText::transcribe(PackedFloat32Array buffer, String initial_prompt) {
+Array SpeechToText::transcribe(PackedFloat32Array buffer, String initial_prompt, int audio_ctx) {
 	Array return_value;
 	whisper_full_params whisper_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
 	whisper_params.language = _language_to_code(language);
-	whisper_params.audio_ctx = 768;
+	whisper_params.duration_ms = buffer.size() * 1000.0f / WHISPER_SAMPLE_RATE;
+	whisper_params.audio_ctx = audio_ctx;
+	whisper_params.speed_up = _get_speed_up();
 	whisper_params.split_on_word = true;
 	whisper_params.token_timestamps = true;
 	whisper_params.suppress_non_speech_tokens = true;
@@ -411,7 +413,6 @@ Array SpeechToText::transcribe(PackedFloat32Array buffer, String initial_prompt)
 		ERR_PRINT("Context instance is null");
 		return Array();
 	}
-	whisper_params.duration_ms = buffer.size() * 1000.0f / WHISPER_SAMPLE_RATE;
 	int ret = whisper_full(context_instance, whisper_params, buffer.ptr(), buffer.size());
 	if (ret != 0) {
 		ERR_PRINT("Failed to process audio, returned " + rtos(ret));
@@ -450,7 +451,7 @@ void SpeechToText::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_language", "language"), &SpeechToText::set_language);
 	ClassDB::bind_method(D_METHOD("get_language_model"), &SpeechToText::get_language_model);
 	ClassDB::bind_method(D_METHOD("set_language_model", "model"), &SpeechToText::set_language_model);
-	ClassDB::bind_method(D_METHOD("transcribe", "buffer", "initial_prompt"), &SpeechToText::transcribe);
+	ClassDB::bind_method(D_METHOD("transcribe", "buffer", "initial_prompt", "audio_ctx"), &SpeechToText::transcribe);
 	ClassDB::bind_method(D_METHOD("voice_activity_detection", "buffer"), &SpeechToText::voice_activity_detection);
 	ClassDB::bind_method(D_METHOD("resample", "buffer"), &SpeechToText::resample);
 
