@@ -1,4 +1,7 @@
-# Godot Whisper
+<p align="center">
+	<img width="128px" src="whisper_logo.png"/> 
+	<h1 align="center">Godot Whisper</h1> 
+</p>
 
 <p align="center">
 	<a href="https://github.com/V-Sekai/godot-whisper/actions/workflows/runner.yml">
@@ -36,6 +39,11 @@
 ## How to install
 
 Go to a github release, copy paste the addons folder to the demo folder. Restart godot editor.
+
+</p>
+<p align="center">
+<img src="banner_godot_whisper.jpg"/>
+</p>
 
 ## Requirements
 
