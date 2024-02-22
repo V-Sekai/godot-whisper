@@ -31,7 +31,7 @@ func get_text():
 		AudioStreamWAV.FORMAT_16_BITS:
 			for i in data.size() / 2:
 				data_float.append((data.decode_s16(i * 2) / 32768.0))
-	var tokens = transcribe(data_float, initial_prompt)
+	var tokens = transcribe(data_float, initial_prompt, 0)
 	if tokens.is_empty():
 		return ""
 	var full_text = tokens.pop_front()
