@@ -160,7 +160,7 @@ public:
 	};
 	bool voice_activity_detection(PackedFloat32Array buffer);
 	PackedFloat32Array resample(PackedVector2Array buffer, SpeechToText::InterpolatorType interpolator_type);
-	Array transcribe(PackedFloat32Array buffer, String initial_prompt);
+	Array transcribe(PackedFloat32Array buffer, String initial_prompt, int audio_ctx);
 	void set_language(int p_language);
 	int get_language();
 	void set_language_model(Ref<WhisperResource> p_model);

@@ -394,17 +394,12 @@ bool SpeechToText::voice_activity_detection(PackedFloat32Array buffer) {
 	return false;
 }
 
-Array SpeechToText::transcribe(PackedFloat32Array buffer, String initial_prompt) {
+Array SpeechToText::transcribe(PackedFloat32Array buffer, String initial_prompt, int audio_ctx) {
 	Array return_value;
 	whisper_full_params whisper_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
 	whisper_params.language = _language_to_code(language);
-	// audio length in seconds/30 seconds)*1500 + 128
 	whisper_params.duration_ms = buffer.size() * 1000.0f / WHISPER_SAMPLE_RATE;
-	if (whisper_params.duration_ms != 0) {
-		whisper_params.audio_ctx = (whisper_params.duration_ms / 30000) * 1500 + 128;
-	} else {
-		whisper_params.audio_ctx = 0;
-	}
+	whisper_params.audio_ctx = audio_ctx;
 	whisper_params.speed_up = _get_speed_up();
 	whisper_params.split_on_word = true;
 	whisper_params.token_timestamps = true;
@@ -456,7 +451,7 @@ void SpeechToText::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_language", "language"), &SpeechToText::set_language);
 	ClassDB::bind_method(D_METHOD("get_language_model"), &SpeechToText::get_language_model);
 	ClassDB::bind_method(D_METHOD("set_language_model", "model"), &SpeechToText::set_language_model);
-	ClassDB::bind_method(D_METHOD("transcribe", "buffer", "initial_prompt"), &SpeechToText::transcribe);
+	ClassDB::bind_method(D_METHOD("transcribe", "buffer", "initial_prompt", "audio_ctx"), &SpeechToText::transcribe);
 	ClassDB::bind_method(D_METHOD("voice_activity_detection", "buffer"), &SpeechToText::voice_activity_detection);
 	ClassDB::bind_method(D_METHOD("resample", "buffer"), &SpeechToText::resample);
 
