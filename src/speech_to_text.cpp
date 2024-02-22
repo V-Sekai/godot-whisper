@@ -398,7 +398,13 @@ Array SpeechToText::transcribe(PackedFloat32Array buffer, String initial_prompt)
 	Array return_value;
 	whisper_full_params whisper_params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
 	whisper_params.language = _language_to_code(language);
-	whisper_params.audio_ctx = 768;
+	// audio length in seconds/30 seconds)*1500 + 128
+	whisper_params.duration_ms = buffer.size() * 1000.0f / WHISPER_SAMPLE_RATE;
+	if (whisper_params.duration_ms != 0) {
+		whisper_params.audio_ctx = (whisper_params.duration_ms / 30000) * 1500 + 128;
+	} else {
+		whisper_params.audio_ctx = 0;
+	}
 	whisper_params.speed_up = _get_speed_up();
 	whisper_params.split_on_word = true;
 	whisper_params.token_timestamps = true;
@@ -412,7 +418,6 @@ Array SpeechToText::transcribe(PackedFloat32Array buffer, String initial_prompt)
 		ERR_PRINT("Context instance is null");
 		return Array();
 	}
-	whisper_params.duration_ms = buffer.size() * 1000.0f / WHISPER_SAMPLE_RATE;
 	int ret = whisper_full(context_instance, whisper_params, buffer.ptr(), buffer.size());
 	if (ret != 0) {
 		ERR_PRINT("Failed to process audio, returned " + rtos(ret));
