@@ -14,6 +14,7 @@ env.Append(
         "WEBRTC_APM_DEBUG_DUMP=0",
         "WHISPER_BUILD",
         "GGML_BUILD",
+        "Wno-c++11-narrowing"
     ]
 )
 
