@@ -28,6 +28,10 @@ sources.extend([
     Glob("thirdparty/whisper.cpp/whisper.cpp"),
 ])
 
+# Disable 32 bit narrowing error.
+if env["platform"] != "windows":
+    env.Append(CCFLAGS=["-Wno-c++11-narrowing"])
+
 if env["platform"] == "macos" or env["platform"] == "ios":
     env.Append(LINKFLAGS=["-framework"])
     env.Append(LINKFLAGS=["Foundation"])

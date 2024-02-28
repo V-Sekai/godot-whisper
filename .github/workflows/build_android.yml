@@ -11,21 +11,21 @@ jobs:
         include:
           - precision: single
             arch: arm64
-          #- precision: single
-          #  arch: arm32
+          - precision: single
+            arch: arm32
           - precision: single
             arch: x86_64
-          #- precision: single
-          #  arch: x86_32
+          - precision: single
+            arch: x86_32
 
           - precision: double
             arch: arm64
-          #- precision: double
-          #  arch: arm32
+          - precision: double
+            arch: arm32
           - precision: double
             arch: x86_64
-          #- precision: double
-          #  arch: x86_32
+          - precision: double
+            arch: x86_32
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout

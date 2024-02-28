@@ -32,3 +32,6 @@ jobs:
   build_windows:
     needs: [lint]
     uses: ./.github/workflows/build_windows.yml
+  build_web:
+    needs: [lint]
+    uses: ./.github/workflows/build_web.yml
