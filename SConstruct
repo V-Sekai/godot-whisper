@@ -16,7 +16,6 @@ env.Append(
         "GGML_BUILD",
     ]
 )
-env.Append(CCFLAGS=["-Wno-c++11-narrowing"])
 
 env.Prepend(CPPPATH=["thirdparty", "include"])
 env.Append(CPPPATH=["src/"])
@@ -28,6 +27,10 @@ sources.extend([
     Glob("thirdparty/whisper.cpp/*.c"),
     Glob("thirdparty/whisper.cpp/whisper.cpp"),
 ])
+
+# Disable 32 bit narrowing error.
+if env["platform"] != "windows":
+    env.Append(CCFLAGS=["-Wno-c++11-narrowing"])
 
 if env["platform"] == "macos" or env["platform"] == "ios":
     env.Append(LINKFLAGS=["-framework"])
