@@ -20,7 +20,7 @@ config/icon="res://icon.png"
 driver/enable_input=true
 enable_audio_input=true
 mix_rate=48000
-input/transcribe/max_tokens=32
+input/transcribe/max_tokens=64
 
 [display]
 

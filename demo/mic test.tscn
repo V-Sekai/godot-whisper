@@ -1,10 +1,10 @@
 [gd_scene load_steps=8 format=3 uid="uid://dibqfutwftm8j"]
 
 [ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="1_36edp"]
-[ext_resource type="AudioStream" uid="uid://ch6ikywfjt1ii" path="res://Blank_Space.ogg.mp3" id="1_m3b8t"]
+[ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="1_ysunu"]
 [ext_resource type="Script" path="res://StartButton.gd" id="3_iker1"]
 [ext_resource type="Script" path="res://test_display.gd" id="3_r84sk"]
-[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-small.en.bin" id="4_yl207"]
+[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-base.en.bin" id="4_egu61"]
 [ext_resource type="Script" path="res://addons/godot_whisper/audio_stream_to_text.gd" id="5_5es8e"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_rhq81"]
@@ -27,7 +27,7 @@ stream = SubResource("AudioStreamMicrophone_rhq81")
 bus = &"Record"
 
 [node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("1_m3b8t")
+stream = ExtResource("1_ysunu")
 autoplay = true
 bus = &"Record"
 
@@ -72,12 +72,10 @@ script = ExtResource("3_iker1")
 capture_stream_to_text = NodePath("../../CaptureStreamToText")
 
 [node name="CaptureStreamToText" type="SpeechToText" parent="."]
-language_model = ExtResource("4_yl207")
+language_model = ExtResource("4_egu61")
 script = ExtResource("1_36edp")
-use_dynamic_audio_context = false
-halucinating_count = 1
-punctuation_characters = ".!?;。；？！"
-language_model_to_download = "small.en"
+maximum_sentence_time = 10
+language_model_to_download = "base.en"
 
 [node name="AudioStreamToText" type="SpeechToText" parent="."]
 script = ExtResource("5_5es8e")
