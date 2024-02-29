@@ -7,8 +7,8 @@ func update_text():
 func _process(_delta):
 	update_text()
 
-var completed_text = ""
-var partial_text = ""
+var completed_text := ""
+var partial_text := ""
 
 func _on_capture_stream_to_text_transcribed_msg(is_partial, new_text):
 	if is_partial == true:

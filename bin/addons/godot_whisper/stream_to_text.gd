@@ -18,10 +18,10 @@ func _do_download():
 	add_child(http_request)
 	http_request.use_threads = true
 	DirAccess.make_dir_recursive_absolute("res://addons/godot_whisper/models")
-	var file_path = "res://addons/godot_whisper/models/gglm-" + language_model_to_download + ".bin"
+	var file_path : String = "res://addons/godot_whisper/models/gglm-" + language_model_to_download + ".bin"
 	http_request.request_completed.connect(self._http_request_completed.bind(file_path))
 	http_request.download_file = file_path
-	var url = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-" + language_model_to_download + ".bin?download=true"
+	var url : String = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-" + language_model_to_download + ".bin?download=true"
 	print("Downloading file from " + url)
 	# Perform a GET request. The URL below returns JSON as of writing.
 	var error = http_request.request(url)
@@ -33,8 +33,9 @@ func _http_request_completed(result, response_code, headers, body, file_path):
 	if result != HTTPRequest.RESULT_SUCCESS:
 		push_error("Can't downloaded.")
 		return
+	EditorInterface.get_resource_filesystem().scan()
 	ResourceLoader.load(file_path, "WhisperResource", 2)
-	print("Download successful. Check " + file_path + ". If file is not there, alt tab or restart editor.")
+	print("Download successful. Check " + file_path)
 
 ## Download the model specified in the [member language_model_to_download]
 @export var download := false:

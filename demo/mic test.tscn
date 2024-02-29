@@ -1,12 +1,11 @@
-[gd_scene load_steps=9 format=3 uid="uid://dibqfutwftm8j"]
+[gd_scene load_steps=8 format=3 uid="uid://dibqfutwftm8j"]
 
 [ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="1_36edp"]
+[ext_resource type="AudioStream" uid="uid://ch6ikywfjt1ii" path="res://Blank_Space.ogg.mp3" id="1_m3b8t"]
 [ext_resource type="Script" path="res://StartButton.gd" id="3_iker1"]
-[ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="3_l8fmi"]
 [ext_resource type="Script" path="res://test_display.gd" id="3_r84sk"]
-[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-base.bin" id="4_k0kxn"]
+[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-small.en.bin" id="4_yl207"]
 [ext_resource type="Script" path="res://addons/godot_whisper/audio_stream_to_text.gd" id="5_5es8e"]
-[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-tiny.en.bin" id="6_m2t7y"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_rhq81"]
 
@@ -28,7 +27,7 @@ stream = SubResource("AudioStreamMicrophone_rhq81")
 bus = &"Record"
 
 [node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("3_l8fmi")
+stream = ExtResource("1_m3b8t")
 autoplay = true
 bus = &"Record"
 
@@ -73,16 +72,14 @@ script = ExtResource("3_iker1")
 capture_stream_to_text = NodePath("../../CaptureStreamToText")
 
 [node name="CaptureStreamToText" type="SpeechToText" parent="."]
-language = 4
-language_model = ExtResource("4_k0kxn")
+language_model = ExtResource("4_yl207")
 script = ExtResource("1_36edp")
-transcribe_interval = 0.8
-language_model_to_download = "base"
+use_dynamic_audio_context = false
+halucinating_count = 1
+punctuation_characters = ".!?;。；？！"
+language_model_to_download = "small.en"
 
 [node name="AudioStreamToText" type="SpeechToText" parent="."]
-language_model = ExtResource("6_m2t7y")
 script = ExtResource("5_5es8e")
-audio_stream = ExtResource("3_l8fmi")
-text = " And so my fellow Americans ask not what your country can do for you ask what you can do for your country."
 
 [connection signal="transcribed_msg" from="CaptureStreamToText" to="Panel/Label" method="_on_capture_stream_to_text_transcribed_msg"]

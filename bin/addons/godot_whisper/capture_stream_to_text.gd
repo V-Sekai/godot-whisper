@@ -49,13 +49,13 @@ func transcribe_thread():
 		var total_time : float= (resampled.size() as float) / SpeechToText.SPEECH_SETTING_SAMPLE_RATE
 		var audio_ctx : int = total_time * 1500 / 30 + 128
 		# audio_ctx = 0
-		var tokens = transcribe(resampled, initial_prompt, audio_ctx)
+		var tokens := transcribe(resampled, initial_prompt, audio_ctx)
 		var full_text = tokens.pop_front()
 		var mix_rate : int = ProjectSettings.get_setting("audio/driver/mix_rate")
 		var finish_sentence = false
 		if total_time > 10:
 			finish_sentence = true
-		var no_activity = voice_activity_detection(resampled)
+		var no_activity := voice_activity_detection(resampled)
 		var text : String
 		var last_t0 := -1
 		var last_t1 := -1
@@ -72,7 +72,7 @@ func transcribe_thread():
 		text = _remove_special_characters(text)
 		if _has_terminating_characters(text, punctuation_characters):
 			finish_sentence = true
-		if total_time < 3:
+		if total_time < 10:
 			finish_sentence = false
 		if finish_sentence:
 			_accumulated_frames = _accumulated_frames.slice(_accumulated_frames.size() - (0.2 * mix_rate))
@@ -84,8 +84,8 @@ func transcribe_thread():
 		var interval_sleep = transcribe_interval * 1000 - time_processing
 		if interval_sleep > 0:
 			OS.delay_msec(interval_sleep)
-		#print(text)
-		#print(full_text)
+		print(text)
+		print(full_text, " ", finish_sentence)
 		print("Transcribe " + str(time_processing/ 1000.0) + " s")
 
 func _has_terminating_characters(message: String, characters: String):
