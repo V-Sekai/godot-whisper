@@ -20,8 +20,7 @@ extends StreamToText
 
 
 func get_text():
-	var start_time = Time.get_ticks_msec()
-	start_time = Time.get_ticks_msec()
+	var start_time := Time.get_ticks_msec()
 	var data := audio_stream.data
 	var data_float : PackedFloat32Array
 	match audio_stream.format:
@@ -34,8 +33,8 @@ func get_text():
 	var tokens = transcribe(data_float, initial_prompt, 0)
 	if tokens.is_empty():
 		return ""
-	var full_text = tokens.pop_front()
-	var text : String
+	var full_text : String = tokens.pop_front()
+	var text := ""
 	for token in tokens:
 		if token["plog"] > 0:
 			continue
@@ -46,7 +45,7 @@ func get_text():
 	return _remove_special_characters(text)
 
 func _remove_special_characters(message: String):
-	var special_characters = [ \
+	var special_characters := [ \
 		{ "start": "[", "end": "]" }, \
 		{ "start": "<", "end": ">" }]
 	for special_character in special_characters:
@@ -56,10 +55,10 @@ func _remove_special_characters(message: String):
 			if end_character != -1:
 				message = message.substr(0, begin_character) + message.substr(end_character + 1)
 
-	var hallucinatory_character = [". you."]
+	var hallucinatory_character := [". you."]
 	for special_character in hallucinatory_character:
 		while(message.find(special_character) != -1):
 			var begin_character := message.find(special_character)
-			var end_character = begin_character + len(special_character)
+			var end_character := begin_character + len(special_character)
 			message = message.substr(0, begin_character) + message.substr(end_character + 1)
 	return message
