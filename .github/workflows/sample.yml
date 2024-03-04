@@ -1,0 +1,27 @@
+name: Lint
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          download-path: ./demo
+      - name: List
+        shell: bash
+        run: |
+          ls -la demo
+      - name: Upload Sample
+        uses: actions/upload-artifact@v3
+        with:
+          name: Godot_Whisper_Sample
+          path: |
+            ${{ github.workspace }}/demo/**
+          if-no-files-found: error
