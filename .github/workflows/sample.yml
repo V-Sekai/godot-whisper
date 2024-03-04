@@ -1,4 +1,4 @@
-name: Lint
+name: Sample
 on:
   workflow_dispatch:
   workflow_call:
@@ -13,7 +13,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
-          download-path: ./demo
+          path: ./demo
       - name: List
         shell: bash
         run: |
