@@ -14,10 +14,12 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           path: ./demo
-      - name: List
+      - name: Move addons
         shell: bash
         run: |
-          ls -la demo
+          mv Godot_Whisper/addons addons
+          rm Godot_Whisper
+        working-directory: demo
       - name: Upload Sample
         uses: actions/upload-artifact@v3
         with:
