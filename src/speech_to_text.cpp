@@ -328,6 +328,7 @@ void SpeechToText::set_language_model(Ref<WhisperResource> p_model) {
 
 void SpeechToText::_load_model() {
 	whisper_free(context_instance);
+	context_instance = nullptr;
 	UtilityFunctions::print(whisper_print_system_info());
 	if (model.is_null()) {
 		return;
@@ -344,6 +345,7 @@ void SpeechToText::_load_model() {
 
 SpeechToText::~SpeechToText() {
 	whisper_free(context_instance);
+	context_instance = nullptr;
 }
 
 PackedFloat32Array SpeechToText::resample(PackedVector2Array buffer, SpeechToText::InterpolatorType interpolator_type) {
