@@ -18,7 +18,7 @@ jobs:
         shell: bash
         run: |
           mv Godot_Whisper/addons addons
-          rm Godot_Whisper
+          rmdir Godot_Whisper
         working-directory: demo
       - name: Upload Sample
         uses: actions/upload-artifact@v3
