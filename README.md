@@ -38,7 +38,7 @@
 
 ## How to install
 
-Go to a github release, copy paste the addons folder to the demo folder. Restart godot editor.
+Go to a github release, copy paste the addons folder to the samples folder. Restart godot editor.
 
 </p>
 <p align="center">
@@ -86,8 +86,8 @@ Also, as doing microphone transcribing requires the data to be at a 16000 sampli
 
 ```
 scons target=template_release generate_bindings=no arch=universal precision=single
-rm -rf demo/addons
-cp -rf bin/addons demo/addons
+rm -rf samples/godot_whisper/addons
+cp -rf bin/addons samples/godot_whisper/addons
 ```
 
 ## Contributors ✨

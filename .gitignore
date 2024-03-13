@@ -7,7 +7,7 @@
 .DS_Store
 .vscode
 
-demo/addons
+samples/godot_whisper/addons
 *.code-workspace
 bin/addons/godot_whisper/bin/libgodot_whisper.macos.template_release.double.universal.framework/libgodot_whisper.macos.template_release.double.universal
 bin/addons/godot_whisper/bin/libgodot_whisper.macos.template_release.universal.framework/libgodot_whisper.macos.template_release.universal
