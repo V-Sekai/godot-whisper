@@ -72,6 +72,6 @@ jobs:
           name: Godot_Whisper
           path: |
             ${{ github.workspace }}/bin/**/*.dll
-            ${{ github.workspace }}/samples/**
+            ${{ github.workspace }}/bin/samples/**
           if-no-files-found: error
           compression-level: 9

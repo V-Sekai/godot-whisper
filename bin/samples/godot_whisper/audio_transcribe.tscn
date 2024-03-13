@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://br76m6r3jwrdh"]
+
+[ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://samples/jfk.wav" id="1_v1n4q"]
+[ext_resource type="Script" path="res://addons/godot_whisper/audio_stream_to_text.gd" id="2_v8tv2"]
+
+[node name="AudioTranscribe" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("1_v1n4q")
+autoplay = true
+bus = &"Record"
+
+[node name="AudioStreamToText" type="SpeechToText" parent="."]
+script = ExtResource("2_v8tv2")

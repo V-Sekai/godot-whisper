@@ -1,11 +1,10 @@
-[gd_scene load_steps=8 format=3 uid="uid://dibqfutwftm8j"]
+[gd_scene load_steps=7 format=3 uid="uid://dibqfutwftm8j"]
 
-[ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="1_36edp"]
-[ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://jfk.wav" id="1_ysunu"]
-[ext_resource type="Script" path="res://StartButton.gd" id="3_iker1"]
-[ext_resource type="Script" path="res://test_display.gd" id="3_r84sk"]
-[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-base.en.bin" id="4_egu61"]
-[ext_resource type="Script" path="res://addons/godot_whisper/audio_stream_to_text.gd" id="5_5es8e"]
+[ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://samples/jfk.wav" id="1_qetor"]
+[ext_resource type="Script" path="res://samples/test_display.gd" id="2_bmtbk"]
+[ext_resource type="Script" path="res://samples/StartButton.gd" id="3_bbt5i"]
+[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-base.en.bin" id="4_lvvon"]
+[ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="5_c8lup"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_rhq81"]
 
@@ -27,7 +26,7 @@ stream = SubResource("AudioStreamMicrophone_rhq81")
 bus = &"Record"
 
 [node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
-stream = ExtResource("1_ysunu")
+stream = ExtResource("1_qetor")
 autoplay = true
 bus = &"Record"
 
@@ -54,7 +53,7 @@ bbcode_enabled = true
 text = "Time: 0s
 Time to process: 0s
 ..."
-script = ExtResource("3_r84sk")
+script = ExtResource("2_bmtbk")
 
 [node name="Label" type="RichTextLabel" parent="."]
 layout_mode = 2
@@ -64,20 +63,16 @@ Takes sample every 5s and transcribes below."
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
 
-[node name="CheckBox" type="CheckBox" parent="HBoxContainer" node_paths=PackedStringArray("capture_stream_to_text")]
+[node name="CheckBox" type="CheckBox" parent="HBoxContainer"]
 layout_mode = 2
 button_pressed = true
 text = "Running"
-script = ExtResource("3_iker1")
-capture_stream_to_text = NodePath("../../CaptureStreamToText")
+script = ExtResource("3_bbt5i")
+capture_stream_to_text = Object(SpeechToText,"language":1,"language_model":ExtResource("4_lvvon"),"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":0,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"editor_description":"","script":ExtResource("5_c8lup"),"maximum_sentence_time":10,"language_model_to_download":"base.en")
+
 
 [node name="CaptureStreamToText" type="SpeechToText" parent="."]
-language_model = ExtResource("4_egu61")
-script = ExtResource("1_36edp")
+language_model = ExtResource("4_lvvon")
+script = ExtResource("5_c8lup")
 maximum_sentence_time = 10
 language_model_to_download = "base.en"
-
-[node name="AudioStreamToText" type="SpeechToText" parent="."]
-script = ExtResource("5_5es8e")
-
-[connection signal="transcribed_msg" from="CaptureStreamToText" to="Panel/Label" method="_on_capture_stream_to_text_transcribed_msg"]
