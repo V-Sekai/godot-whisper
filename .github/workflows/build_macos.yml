@@ -60,5 +60,7 @@ jobs:
         with:
           name: Godot_Whisper
           path: |
+            ${{ github.workspace }}/bin/addons/godot_whisper/ggml-metal.metal
+            ${{ github.workspace }}/bin/addons/godot_whisper/bin/ggml-metal.metal
             ${{ github.workspace }}/bin/**/libgodot_whisper.macos.template_release${{ matrix.mac_precision_extension }}.universal.framework/**
           if-no-files-found: error
