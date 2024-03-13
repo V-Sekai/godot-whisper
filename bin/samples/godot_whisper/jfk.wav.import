@@ -3,12 +3,12 @@
 importer="wav"
 type="AudioStreamWAV"
 uid="uid://cuybt83bwegoq"
-path="res://.godot/imported/jfk.wav-99b211ad611429cfeea8ae6a5a364feb.sample"
+path="res://.godot/imported/jfk.wav-232220f946cfbc3d8dd7a8132b425979.sample"
 
 [deps]
 
-source_file="res://jfk.wav"
-dest_files=["res://.godot/imported/jfk.wav-99b211ad611429cfeea8ae6a5a364feb.sample"]
+source_file="res://samples/godot_whisper/jfk.wav"
+dest_files=["res://.godot/imported/jfk.wav-232220f946cfbc3d8dd7a8132b425979.sample"]
 
 [params]
 
