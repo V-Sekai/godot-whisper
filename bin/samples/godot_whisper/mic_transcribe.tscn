@@ -1,9 +1,8 @@
-[gd_scene load_steps=7 format=3 uid="uid://dibqfutwftm8j"]
+[gd_scene load_steps=6 format=3 uid="uid://dibqfutwftm8j"]
 
-[ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://samples/jfk.wav" id="1_qetor"]
-[ext_resource type="Script" path="res://samples/test_display.gd" id="2_bmtbk"]
-[ext_resource type="Script" path="res://samples/StartButton.gd" id="3_bbt5i"]
-[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-base.en.bin" id="4_lvvon"]
+[ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://samples/godot_whisper/jfk.wav" id="1_qetor"]
+[ext_resource type="Script" path="res://samples/godot_whisper/test_display.gd" id="2_bmtbk"]
+[ext_resource type="Script" path="res://samples/godot_whisper/StartButton.gd" id="3_bbt5i"]
 [ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="5_c8lup"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_rhq81"]
@@ -23,12 +22,10 @@ grow_vertical = 2
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_rhq81")
-bus = &"Record"
 
 [node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("1_qetor")
 autoplay = true
-bus = &"Record"
 
 [node name="Panel" type="Panel" parent="."]
 custom_minimum_size = Vector2(400, 400)
@@ -68,11 +65,10 @@ layout_mode = 2
 button_pressed = true
 text = "Running"
 script = ExtResource("3_bbt5i")
-capture_stream_to_text = Object(SpeechToText,"language":1,"language_model":ExtResource("4_lvvon"),"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":0,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"editor_description":"","script":ExtResource("5_c8lup"),"maximum_sentence_time":10,"language_model_to_download":"base.en")
+capture_stream_to_text = Object(SpeechToText,"language":1,"language_model":Resource("res://addons/godot_whisper/models/gglm-base.en.bin"),"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":0,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"editor_description":"","script":ExtResource("5_c8lup"),"maximum_sentence_time":10,"language_model_to_download":"base.en")
 
 
 [node name="CaptureStreamToText" type="SpeechToText" parent="."]
-language_model = ExtResource("4_lvvon")
 script = ExtResource("5_c8lup")
 maximum_sentence_time = 10
 language_model_to_download = "base.en"
