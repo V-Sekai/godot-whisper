@@ -50,4 +50,3 @@ jobs:
           path: |
             ${{ github.workspace }}/bin/**
           if-no-files-found: error
-          compression-level: 9

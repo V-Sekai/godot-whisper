@@ -62,4 +62,3 @@ jobs:
           path: |
             ${{ github.workspace }}/bin/**/libgodot_whisper.macos.template_release${{ matrix.mac_precision_extension }}.universal.framework/**
           if-no-files-found: error
-          compression-level: 9

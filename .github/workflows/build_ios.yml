@@ -46,4 +46,3 @@ jobs:
           path: |
             ${{ github.workspace }}/bin/**/*.dylib
           if-no-files-found: error
-          compression-level: 9

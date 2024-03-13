@@ -37,4 +37,3 @@ jobs:
           path: |
             ${{ github.workspace }}/bin/**/*.wasm
           if-no-files-found: error
-          compression-level: 9
