@@ -20,8 +20,10 @@ jobs:
         include:
           - precision: single
             arch: arm64
+            ios_precision_extension:
           - precision: double
             arch: arm64
+            ios_precision_extension: .double
     runs-on: macos-latest
     steps:
       - name: Checkout
@@ -44,5 +46,5 @@ jobs:
         with:
           name: Godot_Whisper
           path: |
-            ${{ github.workspace }}/bin/**/libgodot_whisper.ios.template_release${{ matrix.mac_precision_extension }}.arm64.framework/**
+            ${{ github.workspace }}/bin/**/libgodot_whisper.ios.template_release${{ matrix.ios_precision_extension }}.arm64.framework/**
           if-no-files-found: error
