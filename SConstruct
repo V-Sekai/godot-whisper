@@ -121,6 +121,13 @@ if env["platform"] == "macos":
 		),
 		source=sources,
 	)
+elif env["platform"] == "ios":
+	library = env.SharedLibrary(
+		"bin/addons/godot_whisper/bin/libgodot_whisper{}.framework/libgodot_whisper{}".format(
+			env["suffix"], env["suffix"]
+		),
+		source=sources,
+	)
 else:
 	library = env.SharedLibrary(
 		"bin/addons/godot_whisper/bin/libgodot_whisper{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),

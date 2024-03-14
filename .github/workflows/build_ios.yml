@@ -44,5 +44,5 @@ jobs:
         with:
           name: Godot_Whisper
           path: |
-            ${{ github.workspace }}/bin/**/*.dylib
+            ${{ github.workspace }}/bin/**/libgodot_whisper.ios.template_release${{ matrix.mac_precision_extension }}.arm64.framework/**
           if-no-files-found: error

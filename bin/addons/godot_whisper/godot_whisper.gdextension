@@ -10,10 +10,10 @@ macos.release = "bin/libgodot_whisper.macos.template_release.universal.framework
 macos.debug.double = "bin/libgodot_whisper.macos.template_release.double.universal.framework"
 macos.release.double = "bin/libgodot_whisper.macos.template_release.double.universal.framework"
 
-ios.debug = "bin/libgodot_whisper.ios.template_release.arm64.dylib"
-ios.release = "bin/libgodot_whisper.ios.template_release.arm64.dylib"
-ios.debug.double = "bin/libgodot_whisper.ios.template_release.double.arm64.dylib"
-ios.release.double = "bin/libgodot_whisper.ios.template_release.double.arm64.dylib"
+ios.debug = "bin/libgodot_whisper.ios.template_release.arm64.framework"
+ios.release = "bin/libgodot_whisper.ios.template_release.arm64.framework"
+ios.debug.double = "bin/libgodot_whisper.ios.template_release.double.arm64.framework"
+ios.release.double = "bin/libgodot_whisper.ios.template_release.double.arm64.framework"
 
 windows.debug.x86_32 = "bin/libgodot_whisper.windows.template_release.x86_32.dll"
 windows.release.x86_32 = "bin/libgodot_whisper.windows.template_release.x86_32.dll"
