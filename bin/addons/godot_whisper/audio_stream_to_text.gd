@@ -1,8 +1,18 @@
 @tool
 ## Node used to quick test single audio stream to text.
 class_name AudioStreamToText
-extends StreamToText
+extends SpeechToText
 
+# For Traditional Chinese "以下是普通話的句子。"
+# For Simplified Chinese "以下是普通话的句子。"
+@export var initial_prompt: String
+
+func _get_configuration_warnings():
+	if language_model == null:
+		return ["You need a language model."]
+	else:
+		return []
+		
 @export var audio_stream: AudioStreamWAV :
 	set(value):
 		audio_stream = value

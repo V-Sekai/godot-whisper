@@ -1,10 +1,19 @@
-@tool
 ## Node that does transcribing of real time audio. It requires a bus with a [AudioEffectCapture] and a [WhisperResource] language model.
 class_name CaptureStreamToText
-extends StreamToText
+extends SpeechToText
 
 signal transcribed_msg(is_partial, new_text)
 
+# For Traditional Chinese "以下是普通話的句子。"
+# For Simplified Chinese "以下是普通话的句子。"
+@export var initial_prompt: String
+
+func _get_configuration_warnings():
+	if language_model == null:
+		return ["You need a language model."]
+	else:
+		return []
+		
 @export var recording := true:
 	set(value):
 		recording = value
