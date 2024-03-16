@@ -1,6 +1,6 @@
 extends Button
 
-@export var capture_stream_to_text: CaptureStreamToText
+@onready var capture_stream_to_text: CaptureStreamToText = $"../../CaptureStreamToText"
 @export var button_state := true
 
 func _ready():
