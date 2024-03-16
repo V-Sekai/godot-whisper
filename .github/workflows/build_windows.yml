@@ -83,5 +83,6 @@ jobs:
             ${{ github.workspace }}/bin/addons/godot_whisper/plugin.cfg
             ${{ github.workspace }}/bin/addons/godot_whisper/whisper_dock.gd
             ${{ github.workspace }}/bin/addons/godot_whisper/whisper_dock.tscn
+            ${{ github.workspace }}/bin/addons/godot_whisper/models/gglm-tiny.en.bin
           if-no-files-found: error
           compression-level: 9
