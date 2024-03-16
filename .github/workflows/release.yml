@@ -1,0 +1,36 @@
+name: Release
+on:
+  workflow_call:
+
+jobs:
+  release:
+    runs-on: ubuntu-20.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout 
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: Godot_Whisper
+          path: godot-whisper
+      - name: Delete draft release(s)
+        uses: hugo19941994/delete-draft-releases@v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Archive
+        shell: sh
+        run: zip -r "Godot_Whisper.zip" godot-whisper
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Godot Whisper
+          files: Godot_Whisper.zip
+          generate_release_notes: true
+          draft: true
+          prerelease: true
+          fail_on_unmatched_files: true

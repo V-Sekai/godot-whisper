@@ -1,9 +1,12 @@
-[gd_scene load_steps=6 format=3 uid="uid://dibqfutwftm8j"]
+[gd_scene load_steps=9 format=3 uid="uid://dibqfutwftm8j"]
 
+[ext_resource type="Script" path="res://samples/godot_whisper/sample_setup.gd" id="1_d8spe"]
 [ext_resource type="AudioStream" uid="uid://cuybt83bwegoq" path="res://samples/godot_whisper/jfk.wav" id="1_qetor"]
 [ext_resource type="Script" path="res://samples/godot_whisper/test_display.gd" id="2_bmtbk"]
 [ext_resource type="Script" path="res://samples/godot_whisper/StartButton.gd" id="3_bbt5i"]
+[ext_resource type="Script" path="res://samples/godot_whisper/enable_mic.gd" id="5_4gpdh"]
 [ext_resource type="Script" path="res://addons/godot_whisper/capture_stream_to_text.gd" id="5_c8lup"]
+[ext_resource type="WhisperResource" path="res://addons/godot_whisper/models/gglm-tiny.en.bin" id="6_1ttbt"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_rhq81"]
 
@@ -19,11 +22,12 @@ offset_right = 200.0
 offset_bottom = 219.5
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_d8spe")
 
-[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+[node name="MicPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_rhq81")
 
-[node name="AudioStreamPlayer2" type="AudioStreamPlayer" parent="."]
+[node name="AudioPlayer" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("1_qetor")
 autoplay = true
 
@@ -34,15 +38,9 @@ layout_mode = 2
 [node name="Label" type="RichTextLabel" parent="Panel"]
 custom_minimum_size = Vector2(400, 400)
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -200.0
-offset_right = 200.0
-offset_bottom = 200.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 4
@@ -65,10 +63,19 @@ layout_mode = 2
 button_pressed = true
 text = "Running"
 script = ExtResource("3_bbt5i")
-capture_stream_to_text = Object(SpeechToText,"language":1,"language_model":Resource("res://addons/godot_whisper/models/gglm-base.en.bin"),"_import_path":NodePath(""),"unique_name_in_owner":false,"process_mode":0,"process_priority":0,"process_physics_priority":0,"process_thread_group":0,"editor_description":"","script":ExtResource("5_c8lup"),"maximum_sentence_time":10,"language_model_to_download":"base.en")
 
+[node name="MicToggle" type="CheckBox" parent="HBoxContainer"]
+layout_mode = 2
+text = "Mic"
+script = ExtResource("5_4gpdh")
+
+[node name="Label" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+text = "Enable Microphone in Project Settings -> audio/driver/enable_input"
 
 [node name="CaptureStreamToText" type="SpeechToText" parent="."]
+language_model = ExtResource("6_1ttbt")
 script = ExtResource("5_c8lup")
 maximum_sentence_time = 10
-language_model_to_download = "base.en"
+
+[connection signal="toggled" from="HBoxContainer/MicToggle" to="HBoxContainer/MicToggle" method="_on_toggled"]

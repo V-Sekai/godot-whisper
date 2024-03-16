@@ -35,3 +35,10 @@ jobs:
   build_web:
     needs: [lint]
     uses: ./.github/workflows/build_web.yml
+
+  release:
+    name: Create Release
+    permissions:
+      contents: write
+    needs: [build_android, build_ios, build_linux, build_macos, build_windows, build_web]
+    uses: ./.github/workflows/release.yml
