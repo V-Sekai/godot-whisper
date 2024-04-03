@@ -34,6 +34,29 @@ jobs:
           submodules: true
           fetch-depth: 0
 
+      - uses: actions/checkout@v3
+        with:
+          path: ${{ github.workspace }}/OpenCL-SDK
+          branch: v2023.12.14
+          repository: KhronosGroup/OpenCL-SDK
+          submodules: true
+          fetch-depth: 0
+
+      - name: Check OpenCL Cache
+        id: opencl_cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            OpenCL-SDK
+          key: __${{ runner.os }}_${{ matrix.arch }}-opencl-v2021.06.30__${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            __${{runner.os }}-opencl__
+
+      - name: Build OpenCL
+        run: |
+          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_SDK_BUILD_SAMPLES=OFF -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF -D BUILD_TESTING=OFF -D BUILD_DOCS=OFF -D BUILD_EXAMPLES=OFF -D BUILD_TESTS=OFF -D OPENCL_SDK_TEST_SAMPLES=OFF
+          cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
+
       - name: 🔗 GDExtension Build
         uses: ughuuu/godot-cpp-template/.github/actions/build@add-more-stuff/options-to-build
         with:
