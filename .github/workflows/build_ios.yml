@@ -33,7 +33,7 @@ jobs:
           fetch-depth: 0
 
       - name: 🔗 GDExtension Build
-        uses: godot/godot-cpp-template/.github/actions/build
+        uses: godot/godot-cpp-template/.github/actions/build@main
         with:
           platform: ios
           arch: ${{ matrix.arch }}

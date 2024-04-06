@@ -36,7 +36,7 @@ jobs:
           submodules: true
           fetch-depth: 0
       - name: 🔗 GDExtension Build
-        uses: godot/godot-cpp-template/.github/actions/build
+        uses: godot/godot-cpp-template/.github/actions/build@main
         with:
           platform: macos
           arch: ${{ matrix.arch }}
@@ -45,7 +45,7 @@ jobs:
           build-target-type: template_release
 
       - name: Mac Sign
-        uses: godot/godot-cpp-template/.github/actions/sign
+        uses: godot/godot-cpp-template/.github/actions/sign@main
         with:
           FRAMEWORK_PATH: bin/addons/godot_whisper/bin/libgodot_whisper.macos.template_release${{ matrix.mac_precision_extension }}.universal.framework
           SIGN_FLAGS: "--deep"
