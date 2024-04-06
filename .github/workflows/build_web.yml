@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: 🔗 GDExtension Build
-        uses: ughuuu/godot-cpp-template/.github/actions/build@add-more-stuff/options-to-build
+        uses: godot/godot-cpp-template/.github/actions/build
         with:
           platform: web
           arch: ${{ matrix.arch }}
