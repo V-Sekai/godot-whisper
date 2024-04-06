@@ -62,7 +62,6 @@ jobs:
         with:
           platform: android
           arch: ${{ matrix.arch }}
-          godot-cpp-location: godot-cpp
           float-precision: ${{ matrix.precision }}
           build-target-type: template_release
 
