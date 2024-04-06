@@ -46,7 +46,7 @@ jobs:
           cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
 
       - name: 🔗 GDExtension Build
-        uses: godot/godot-cpp-template/.github/actions/build@main
+        uses: godotengine/godot-cpp-template/.github/actions/build@main
         with:
           platform: linux
           arch: ${{ matrix.arch }}
