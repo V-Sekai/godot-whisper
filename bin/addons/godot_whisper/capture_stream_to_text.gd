@@ -19,6 +19,8 @@ func _get_configuration_warnings():
 		recording = value
 		if recording:
 			_ready()
+		else:
+			thread.wait_to_finish()
 	get:
 		return recording
 ## The interval at which transcribing is done. Use a value bigger than the time it takes to transcribe (eg. depends on model).
@@ -47,6 +49,9 @@ var thread : Thread
 func _ready():
 	if Engine.is_editor_hint():
 		return
+	if thread && thread.is_alive():
+		recording = false
+		thread.wait_to_finish()
 	thread = Thread.new()
 	_effect_capture.clear_buffer()
 	thread.start(transcribe_thread)
@@ -76,6 +81,9 @@ func transcribe_thread():
 		if total_time > maximum_sentence_time:
 			finish_sentence = true
 		var no_activity := voice_activity_detection(resampled)
+		if no_activity:
+			print("no activity")
+			continue
 		var text : String
 		for token in tokens:
 			text += token["text"]
