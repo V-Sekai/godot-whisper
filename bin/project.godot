@@ -20,7 +20,7 @@ driver/enable_input=true
 driver/mix_rate=48000
 enable_audio_input=true
 mix_rate=48000
-input/transcribe/vad_treshold=2.0
+input/transcribe/vad_treshold=4.0
 
 [display]
 

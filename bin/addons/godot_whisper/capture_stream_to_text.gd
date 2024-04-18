@@ -68,9 +68,9 @@ func transcribe_thread():
 			OS.delay_msec(transcribe_interval * 1000)
 			continue
 		var no_activity := voice_activity_detection(resampled)
-		if no_activity:
-			print("no activity")
-			continue
+		#if no_activity:
+			#print("no activity")
+			#continue
 		var total_time : float= (resampled.size() as float) / SpeechToText.SPEECH_SETTING_SAMPLE_RATE
 		var audio_ctx : int = total_time * 1500 / 30 + 128
 		if !use_dynamic_audio_context:
@@ -92,10 +92,14 @@ func transcribe_thread():
 			finish_sentence = true
 		if total_time < minimum_sentence_time || abs(tokens.size() - last_token_count) > halucinating_count:
 			finish_sentence = false
+		var time_processing = (Time.get_ticks_msec() - start_time)
+		if no_activity:
+			#_accumulated_frames = []
+			continue
 		if finish_sentence:
 			_accumulated_frames = _accumulated_frames.slice(_accumulated_frames.size() - (0.2 * mix_rate))
+		#if !no_activity:
 		call_deferred("emit_signal", "transcribed_msg", finish_sentence, full_text)
-		var time_processing = (Time.get_ticks_msec() - start_time)
 		last_token_count = tokens.size()
 		#print(text)
 		print(full_text)
