@@ -17,9 +17,10 @@ config/icon="res://icon.png"
 [audio]
 
 driver/enable_input=true
+driver/mix_rate=48000
 enable_audio_input=true
 mix_rate=48000
-input/transcribe/max_tokens=64
+input/transcribe/vad_treshold=2.0
 
 [display]
 

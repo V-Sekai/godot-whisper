@@ -375,8 +375,8 @@ PackedFloat32Array SpeechToText::resample(PackedVector2Array buffer, SpeechToTex
 
 bool SpeechToText::voice_activity_detection(PackedFloat32Array buffer) {
 	/* VAD parameters */
-	// The most recent 3s.
-	const int vad_window_s = 3;
+	// The most recent 2s.
+	const int vad_window_s = 2;
 	const int n_samples_vad_window = WHISPER_SAMPLE_RATE * vad_window_s;
 	// In VAD, compare the energy of the last 500ms to that of the total 3s.
 	const int vad_last_ms = 500;
