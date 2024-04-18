@@ -19,6 +19,8 @@ func _get_configuration_warnings():
 		recording = value
 		if recording:
 			_ready()
+		else:
+			thread.wait_to_finish()
 	get:
 		return recording
 ## The interval at which transcribing is done. Use a value bigger than the time it takes to transcribe (eg. depends on model).
@@ -47,6 +49,9 @@ var thread : Thread
 func _ready():
 	if Engine.is_editor_hint():
 		return
+	if thread && thread.is_alive():
+		recording = false
+		thread.wait_to_finish()
 	thread = Thread.new()
 	_effect_capture.clear_buffer()
 	thread.start(transcribe_thread)
@@ -62,6 +67,10 @@ func transcribe_thread():
 		if resampled.size() <= 0:
 			OS.delay_msec(transcribe_interval * 1000)
 			continue
+		var no_activity := voice_activity_detection(resampled)
+		#if no_activity:
+			#print("no activity")
+			#continue
 		var total_time : float= (resampled.size() as float) / SpeechToText.SPEECH_SETTING_SAMPLE_RATE
 		var audio_ctx : int = total_time * 1500 / 30 + 128
 		if !use_dynamic_audio_context:
@@ -75,7 +84,6 @@ func transcribe_thread():
 		var finish_sentence = false
 		if total_time > maximum_sentence_time:
 			finish_sentence = true
-		var no_activity := voice_activity_detection(resampled)
 		var text : String
 		for token in tokens:
 			text += token["text"]
@@ -84,10 +92,14 @@ func transcribe_thread():
 			finish_sentence = true
 		if total_time < minimum_sentence_time || abs(tokens.size() - last_token_count) > halucinating_count:
 			finish_sentence = false
+		var time_processing = (Time.get_ticks_msec() - start_time)
+		if no_activity:
+			#_accumulated_frames = []
+			continue
 		if finish_sentence:
 			_accumulated_frames = _accumulated_frames.slice(_accumulated_frames.size() - (0.2 * mix_rate))
+		#if !no_activity:
 		call_deferred("emit_signal", "transcribed_msg", finish_sentence, full_text)
-		var time_processing = (Time.get_ticks_msec() - start_time)
 		last_token_count = tokens.size()
 		#print(text)
 		print(full_text)
