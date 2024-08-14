@@ -68,6 +68,9 @@ else:
         "USE_ICD_LOADER",
         ]
     )
+
+    env.Append(LIBPATH=["OpenCL-SDK/install/lib"])
+
     opencl_include_dir = os.environ.get('OpenCL_INCLUDE_DIR')
     if opencl_include_dir:
         env.Append(CPPDEFINES=[opencl_include_dir])
@@ -76,7 +79,7 @@ else:
     if opencl_library:
         env.Append(LIBS=[opencl_library])
     else:
-        env.Append(LIBS=["OpenCL"])
+        env.Append(LIBS=[":libOpenCL.so.1"])
 
     clblast_sources = [
         "thirdparty/clblast/src/database/database.cpp",
