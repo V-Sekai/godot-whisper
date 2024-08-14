@@ -78,7 +78,9 @@ else:
     opencl_library = os.environ.get('OpenCL_LIBRARY')
     if opencl_library:
         env.Append(LIBS=[opencl_library])
-    else:
+    elif env["platform"] == "windows":
+        env.Append(LIBS=[":OpenCL.dll"])
+    elif env["platform"] == "linux":
         env.Append(LIBS=[":libOpenCL.so.1"])
 
     clblast_sources = [
