@@ -14,6 +14,7 @@ env.Append(
         "WEBRTC_APM_DEBUG_DUMP=0",
         "WHISPER_BUILD",
         "GGML_BUILD",
+        "_GNU_SOURCE"
     ]
 )
 
@@ -74,6 +75,8 @@ else:
     opencl_library = os.environ.get('OpenCL_LIBRARY')
     if opencl_library:
         env.Append(LIBS=[opencl_library])
+    else:
+        env.Append(LIBS=["OpenCL"])
 
     clblast_sources = [
         "thirdparty/clblast/src/database/database.cpp",
