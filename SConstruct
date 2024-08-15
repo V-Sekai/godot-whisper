@@ -14,6 +14,7 @@ env.Append(
         "WEBRTC_APM_DEBUG_DUMP=0",
         "WHISPER_BUILD",
         "GGML_BUILD",
+        "_GNU_SOURCE"
     ]
 )
 
@@ -67,6 +68,9 @@ else:
         "USE_ICD_LOADER",
         ]
     )
+
+    env.Append(LIBPATH=["OpenCL-SDK/install/lib"])
+
     opencl_include_dir = os.environ.get('OpenCL_INCLUDE_DIR')
     if opencl_include_dir:
         env.Append(CPPDEFINES=[opencl_include_dir])
@@ -74,6 +78,10 @@ else:
     opencl_library = os.environ.get('OpenCL_LIBRARY')
     if opencl_library:
         env.Append(LIBS=[opencl_library])
+    elif env["platform"] == "windows":
+        env.Append(LIBS=[":OpenCL.dll"])
+    elif env["platform"] == "linux":
+        env.Append(LIBS=[":libOpenCL.so.1"])
 
     clblast_sources = [
         "thirdparty/clblast/src/database/database.cpp",
