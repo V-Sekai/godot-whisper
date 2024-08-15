@@ -56,6 +56,8 @@ Go to a github release, copy paste the addons folder to the samples folder. Rest
 
 Normal times for this, using tiny.en model are about 0.3s. This only does transcribing.
 
+NOTE: Currently this node supports only some .WAV files. The transcribe function takes as input a `PackedFloat32Array` buffer. Currently the only format supported is if the .WAV is `AudioStreamWAV.FORMAT_8_BITS` and `AudioStreamWAV.FORMAT_16_BITS`. For other it will simply not work and you will have to write a custom decoder for the .WAV file. Godot does support decoding it at runtime, check how CaptureStreamToText node works.
+
 ## CaptureStreamToText
 
 This runs also resampling on the audio(in case mix rate is not exactly 16000 it will process the audio to 16000). Then it runs every transcribe_interval transcribe function.
