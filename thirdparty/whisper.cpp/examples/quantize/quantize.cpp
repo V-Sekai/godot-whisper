@@ -1,4 +1,5 @@
 #include "ggml.h"
+#include "ggml-backend.h"
 
 #include "common.h"
 #include "common-ggml.h"
@@ -36,7 +37,7 @@ struct whisper_filters {
 };
 
 // quantize a model
-bool whisper_model_quantize(const std::string & fname_inp, const std::string & fname_out, ggml_ftype ftype) {
+static bool whisper_model_quantize(const std::string & fname_inp, const std::string & fname_out, ggml_ftype ftype) {
     gpt_vocab vocab;
 
     printf("%s: loading model from '%s'\n", __func__, fname_inp.c_str());
@@ -176,6 +177,8 @@ bool whisper_model_quantize(const std::string & fname_inp, const std::string & f
 }
 
 int main(int argc, char ** argv) {
+    ggml_backend_load_all();
+
     if (argc != 4) {
         fprintf(stderr, "usage: %s model-f32.bin model-quant.bin type\n", argv[0]);
         ggml_print_ftypes(stderr);

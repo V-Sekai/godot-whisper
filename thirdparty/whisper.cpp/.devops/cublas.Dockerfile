@@ -12,7 +12,7 @@ FROM ${BASE_CUDA_DEV_CONTAINER} as build
 ARG CUDA_DOCKER_ARCH=all
 
 RUN apt-get update && \
-    apt-get install -y build-essential git cmake
+    apt-get install -y build-essential git cmake libsdl2-dev wget git
 
 WORKDIR /app
 
@@ -21,8 +21,8 @@ COPY . .
 # Set nvcc architecture
 ENV CUDA_DOCKER_ARCH=${CUDA_DOCKER_ARCH}
 # Enable cuBLAS
-ENV WHISPER_CUBLAS=1
+ENV GGML_CUDA=1
 
-RUN make
+RUN make base.en
 
 ENTRYPOINT ["/app/main"]
