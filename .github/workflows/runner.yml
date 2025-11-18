@@ -1,4 +1,4 @@
-name: Builds
+name: Build GDExtension
 
 on:
   workflow_dispatch:
@@ -9,36 +9,360 @@ on:
 
 jobs:
   lint:
-    uses: ./.github/workflows/lint.yml
-  build_android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Setup clang-format
+        shell: bash
+        run: |
+          python -m pip install clang-format
+      - name: Run clang-format
+        shell: bash
+        run: |
+          clang-format --style=file:.clang-format src/** --dry-run --Werror
+
+  build_ci:
     needs: [lint]
-    uses: ./.github/workflows/build_android.yml
-  build_ios:
+    if: github.event_name == 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: { platform: linux, arch: x86_64, os: ubuntu-latest }
+            target-type: template_release
+            float-precision: double
+          - target: { platform: windows, arch: x86_64, os: windows-latest }
+            target-type: template_release
+            float-precision: single
+          - target: { platform: macos, arch: universal, os: macos-latest }
+            target-type: template_release
+            float-precision: single
+          - target: { platform: android, arch: arm64, os: ubuntu-latest }
+            target-type: template_release
+            float-precision: single
+          - target: { platform: web, arch: wasm32, os: ubuntu-latest }
+            target-type: template_release
+            float-precision: double
+    runs-on: ${{ matrix.target.os }}
+    steps:
+      # Clone this repository
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - uses: actions/checkout@v4
+        if: ${{ matrix.target.platform == 'linux' || matrix.target.platform == 'windows' || matrix.target.platform == 'android' }}
+        with:
+          path: ${{ github.workspace }}/OpenCL-SDK
+          branch: v2023.12.14
+          repository: KhronosGroup/OpenCL-SDK
+          submodules: true
+          fetch-depth: 0
+
+      - name: Check OpenCL Cache
+        if: ${{ matrix.target.platform == 'linux' || matrix.target.platform == 'windows' || matrix.target.platform == 'android' }}
+        id: opencl_cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            OpenCL-SDK
+          key: __${{ runner.os }}_${{ matrix.target.platform }}_${{ matrix.target.arch }}-opencl-v2021.06.30__${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            __${{runner.os }}-opencl__
+
+      - name: Build OpenCL (Linux/Android)
+        if: ${{ (matrix.target.platform == 'linux' || matrix.target.platform == 'android') }}
+        run: |
+          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_SDK_BUILD_SAMPLES=OFF -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF -D BUILD_TESTING=OFF -D BUILD_DOCS=OFF -D BUILD_EXAMPLES=OFF -D BUILD_TESTS=OFF -D OPENCL_SDK_TEST_SAMPLES=OFF
+          cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
+
+      - name: Build OpenCL (Windows)
+        if: ${{ matrix.target.platform == 'windows' }}
+        shell: pwsh
+        run: |
+          $openclArch = if ("${{ matrix.target.arch }}" -eq "x86_64") { "x64" } else { "Win32" }
+          cmake -G "Visual Studio 17 2022" -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_SDK_BUILD_SAMPLES=OFF -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF -D BUILD_TESTING=OFF -D BUILD_DOCS=OFF -D BUILD_EXAMPLES=OFF -D BUILD_TESTS=OFF -D OPENCL_SDK_TEST_SAMPLES=OFF -A $openclArch
+          cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
+
+      # Set OpenCL library path for Windows (output for use in next step)
+      - name: Find OpenCL library path (Windows)
+        if: ${{ matrix.target.platform == 'windows' }}
+        id: opencl_path
+        shell: pwsh
+        run: |
+          $openclArch = if ("${{ matrix.target.arch }}" -eq "x86_64") { "x64" } else { "Win32" }
+          # Try architecture-specific path first, then fallback to generic
+          $openclLib = "${{ github.workspace }}/OpenCL-SDK/install/lib/$openclArch/OpenCL.lib"
+          if (-not (Test-Path $openclLib)) {
+            $openclLib = "${{ github.workspace }}/OpenCL-SDK/install/lib/OpenCL.lib"
+          }
+          if (Test-Path $openclLib) {
+            Write-Host "opencl_lib=$openclLib" >> $env:GITHUB_OUTPUT
+            Write-Host "Found OpenCL.lib at $openclLib"
+          } else {
+            Write-Host "Warning: OpenCL.lib not found, checking install directory..."
+            $found = Get-ChildItem -Path "${{ github.workspace }}/OpenCL-SDK/install" -Recurse -Filter "OpenCL.lib" | Select-Object -First 1
+            if ($found) {
+              Write-Host "opencl_lib=$($found.FullName)" >> $env:GITHUB_OUTPUT
+              Write-Host "Found OpenCL.lib at $($found.FullName)"
+            } else {
+              Write-Host "opencl_lib=" >> $env:GITHUB_OUTPUT
+              Write-Host "Error: OpenCL.lib not found anywhere"
+            }
+          }
+
+      # Build GDExtension (with OpenCL env vars for Windows)
+      - name: 🔗 GDExtension Build
+        if: ${{ matrix.target.platform != 'windows' }}
+        uses: godotengine/godot-cpp-template/.github/actions/build@f9564a9c8115139b9624692d39e358291f6d76ce
+        with:
+          platform: ${{ matrix.target.platform }}
+          arch: ${{ matrix.target.arch }}
+          float-precision: ${{ matrix.float-precision }}
+          build-target-type: ${{ matrix.target-type }}
+
+      - name: 🔗 GDExtension Build (Windows)
+        if: ${{ matrix.target.platform == 'windows' }}
+        uses: godotengine/godot-cpp-template/.github/actions/build@f9564a9c8115139b9624692d39e358291f6d76ce
+        env:
+          OpenCL_ROOT: ${{ github.workspace }}/OpenCL-SDK
+          OpenCL_INCLUDE_DIR: ${{ github.workspace }}/OpenCL-SDK/build/install/include
+          OpenCL_LIBRARY: ${{ steps.opencl_path.outputs.opencl_lib != '' && steps.opencl_path.outputs.opencl_lib || format('{0}/OpenCL-SDK/install/lib/OpenCL.lib', github.workspace) }}
+        with:
+          platform: ${{ matrix.target.platform }}
+          arch: ${{ matrix.target.arch }}
+          float-precision: ${{ matrix.float-precision }}
+          build-target-type: ${{ matrix.target-type }}
+
+      # Mac Sign (only for macOS on main branch)
+      - name: Set macOS precision extension
+        if: ${{ matrix.target.platform == 'macos' && github.ref == 'refs/heads/main' }}
+        id: macos_ext
+        run: |
+          if [ "${{ matrix.float-precision }}" = "double" ]; then
+            echo "extension=.double" >> $GITHUB_OUTPUT
+          else
+            echo "extension=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Mac Sign
+        if: ${{ matrix.target.platform == 'macos' && github.ref == 'refs/heads/main' }}
+        uses: godotengine/godot-cpp-template/.github/actions/sign@f9564a9c8115139b9624692d39e358291f6d76ce
+        with:
+          FRAMEWORK_PATH: bin/addons/godot_whisper/bin/libgodot_whisper.macos.${{ matrix.target-type }}${{ steps.macos_ext.outputs.extension }}.universal.framework
+          SIGN_FLAGS: "--deep"
+          APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+          APPLE_DEV_PASSWORD: ${{ secrets.APPLE_DEV_PASSWORD }}
+          APPLE_DEV_ID: ${{ secrets.APPLE_DEV_ID }}
+          APPLE_DEV_TEAM_ID: ${{ secrets.APPLE_DEV_TEAM_ID }}
+          APPLE_DEV_APP_ID: ${{ secrets.APPLE_DEV_APP_ID }}
+
+      # Upload Artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Godot_Whisper-${{ matrix.target.platform }}-${{ matrix.target.arch }}-${{ matrix.float-precision }}-${{ matrix.target-type }}
+          path: |
+            ${{ github.workspace }}/bin/**/*.so
+            ${{ github.workspace }}/bin/**/*.dll
+            ${{ github.workspace }}/bin/**/*.wasm
+            ${{ github.workspace }}/bin/**/*.framework/**
+            ${{ github.workspace }}/bin/addons/godot_whisper/ggml-metal.metal
+            ${{ github.workspace }}/bin/addons/godot_whisper/bin/ggml-metal.metal
+            ${{ github.workspace }}/bin/addons/godot_whisper/audio_stream_to_text.gd
+            ${{ github.workspace }}/bin/addons/godot_whisper/capture_stream_to_text.gd
+            ${{ github.workspace }}/bin/addons/godot_whisper/godot_whisper.gdextension
+            ${{ github.workspace }}/bin/addons/godot_whisper/label_transcribe.gd
+            ${{ github.workspace }}/bin/addons/godot_whisper/model_downloader.gd
+            ${{ github.workspace }}/bin/addons/godot_whisper/plugin.cfg
+            ${{ github.workspace }}/bin/addons/godot_whisper/whisper_dock.gd
+            ${{ github.workspace }}/bin/addons/godot_whisper/whisper_dock.tscn
+            ${{ github.workspace }}/bin/addons/godot_whisper/models/gglm-tiny.en.bin
+            ${{ github.workspace }}/bin/samples/**
+          if-no-files-found: error
+
+  build_full:
     needs: [lint]
-    uses: ./.github/workflows/build_ios.yml
-  build_linux:
-    needs: [lint]
-    uses: ./.github/workflows/build_linux.yml
-  build_macos:
-    needs: [lint]
-    uses: ./.github/workflows/build_macos.yml
-    secrets:
-      APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
-      APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
-      APPLE_DEV_PASSWORD: ${{ secrets.APPLE_DEV_PASSWORD }}
-      APPLE_DEV_ID: ${{ secrets.APPLE_DEV_ID }}
-      APPLE_DEV_TEAM_ID: ${{ secrets.APPLE_DEV_TEAM_ID }}
-      APPLE_DEV_APP_ID: ${{ secrets.APPLE_DEV_APP_ID }}
-  build_windows:
-    needs: [lint]
-    uses: ./.github/workflows/build_windows.yml
-  build_web:
-    needs: [lint]
-    uses: ./.github/workflows/build_web.yml
+    if: github.event_name != 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          [
+            { platform: linux, arch: x86_64, os: ubuntu-latest },
+            { platform: windows, arch: x86_64, os: windows-latest },
+            { platform: windows, arch: x86_32, os: windows-latest },
+            { platform: macos, arch: universal, os: macos-latest },
+            { platform: android, arch: arm64, os: ubuntu-latest },
+            { platform: android, arch: arm32, os: ubuntu-latest },
+            { platform: android, arch: x86_64, os: ubuntu-latest },
+            { platform: android, arch: x86_32, os: ubuntu-latest },
+            { platform: ios, arch: arm64, os: macos-latest },
+            { platform: web, arch: wasm32, os: ubuntu-latest },
+          ]
+        target-type: [template_release]
+        float-precision: [single, double]
+    runs-on: ${{ matrix.target.os }}
+    steps:
+      # Clone this repository
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - uses: actions/checkout@v4
+        if: ${{ matrix.target.platform == 'linux' || matrix.target.platform == 'windows' || matrix.target.platform == 'android' }}
+        with:
+          path: ${{ github.workspace }}/OpenCL-SDK
+          branch: v2023.12.14
+          repository: KhronosGroup/OpenCL-SDK
+          submodules: true
+          fetch-depth: 0
+
+      - name: Check OpenCL Cache
+        if: ${{ matrix.target.platform == 'linux' || matrix.target.platform == 'windows' || matrix.target.platform == 'android' }}
+        id: opencl_cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            OpenCL-SDK
+          key: __${{ runner.os }}_${{ matrix.target.platform }}_${{ matrix.target.arch }}-opencl-v2021.06.30__${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            __${{runner.os }}-opencl__
+
+      - name: Build OpenCL (Linux/Android)
+        if: ${{ (matrix.target.platform == 'linux' || matrix.target.platform == 'android') }}
+        run: |
+          cmake -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_SDK_BUILD_SAMPLES=OFF -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF -D BUILD_TESTING=OFF -D BUILD_DOCS=OFF -D BUILD_EXAMPLES=OFF -D BUILD_TESTS=OFF -D OPENCL_SDK_TEST_SAMPLES=OFF
+          cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
+
+      - name: Build OpenCL (Windows)
+        if: ${{ matrix.target.platform == 'windows' }}
+        shell: pwsh
+        run: |
+          $openclArch = if ("${{ matrix.target.arch }}" -eq "x86_64") { "x64" } else { "Win32" }
+          cmake -G "Visual Studio 17 2022" -S OpenCL-SDK -B ${{ github.workspace }}/OpenCL-SDK/build -DOPENCL_SDK_BUILD_SAMPLES=OFF -DOPENCL_ICD_LOADER_BUILD=ON -DOPENCL_SDK_BUILD_OPENGL_SAMPLES=OFF -D BUILD_TESTING=OFF -D BUILD_DOCS=OFF -D BUILD_EXAMPLES=OFF -D BUILD_TESTS=OFF -D OPENCL_SDK_TEST_SAMPLES=OFF -A $openclArch
+          cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
+
+      # Set OpenCL library path for Windows (output for use in next step)
+      - name: Find OpenCL library path (Windows)
+        if: ${{ matrix.target.platform == 'windows' }}
+        id: opencl_path
+        shell: pwsh
+        run: |
+          $openclArch = if ("${{ matrix.target.arch }}" -eq "x86_64") { "x64" } else { "Win32" }
+          # Try architecture-specific path first, then fallback to generic
+          $openclLib = "${{ github.workspace }}/OpenCL-SDK/install/lib/$openclArch/OpenCL.lib"
+          if (-not (Test-Path $openclLib)) {
+            $openclLib = "${{ github.workspace }}/OpenCL-SDK/install/lib/OpenCL.lib"
+          }
+          if (Test-Path $openclLib) {
+            Write-Host "opencl_lib=$openclLib" >> $env:GITHUB_OUTPUT
+            Write-Host "Found OpenCL.lib at $openclLib"
+          } else {
+            Write-Host "Warning: OpenCL.lib not found, checking install directory..."
+            $found = Get-ChildItem -Path "${{ github.workspace }}/OpenCL-SDK/install" -Recurse -Filter "OpenCL.lib" | Select-Object -First 1
+            if ($found) {
+              Write-Host "opencl_lib=$($found.FullName)" >> $env:GITHUB_OUTPUT
+              Write-Host "Found OpenCL.lib at $($found.FullName)"
+            } else {
+              Write-Host "opencl_lib=" >> $env:GITHUB_OUTPUT
+              Write-Host "Error: OpenCL.lib not found anywhere"
+            }
+          }
+
+      # Build GDExtension (with OpenCL env vars for Windows)
+      - name: 🔗 GDExtension Build
+        if: ${{ matrix.target.platform != 'windows' }}
+        uses: godotengine/godot-cpp-template/.github/actions/build@f9564a9c8115139b9624692d39e358291f6d76ce
+        with:
+          platform: ${{ matrix.target.platform }}
+          arch: ${{ matrix.target.arch }}
+          float-precision: ${{ matrix.float-precision }}
+          build-target-type: ${{ matrix.target-type }}
+
+      - name: 🔗 GDExtension Build (Windows)
+        if: ${{ matrix.target.platform == 'windows' }}
+        uses: godotengine/godot-cpp-template/.github/actions/build@f9564a9c8115139b9624692d39e358291f6d76ce
+        env:
+          OpenCL_ROOT: ${{ github.workspace }}/OpenCL-SDK
+          OpenCL_INCLUDE_DIR: ${{ github.workspace }}/OpenCL-SDK/build/install/include
+          OpenCL_LIBRARY: ${{ steps.opencl_path.outputs.opencl_lib != '' && steps.opencl_path.outputs.opencl_lib || format('{0}/OpenCL-SDK/install/lib/OpenCL.lib', github.workspace) }}
+        with:
+          platform: ${{ matrix.target.platform }}
+          arch: ${{ matrix.target.arch }}
+          float-precision: ${{ matrix.float-precision }}
+          build-target-type: ${{ matrix.target-type }}
+
+      # Mac Sign (only for macOS on main branch)
+      - name: Set macOS precision extension
+        if: ${{ matrix.target.platform == 'macos' && github.ref == 'refs/heads/main' }}
+        id: macos_ext
+        run: |
+          if [ "${{ matrix.float-precision }}" = "double" ]; then
+            echo "extension=.double" >> $GITHUB_OUTPUT
+          else
+            echo "extension=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Mac Sign
+        if: ${{ matrix.target.platform == 'macos' && github.ref == 'refs/heads/main' }}
+        uses: godotengine/godot-cpp-template/.github/actions/sign@f9564a9c8115139b9624692d39e358291f6d76ce
+        with:
+          FRAMEWORK_PATH: bin/addons/godot_whisper/bin/libgodot_whisper.macos.${{ matrix.target-type }}${{ steps.macos_ext.outputs.extension }}.universal.framework
+          SIGN_FLAGS: "--deep"
+          APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+          APPLE_DEV_PASSWORD: ${{ secrets.APPLE_DEV_PASSWORD }}
+          APPLE_DEV_ID: ${{ secrets.APPLE_DEV_ID }}
+          APPLE_DEV_TEAM_ID: ${{ secrets.APPLE_DEV_TEAM_ID }}
+          APPLE_DEV_APP_ID: ${{ secrets.APPLE_DEV_APP_ID }}
+
+      # Upload Artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Godot_Whisper-${{ matrix.target.platform }}-${{ matrix.target.arch }}-${{ matrix.float-precision }}-${{ matrix.target-type }}
+          path: |
+            ${{ github.workspace }}/bin/**/*.so
+            ${{ github.workspace }}/bin/**/*.dll
+            ${{ github.workspace }}/bin/**/*.wasm
+            ${{ github.workspace }}/bin/**/*.framework/**
+            ${{ github.workspace }}/bin/addons/godot_whisper/ggml-metal.metal
+            ${{ github.workspace }}/bin/addons/godot_whisper/bin/ggml-metal.metal
+            ${{ github.workspace }}/bin/addons/godot_whisper/audio_stream_to_text.gd
+            ${{ github.workspace }}/bin/addons/godot_whisper/capture_stream_to_text.gd
+            ${{ github.workspace }}/bin/addons/godot_whisper/godot_whisper.gdextension
+            ${{ github.workspace }}/bin/addons/godot_whisper/label_transcribe.gd
+            ${{ github.workspace }}/bin/addons/godot_whisper/model_downloader.gd
+            ${{ github.workspace }}/bin/addons/godot_whisper/plugin.cfg
+            ${{ github.workspace }}/bin/addons/godot_whisper/whisper_dock.gd
+            ${{ github.workspace }}/bin/addons/godot_whisper/whisper_dock.tscn
+            ${{ github.workspace }}/bin/addons/godot_whisper/models/gglm-tiny.en.bin
+            ${{ github.workspace }}/bin/samples/**
+          if-no-files-found: error
+
+  # Merges all the build artifacts together into a single Godot_Whisper artifact.
+  merge:
+    runs-on: ubuntu-latest
+    needs: [build_ci, build_full]
+    if: always()
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: Godot_Whisper
+          pattern: Godot_Whisper-*
+          delete-merged: true
 
   release:
     name: Create Release
     permissions:
       contents: write
-    needs: [build_android, build_ios, build_linux, build_macos, build_windows, build_web]
+    needs: [merge]
     uses: ./.github/workflows/release.yml
