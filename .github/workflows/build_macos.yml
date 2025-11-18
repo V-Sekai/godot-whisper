@@ -31,12 +31,12 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: true
           fetch-depth: 0
       - name: 🔗 GDExtension Build
-        uses: godotengine/godot-cpp-template/.github/actions/build@main
+        uses: godotengine/godot-cpp-template/.github/actions/build@f9564a9c8115139b9624692d39e358291f6d76ce
         with:
           platform: macos
           arch: ${{ matrix.arch }}
@@ -45,7 +45,7 @@ jobs:
           build-target-type: template_release
 
       - name: Mac Sign
-        uses: godotengine/godot-cpp-template/.github/actions/sign@main
+        uses: godotengine/godot-cpp-template/.github/actions/sign@f9564a9c8115139b9624692d39e358291f6d76ce
         with:
           FRAMEWORK_PATH: bin/addons/godot_whisper/bin/libgodot_whisper.macos.template_release${{ matrix.mac_precision_extension }}.universal.framework
           SIGN_FLAGS: "--deep"
@@ -57,7 +57,7 @@ jobs:
           APPLE_DEV_APP_ID: ${{ secrets.APPLE_DEV_APP_ID }}
         if: github.ref == 'refs/heads/main'
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Godot_Whisper
           path: |

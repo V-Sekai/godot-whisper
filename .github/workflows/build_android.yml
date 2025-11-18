@@ -26,15 +26,15 @@ jobs:
             arch: x86_64
           - precision: double
             arch: x86_32
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: true
           fetch-depth: 0
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: ${{ github.workspace }}/OpenCL-SDK
           branch: v2023.12.14
@@ -44,7 +44,7 @@ jobs:
 
       - name: Check OpenCL Cache
         id: opencl_cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             OpenCL-SDK
@@ -58,7 +58,7 @@ jobs:
           cmake --build ${{ github.workspace }}/OpenCL-SDK/build --target install
 
       - name: 🔗 GDExtension Build
-        uses: godotengine/godot-cpp-template/.github/actions/build@main
+        uses: godotengine/godot-cpp-template/.github/actions/build@f9564a9c8115139b9624692d39e358291f6d76ce
         with:
           platform: android
           arch: ${{ matrix.arch }}
@@ -66,7 +66,7 @@ jobs:
           build-target-type: template_release
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Godot_Whisper
           path: |
