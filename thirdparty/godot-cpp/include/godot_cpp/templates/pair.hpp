@@ -28,12 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_PAIR_HPP
-#define GODOT_PAIR_HPP
+#pragma once
+
+#include <godot_cpp/templates/hashfuncs.hpp>
 
 namespace godot {
 
-template <class F, class S>
+template <typename F, typename S>
 struct Pair {
 	F first;
 	S second;
@@ -49,17 +50,17 @@ struct Pair {
 	}
 };
 
-template <class F, class S>
+template <typename F, typename S>
 bool operator==(const Pair<F, S> &pair, const Pair<F, S> &other) {
 	return (pair.first == other.first) && (pair.second == other.second);
 }
 
-template <class F, class S>
+template <typename F, typename S>
 bool operator!=(const Pair<F, S> &pair, const Pair<F, S> &other) {
 	return (pair.first != other.first) || (pair.second != other.second);
 }
 
-template <class F, class S>
+template <typename F, typename S>
 struct PairSort {
 	bool operator()(const Pair<F, S> &A, const Pair<F, S> &B) const {
 		if (A.first != B.first) {
@@ -69,7 +70,16 @@ struct PairSort {
 	}
 };
 
-template <class K, class V>
+template <typename F, typename S>
+struct PairHash {
+	static uint32_t hash(const Pair<F, S> &P) {
+		uint64_t h1 = HashMapHasherDefault::hash(P.first);
+		uint64_t h2 = HashMapHasherDefault::hash(P.second);
+		return hash_one_uint64((h1 << 32) | h2);
+	}
+};
+
+template <typename K, typename V>
 struct KeyValue {
 	const K key;
 	V value;
@@ -85,17 +95,17 @@ struct KeyValue {
 	}
 };
 
-template <class K, class V>
+template <typename K, typename V>
 bool operator==(const KeyValue<K, V> &pair, const KeyValue<K, V> &other) {
 	return (pair.key == other.key) && (pair.value == other.value);
 }
 
-template <class K, class V>
+template <typename K, typename V>
 bool operator!=(const KeyValue<K, V> &pair, const KeyValue<K, V> &other) {
 	return (pair.key != other.key) || (pair.value != other.value);
 }
 
-template <class K, class V>
+template <typename K, typename V>
 struct KeyValueSort {
 	bool operator()(const KeyValue<K, V> &A, const KeyValue<K, V> &B) const {
 		return A.key < B.key;
@@ -103,5 +113,3 @@ struct KeyValueSort {
 };
 
 } // namespace godot
-
-#endif // GODOT_PAIR_HPP

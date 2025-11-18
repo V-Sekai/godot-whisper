@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_CLASS_DB_HPP
-#define GODOT_CLASS_DB_HPP
+#pragma once
 
 #include <gdextension_interface.h>
 
@@ -37,12 +36,17 @@
 #include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/core/method_bind.hpp>
 #include <godot_cpp/core/object.hpp>
+#include <godot_cpp/core/print_string.hpp>
 
 #include <godot_cpp/classes/class_db_singleton.hpp>
 
+// Makes callable_mp readily available in all classes connecting signals.
+// Needs to come after method_bind and object have been included.
+#include <godot_cpp/variant/callable_method_pointer.hpp>
+
 #include <list>
+#include <mutex>
 #include <set>
-#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -81,22 +85,18 @@ class ClassDB {
 	friend class godot::GDExtensionBinding;
 
 public:
-	struct PropertySetGet {
-		int index;
-		StringName setter;
-		StringName getter;
-		MethodBind *_setptr;
-		MethodBind *_getptr;
-		Variant::Type type;
-	};
-
 	struct ClassInfo {
+		struct VirtualMethod {
+			GDExtensionClassCallVirtual func;
+			uint32_t hash;
+		};
+
 		StringName name;
 		StringName parent_name;
 		GDExtensionInitializationLevel level = GDEXTENSION_INITIALIZATION_SCENE;
 		std::unordered_map<StringName, MethodBind *> method_map;
 		std::set<StringName> signal_names;
-		std::unordered_map<StringName, GDExtensionClassCallVirtual> virtual_methods;
+		std::unordered_map<StringName, VirtualMethod> virtual_methods;
 		std::set<StringName> property_names;
 		std::set<StringName> constant_names;
 		// Pointer to the parent custom class, if any. Will be null if the parent class is a Godot class.
@@ -109,31 +109,87 @@ private:
 	static std::unordered_map<StringName, const GDExtensionInstanceBindingCallbacks *> instance_binding_callbacks;
 	// Used to remember the custom class registration order.
 	static std::vector<StringName> class_register_order;
+	static std::unordered_map<StringName, Object *> engine_singletons;
+	static std::mutex engine_singletons_mutex;
 
 	static MethodBind *bind_methodfi(uint32_t p_flags, MethodBind *p_bind, const MethodDefinition &method_name, const void **p_defs, int p_defcount);
 	static void initialize_class(const ClassInfo &cl);
 	static void bind_method_godot(const StringName &p_class_name, MethodBind *p_method);
 
-	template <class T, bool is_abstract>
-	static void _register_class(bool p_virtual = false);
+	template <typename T, bool is_abstract>
+	static void _register_class(bool p_virtual = false, bool p_exposed = true, bool p_runtime = false);
+
+	template <typename T>
+	static GDExtensionObjectPtr _create_instance_func(void *data, GDExtensionBool p_notify_postinitialize) {
+		if constexpr (!std::is_abstract_v<T>) {
+			Wrapped::_set_construct_info<T>();
+			T *new_object = new ("", "") T;
+			if (p_notify_postinitialize) {
+				new_object->_postinitialize();
+			}
+			return new_object->_owner;
+		} else {
+			return nullptr;
+		}
+	}
+
+	template <typename T>
+	static GDExtensionClassInstancePtr _recreate_instance_func(void *data, GDExtensionObjectPtr obj) {
+		if constexpr (!std::is_abstract_v<T>) {
+#ifdef HOT_RELOAD_ENABLED
+#ifdef _GODOT_CPP_AVOID_THREAD_LOCAL
+			std::lock_guard<std::recursive_mutex> lk(Wrapped::_constructing_mutex);
+#endif
+			Wrapped::_constructing_recreate_owner = obj;
+			T *new_instance = (T *)memalloc(sizeof(T));
+			memnew_placement(new_instance, T);
+			return new_instance;
+#else
+			return nullptr;
+#endif
+		} else {
+			return nullptr;
+		}
+	}
 
 public:
-	template <class T>
+	template <typename T>
 	static void register_class(bool p_virtual = false);
-	template <class T>
+	template <typename T>
 	static void register_abstract_class();
+	template <typename T>
+	static void register_internal_class();
+	template <typename T>
+	static void register_runtime_class();
 
 	_FORCE_INLINE_ static void _register_engine_class(const StringName &p_name, const GDExtensionInstanceBindingCallbacks *p_callbacks) {
 		instance_binding_callbacks[p_name] = p_callbacks;
 	}
 
-	template <class N, class M, typename... VarArgs>
+	static void _editor_get_classes_used_callback(GDExtensionTypePtr p_packed_string_array);
+
+	static void _register_engine_singleton(const StringName &p_class_name, Object *p_singleton) {
+		std::lock_guard<std::mutex> lock(engine_singletons_mutex);
+		std::unordered_map<StringName, Object *>::const_iterator i = engine_singletons.find(p_class_name);
+		if (i != engine_singletons.end()) {
+			ERR_FAIL_COND((*i).second != p_singleton);
+			return;
+		}
+		engine_singletons[p_class_name] = p_singleton;
+	}
+
+	static void _unregister_engine_singleton(const StringName &p_class_name) {
+		std::lock_guard<std::mutex> lock(engine_singletons_mutex);
+		engine_singletons.erase(p_class_name);
+	}
+
+	template <typename N, typename M, typename... VarArgs>
 	static MethodBind *bind_method(N p_method_name, M p_method, VarArgs... p_args);
 
-	template <class N, class M, typename... VarArgs>
+	template <typename N, typename M, typename... VarArgs>
 	static MethodBind *bind_static_method(StringName p_class, N p_method_name, M p_method, VarArgs... p_args);
 
-	template <class M>
+	template <typename M>
 	static MethodBind *bind_vararg_method(uint32_t p_flags, StringName p_name, M p_method, const MethodInfo &p_info = MethodInfo(), const std::vector<Variant> &p_default_args = std::vector<Variant>{}, bool p_return_nil_is_variant = true);
 
 	static void add_property_group(const StringName &p_class, const String &p_name, const String &p_prefix);
@@ -141,11 +197,14 @@ public:
 	static void add_property(const StringName &p_class, const PropertyInfo &p_pinfo, const StringName &p_setter, const StringName &p_getter, int p_index = -1);
 	static void add_signal(const StringName &p_class, const MethodInfo &p_signal);
 	static void bind_integer_constant(const StringName &p_class_name, const StringName &p_enum_name, const StringName &p_constant_name, GDExtensionInt p_constant_value, bool p_is_bitfield = false);
-	static void bind_virtual_method(const StringName &p_class, const StringName &p_method, GDExtensionClassCallVirtual p_call);
+	// Binds an implementation of a virtual method defined in Godot.
+	static void bind_virtual_method(const StringName &p_class, const StringName &p_method, GDExtensionClassCallVirtual p_call, uint32_t p_hash);
+	// Add a new virtual method that can be implemented by scripts.
+	static void add_virtual_method(const StringName &p_class, const MethodInfo &p_method, const Vector<StringName> &p_arg_names = Vector<StringName>());
 
 	static MethodBind *get_method(const StringName &p_class, const StringName &p_method);
 
-	static GDExtensionClassCallVirtual get_virtual_func(void *p_userdata, GDExtensionConstStringNamePtr p_name);
+	static GDExtensionClassCallVirtual get_virtual_func(void *p_userdata, GDExtensionConstStringNamePtr p_name, uint32_t p_hash);
 	static const GDExtensionInstanceBindingCallbacks *get_instance_binding_callbacks(const StringName &p_class);
 
 	static void initialize(GDExtensionInitializationLevel p_level);
@@ -155,25 +214,27 @@ public:
 };
 
 #define BIND_CONSTANT(m_constant) \
-	godot::ClassDB::bind_integer_constant(get_class_static(), "", #m_constant, m_constant);
+	::godot::ClassDB::bind_integer_constant(get_class_static(), "", #m_constant, m_constant);
 
 #define BIND_ENUM_CONSTANT(m_constant) \
-	godot::ClassDB::bind_integer_constant(get_class_static(), godot::_gde_constant_get_enum_name(m_constant, #m_constant), #m_constant, m_constant);
+	::godot::ClassDB::bind_integer_constant(get_class_static(), ::godot::_gde_constant_get_enum_name(m_constant, #m_constant), #m_constant, m_constant);
 
 #define BIND_BITFIELD_FLAG(m_constant) \
-	godot::ClassDB::bind_integer_constant(get_class_static(), godot::_gde_constant_get_bitfield_name(m_constant, #m_constant), #m_constant, m_constant, true);
+	::godot::ClassDB::bind_integer_constant(get_class_static(), ::godot::_gde_constant_get_bitfield_name(m_constant, #m_constant), #m_constant, m_constant, true);
 
-#define BIND_VIRTUAL_METHOD(m_class, m_method)                                                                                                \
+#define BIND_VIRTUAL_METHOD(m_class, m_method, m_hash)                                                                                        \
 	{                                                                                                                                         \
 		auto _call##m_method = [](GDExtensionObjectPtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr p_ret) -> void { \
 			call_with_ptr_args(reinterpret_cast<m_class *>(p_instance), &m_class::m_method, p_args, p_ret);                                   \
 		};                                                                                                                                    \
-		godot::ClassDB::bind_virtual_method(m_class::get_class_static(), #m_method, _call##m_method);                                         \
+		::godot::ClassDB::bind_virtual_method(m_class::get_class_static(), #m_method, _call##m_method, m_hash);                               \
 	}
 
-template <class T, bool is_abstract>
-void ClassDB::_register_class(bool p_virtual) {
+template <typename T, bool is_abstract>
+void ClassDB::_register_class(bool p_virtual, bool p_exposed, bool p_runtime) {
 	static_assert(TypesAreSame<typename T::self_type, T>::value, "Class not declared properly, please use GDCLASS.");
+	static_assert(!FunctionsAreSame<T::self_type::_bind_methods, T::parent_type::_bind_methods>::value, "Class must declare 'static void _bind_methods'.");
+	static_assert(!std::is_abstract_v<T> || is_abstract, "Class is abstract, please use GDREGISTER_ABSTRACT_CLASS.");
 	instance_binding_callbacks[T::get_class_static()] = &T::_gde_binding_callbacks;
 
 	// Register this class within our plugin
@@ -190,27 +251,33 @@ void ClassDB::_register_class(bool p_virtual) {
 	class_register_order.push_back(cl.name);
 
 	// Register this class with Godot
-	GDExtensionClassCreationInfo class_info = {
+	GDExtensionClassCreationInfo5 class_info = {
 		p_virtual, // GDExtensionBool is_virtual;
 		is_abstract, // GDExtensionBool is_abstract;
+		p_exposed, // GDExtensionBool is_exposed;
+		p_runtime, // GDExtensionBool is_runtime;
+		nullptr, // GDExtensionConstStringPtr icon_path;
 		T::set_bind, // GDExtensionClassSet set_func;
 		T::get_bind, // GDExtensionClassGet get_func;
-		T::get_property_list_bind, // GDExtensionClassGetPropertyList get_property_list_func;
-		T::free_property_list_bind, // GDExtensionClassFreePropertyList free_property_list_func;
+		T::has_get_property_list() ? T::get_property_list_bind : nullptr, // GDExtensionClassGetPropertyList get_property_list_func;
+		T::free_property_list_bind, // GDExtensionClassFreePropertyList2 free_property_list_func;
 		T::property_can_revert_bind, // GDExtensionClassPropertyCanRevert property_can_revert_func;
 		T::property_get_revert_bind, // GDExtensionClassPropertyGetRevert property_get_revert_func;
-		T::notification_bind, // GDExtensionClassNotification notification_func;
+		T::validate_property_bind, // GDExtensionClassValidateProperty validate_property_func;
+		T::notification_bind, // GDExtensionClassNotification2 notification_func;
 		T::to_string_bind, // GDExtensionClassToString to_string_func;
 		nullptr, // GDExtensionClassReference reference_func;
 		nullptr, // GDExtensionClassUnreference unreference_func;
-		T::create, // GDExtensionClassCreateInstance create_instance_func; /* this one is mandatory */
+		&_create_instance_func<T>, // GDExtensionClassCreateInstance create_instance_func; /* this one is mandatory */
 		T::free, // GDExtensionClassFreeInstance free_instance_func; /* this one is mandatory */
+		&_recreate_instance_func<T>, // GDExtensionClassRecreateInstance recreate_instance_func;
 		&ClassDB::get_virtual_func, // GDExtensionClassGetVirtual get_virtual_func;
-		nullptr, // GDExtensionClassGetRID get_rid;
+		nullptr, // GDExtensionClassGetVirtualCallData get_virtual_call_data_func;
+		nullptr, // GDExtensionClassCallVirtualWithData call_virtual_func;
 		(void *)&T::get_class_static(), // void *class_userdata;
 	};
 
-	internal::gdextension_interface_classdb_register_extension_class(internal::library, cl.name._native_ptr(), cl.parent_name._native_ptr(), &class_info);
+	internal::gdextension_interface_classdb_register_extension_class5(internal::library, cl.name._native_ptr(), cl.parent_name._native_ptr(), &class_info);
 
 	// call bind_methods etc. to register all members of the class
 	T::initialize_class();
@@ -219,17 +286,27 @@ void ClassDB::_register_class(bool p_virtual) {
 	initialize_class(classes[cl.name]);
 }
 
-template <class T>
+template <typename T>
 void ClassDB::register_class(bool p_virtual) {
 	ClassDB::_register_class<T, false>(p_virtual);
 }
 
-template <class T>
+template <typename T>
 void ClassDB::register_abstract_class() {
 	ClassDB::_register_class<T, true>();
 }
 
-template <class N, class M, typename... VarArgs>
+template <typename T>
+void ClassDB::register_internal_class() {
+	ClassDB::_register_class<T, false>(false, false);
+}
+
+template <typename T>
+void ClassDB::register_runtime_class() {
+	ClassDB::_register_class<T, false>(false, true, true);
+}
+
+template <typename N, typename M, typename... VarArgs>
 MethodBind *ClassDB::bind_method(N p_method_name, M p_method, VarArgs... p_args) {
 	Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
 	const Variant *argptrs[sizeof...(p_args) + 1];
@@ -240,7 +317,7 @@ MethodBind *ClassDB::bind_method(N p_method_name, M p_method, VarArgs... p_args)
 	return bind_methodfi(METHOD_FLAGS_DEFAULT, bind, p_method_name, sizeof...(p_args) == 0 ? nullptr : (const void **)argptrs, sizeof...(p_args));
 }
 
-template <class N, class M, typename... VarArgs>
+template <typename N, typename M, typename... VarArgs>
 MethodBind *ClassDB::bind_static_method(StringName p_class, N p_method_name, M p_method, VarArgs... p_args) {
 	Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
 	const Variant *argptrs[sizeof...(p_args) + 1];
@@ -252,7 +329,7 @@ MethodBind *ClassDB::bind_static_method(StringName p_class, N p_method_name, M p
 	return bind_methodfi(0, bind, p_method_name, sizeof...(p_args) == 0 ? nullptr : (const void **)argptrs, sizeof...(p_args));
 }
 
-template <class M>
+template <typename M>
 MethodBind *ClassDB::bind_vararg_method(uint32_t p_flags, StringName p_name, M p_method, const MethodInfo &p_info, const std::vector<Variant> &p_default_args, bool p_return_nil_is_variant) {
 	MethodBind *bind = create_vararg_method_bind(p_method, p_info, p_return_nil_is_variant);
 	ERR_FAIL_NULL_V(bind, nullptr);
@@ -284,10 +361,12 @@ MethodBind *ClassDB::bind_vararg_method(uint32_t p_flags, StringName p_name, M p
 	return bind;
 }
 
-#define GDREGISTER_CLASS(m_class) ClassDB::register_class<m_class>();
-#define GDREGISTER_VIRTUAL_CLASS(m_class) ClassDB::register_class<m_class>(true);
-#define GDREGISTER_ABSTRACT_CLASS(m_class) ClassDB::register_abstract_class<m_class>();
+#define GDREGISTER_CLASS(m_class) ::godot::ClassDB::register_class<m_class>();
+#define GDREGISTER_VIRTUAL_CLASS(m_class) ::godot::ClassDB::register_class<m_class>(true);
+#define GDREGISTER_ABSTRACT_CLASS(m_class) ::godot::ClassDB::register_abstract_class<m_class>();
+#define GDREGISTER_INTERNAL_CLASS(m_class) ::godot::ClassDB::register_internal_class<m_class>();
+#define GDREGISTER_RUNTIME_CLASS(m_class) ::godot::ClassDB::register_runtime_class<m_class>();
 
 } // namespace godot
 
-#endif // GODOT_CLASS_DB_HPP
+CLASSDB_SINGLETON_VARIANT_CAST;

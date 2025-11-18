@@ -9,14 +9,16 @@ class TestClass:
 func _ready():
 	var example: Example = $Example
 
+	# Timing of set instance binding.
+	assert_equal(example.is_object_binding_set_by_parent_constructor(), true)
+
 	# Signal.
 	example.emit_custom_signal("Button", 42)
 	assert_equal(custom_signal_emitted, ["Button", 42])
 
 	# To string.
-	assert_equal(example.to_string(),'Example:[ GDExtension::Example <--> Instance ID:%s ]' % example.get_instance_id())
-	# It appears there's a bug with instance ids :-(
-	#assert_equal($Example/ExampleMin.to_string(), 'ExampleMin:[Wrapped:%s]' % $Example/ExampleMin.get_instance_id())
+	assert_equal(example.to_string(),'[ GDExtension::Example <--> Instance ID:%s ]' % example.get_instance_id())
+	assert_equal($Example/ExampleMin.to_string(), 'ExampleMin:<ExampleMin#%s>' % $Example/ExampleMin.get_instance_id())
 
 	# Call static methods.
 	assert_equal(Example.test_static(9, 100), 109);
@@ -26,6 +28,10 @@ func _ready():
 	# Property list.
 	example.property_from_list = Vector3(100, 200, 300)
 	assert_equal(example.property_from_list, Vector3(100, 200, 300))
+	var prop_list = example.get_property_list()
+	for prop_info in prop_list:
+		if prop_info['name'] == 'mouse_filter':
+			assert_equal(prop_info['usage'], PROPERTY_USAGE_NO_EDITOR)
 
 	# Call simple methods.
 	example.simple_func()
@@ -74,10 +80,16 @@ func _ready():
 
 	# Array and Dictionary
 	assert_equal(example.test_array(), [1, 2])
-	assert_equal(example.test_tarray(), [ Vector2(1, 2), Vector2(2, 3) ])
-	assert_equal(example.test_dictionary(), {"hello": "world", "foo": "bar"})
+	assert_equal(example.test_tarray(), [Vector2(1, 2), Vector2(2, 3)])
 	var array: Array[int] = [1, 2, 3]
 	assert_equal(example.test_tarray_arg(array), 6)
+	assert_equal(example.test_dictionary(), { "hello": "world", "foo": "bar" })
+	assert_equal(example.test_tdictionary(), { Vector2(1, 2): Vector2i(2, 3) })
+	var dictionary: Dictionary[String, int] = { "1": 1, "2": 2, "3": 3 }
+	assert_equal(example.test_tdictionary_arg(dictionary), 6)
+
+	example.callable_bind()
+	assert_equal(custom_signal_emitted, ["bound", 11])
 
 	# String += operator
 	assert_equal(example.test_string_ops(), "ABCĎE")
@@ -86,11 +98,74 @@ func _ready():
 	assert_equal(example.test_str_utility(), "Hello, World! The answer is 42")
 
 	# Test converting string to char* and doing comparison.
-	assert_equal(example.test_string_is_fourty_two("blah"), false)
-	assert_equal(example.test_string_is_fourty_two("fourty two"), true)
+	assert_equal(example.test_string_is_forty_two("blah"), false)
+	assert_equal(example.test_string_is_forty_two("forty two"), true)
+
+	# String::resize().
+	assert_equal(example.test_string_resize("What"), "What!?")
+
+	# mp_callable() with void method.
+	var mp_callable: Callable = example.test_callable_mp()
+	assert_equal(mp_callable.is_valid(), true)
+	assert_equal(mp_callable.get_argument_count(), 3)
+	mp_callable.call(example, "void", 36)
+	assert_equal(custom_signal_emitted, ["unbound_method1: Example - void", 36])
+
+	# Check that it works with is_connected().
+	assert_equal(example.renamed.is_connected(mp_callable), false)
+	example.renamed.connect(mp_callable)
+	assert_equal(example.renamed.is_connected(mp_callable), true)
+	# Make sure a new object is still treated as equivalent.
+	assert_equal(example.renamed.is_connected(example.test_callable_mp()), true)
+	assert_equal(mp_callable.hash(), example.test_callable_mp().hash())
+	example.renamed.disconnect(mp_callable)
+	assert_equal(example.renamed.is_connected(mp_callable), false)
+
+	# mp_callable() with return value.
+	var mp_callable_ret: Callable = example.test_callable_mp_ret()
+	assert_equal(mp_callable_ret.get_argument_count(), 3)
+	assert_equal(mp_callable_ret.call(example, "test", 77), "unbound_method2: Example - test - 77")
+
+	# mp_callable() with const method and return value.
+	var mp_callable_retc: Callable = example.test_callable_mp_retc()
+	assert_equal(mp_callable_retc.get_argument_count(), 3)
+	assert_equal(mp_callable_retc.call(example, "const", 101), "unbound_method3: Example - const - 101")
+
+	# mp_callable_static() with void method.
+	var mp_callable_static: Callable = example.test_callable_mp_static()
+	assert_equal(mp_callable_static.get_argument_count(), 3)
+	mp_callable_static.call(example, "static", 83)
+	assert_equal(custom_signal_emitted, ["unbound_static_method1: Example - static", 83])
+
+	# Check that it works with is_connected().
+	assert_equal(example.renamed.is_connected(mp_callable_static), false)
+	example.renamed.connect(mp_callable_static)
+	assert_equal(example.renamed.is_connected(mp_callable_static), true)
+	# Make sure a new object is still treated as equivalent.
+	assert_equal(example.renamed.is_connected(example.test_callable_mp_static()), true)
+	assert_equal(mp_callable_static.hash(), example.test_callable_mp_static().hash())
+	example.renamed.disconnect(mp_callable_static)
+	assert_equal(example.renamed.is_connected(mp_callable_static), false)
+
+	# mp_callable_static() with return value.
+	var mp_callable_static_ret: Callable = example.test_callable_mp_static_ret()
+	assert_equal(mp_callable_static_ret.get_argument_count(), 3)
+	assert_equal(mp_callable_static_ret.call(example, "static-ret", 84), "unbound_static_method2: Example - static-ret - 84")
+
+	# CallableCustom.
+	var custom_callable: Callable = example.test_custom_callable();
+	assert_equal(custom_callable.is_custom(), true);
+	assert_equal(custom_callable.is_valid(), true);
+	assert_equal(custom_callable.call(), "Hi")
+	assert_equal(custom_callable.hash(), 27);
+	assert_equal(custom_callable.get_object(), null);
+	assert_equal(custom_callable.get_method(), "");
+	assert_equal(custom_callable.get_argument_count(), 2)
+	assert_equal(str(custom_callable), "<MyCallableCustom>");
 
 	# PackedArray iterators
 	assert_equal(example.test_vector_ops(), 105)
+	assert_equal(example.test_vector_init_list(), 105)
 
 	# Properties.
 	assert_equal(example.group_subgroup_custom_position, Vector2(0, 0))
@@ -121,6 +196,10 @@ func _ready():
 	control.queue_free()
 	sprite.queue_free()
 
+	# Test that passing null for objects works as expected too.
+	var example_null : Example = null
+	assert_equal(example.test_object_cast_to_node(example_null), false)
+
 	# Test conversions to and from Variant.
 	assert_equal(example.test_variant_vector2i_conversion(Vector2i(1, 1)), Vector2i(1, 1))
 	assert_equal(example.test_variant_vector2i_conversion(Vector2(1.0, 1.0)), Vector2i(1, 1))
@@ -128,6 +207,12 @@ func _ready():
 	assert_equal(example.test_variant_int_conversion(10.0), 10)
 	assert_equal(example.test_variant_float_conversion(10.0), 10.0)
 	assert_equal(example.test_variant_float_conversion(10), 10.0)
+
+	# Test checking if objects are valid.
+	var object_of_questionable_validity = Object.new()
+	assert_equal(example.test_object_is_valid(object_of_questionable_validity), true)
+	object_of_questionable_validity.free()
+	assert_equal(example.test_object_is_valid(object_of_questionable_validity), false)
 
 	# Test that ptrcalls from GDExtension to the engine are correctly encoding Object and RefCounted.
 	var new_node = Node.new()
@@ -155,6 +240,10 @@ func _ready():
 	assert_equal(example.test_bitfield(0), 0)
 	assert_equal(example.test_bitfield(Example.FLAG_ONE | Example.FLAG_TWO), 3)
 
+	# Test variant iterator.
+	assert_equal(example.test_variant_iterator([10, 20, 30]), [15, 25, 35])
+	assert_equal(example.test_variant_iterator(null), "iter_init: not valid")
+
 	# RPCs.
 	assert_equal(example.return_last_rpc_arg(), 0)
 	example.test_rpc(42)
@@ -168,6 +257,46 @@ func _ready():
 	event.unicode = 72
 	get_viewport().push_input(event)
 	assert_equal(custom_signal_emitted, ["_input: H", 72])
+
+	# Check NOTIFICATION_POST_INITIALIZED, both when created from GDScript and godot-cpp.
+	var new_example_ref = ExampleRef.new()
+	assert_equal(new_example_ref.was_post_initialized(), true)
+	assert_equal(example.test_post_initialize(), true)
+
+	# Test a virtual method defined in GDExtension and implemented in script.
+	assert_equal(example.test_virtual_implemented_in_script("Virtual", 939), "Implemented")
+	assert_equal(custom_signal_emitted, ["Virtual", 939])
+
+	# Test that we can access an engine singleton.
+	assert_equal(example.test_use_engine_singleton(), OS.get_name())
+
+	assert_equal(example.test_get_internal(1), 1)
+	assert_equal(example.test_get_internal(true), -1)
+
+	# Test that notifications happen on both parent and child classes.
+	var example_child = $ExampleChild
+	assert_equal(example_child.get_value1(), 11)
+	assert_equal(example_child.get_value2(), 33)
+	example_child.notification(NOTIFICATION_ENTER_TREE, true)
+	assert_equal(example_child.get_value1(), 11)
+	assert_equal(example_child.get_value2(), 22)
+
+	# Test that the extension's library path is absolute and valid.
+	var library_path = Example.test_library_path()
+	assert_equal(library_path.begins_with("res://"), false)
+	assert_equal(library_path, ProjectSettings.globalize_path(library_path))
+	assert_equal(FileAccess.file_exists(library_path), true)
+
+	# Test that internal classes work as expected (at least for Godot 4.5+).
+	assert_equal(ClassDB.can_instantiate("ExampleInternal"), false)
+	assert_equal(ClassDB.instantiate("ExampleInternal"), null)
+	var internal_class = example.test_get_internal_class()
+	assert_equal(internal_class.get_the_answer(), 42)
+	assert_equal(internal_class.get_class(), "ExampleInternal")
+
+	# Test a class with a unicode name.
+	var przykład = ExamplePrzykład.new()
+	assert_equal(przykład.get_the_word(), "słowo to przykład")
 
 	exit_with_status()
 

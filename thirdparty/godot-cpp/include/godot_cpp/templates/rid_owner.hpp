@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_RID_OWNER_HPP
-#define GODOT_RID_OWNER_HPP
+#pragma once
 
 #include <godot_cpp/core/memory.hpp>
 #include <godot_cpp/godot.hpp>
@@ -42,7 +41,7 @@
 
 namespace godot {
 
-template <class T, bool THREAD_SAFE = false>
+template <typename T, bool THREAD_SAFE = false>
 class RID_Alloc {
 	T **chunks = nullptr;
 	uint32_t **free_list_chunks = nullptr;
@@ -347,7 +346,7 @@ public:
 	}
 };
 
-template <class T, bool THREAD_SAFE = false>
+template <typename T, bool THREAD_SAFE = false>
 class RID_PtrOwner {
 	RID_Alloc<T *, THREAD_SAFE> alloc;
 
@@ -406,7 +405,7 @@ public:
 			alloc(p_target_chunk_byte_size) {}
 };
 
-template <class T, bool THREAD_SAFE = false>
+template <typename T, bool THREAD_SAFE = false>
 class RID_Owner {
 	RID_Alloc<T, THREAD_SAFE> alloc;
 
@@ -461,5 +460,3 @@ public:
 };
 
 } // namespace godot
-
-#endif // GODOT_RID_OWNER_HPP

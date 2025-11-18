@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_ENGINE_PTRCALL_HPP
-#define GODOT_ENGINE_PTRCALL_HPP
+#pragma once
 
 #include <gdextension_interface.h>
 
@@ -43,7 +42,7 @@ namespace godot {
 
 namespace internal {
 
-template <class O, class... Args>
+template <typename O, typename... Args>
 O *_call_native_mb_ret_obj(const GDExtensionMethodBindPtr mb, void *instance, const Args &...args) {
 	GodotObject *ret = nullptr;
 	std::array<GDExtensionConstTypePtr, sizeof...(Args)> mb_args = { { (GDExtensionConstTypePtr)args... } };
@@ -54,37 +53,37 @@ O *_call_native_mb_ret_obj(const GDExtensionMethodBindPtr mb, void *instance, co
 	return reinterpret_cast<O *>(internal::get_object_instance_binding(ret));
 }
 
-template <class R, class... Args>
+template <typename R, typename... Args>
 R _call_native_mb_ret(const GDExtensionMethodBindPtr mb, void *instance, const Args &...args) {
-	R ret;
+	typename PtrToArg<R>::EncodeT ret;
 	std::array<GDExtensionConstTypePtr, sizeof...(Args)> mb_args = { { (GDExtensionConstTypePtr)args... } };
 	internal::gdextension_interface_object_method_bind_ptrcall(mb, instance, mb_args.data(), &ret);
-	return ret;
+	return static_cast<R>(ret);
 }
 
-template <class... Args>
+template <typename... Args>
 void _call_native_mb_no_ret(const GDExtensionMethodBindPtr mb, void *instance, const Args &...args) {
 	std::array<GDExtensionConstTypePtr, sizeof...(Args)> mb_args = { { (GDExtensionConstTypePtr)args... } };
 	internal::gdextension_interface_object_method_bind_ptrcall(mb, instance, mb_args.data(), nullptr);
 }
 
-template <class R, class... Args>
+template <typename R, typename... Args>
 R _call_utility_ret(GDExtensionPtrUtilityFunction func, const Args &...args) {
-	R ret;
+	typename PtrToArg<R>::EncodeT ret;
 	std::array<GDExtensionConstTypePtr, sizeof...(Args)> mb_args = { { (GDExtensionConstTypePtr)args... } };
 	func(&ret, mb_args.data(), mb_args.size());
-	return ret;
+	return static_cast<R>(ret);
 }
 
-template <class... Args>
-Object *_call_utility_ret_obj(const GDExtensionPtrUtilityFunction func, void *instance, const Args &...args) {
+template <typename... Args>
+Object *_call_utility_ret_obj(const GDExtensionPtrUtilityFunction func, const Args &...args) {
 	GodotObject *ret = nullptr;
 	std::array<GDExtensionConstTypePtr, sizeof...(Args)> mb_args = { { (GDExtensionConstTypePtr)args... } };
 	func(&ret, mb_args.data(), mb_args.size());
 	return (Object *)internal::get_object_instance_binding(ret);
 }
 
-template <class... Args>
+template <typename... Args>
 void _call_utility_no_ret(const GDExtensionPtrUtilityFunction func, const Args &...args) {
 	std::array<GDExtensionConstTypePtr, sizeof...(Args)> mb_args = { { (GDExtensionConstTypePtr)args... } };
 	func(nullptr, mb_args.data(), mb_args.size());
@@ -93,5 +92,3 @@ void _call_utility_no_ret(const GDExtensionPtrUtilityFunction func, const Args &
 } // namespace internal
 
 } // namespace godot
-
-#endif // GODOT_ENGINE_PTRCALL_HPP

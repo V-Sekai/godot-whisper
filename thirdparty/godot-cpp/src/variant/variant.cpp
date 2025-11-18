@@ -35,6 +35,7 @@
 #include <godot_cpp/core/binder_common.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/defs.hpp>
+#include <godot_cpp/variant/variant_internal.hpp>
 
 #include <utility>
 
@@ -49,6 +50,7 @@ void Variant::init_bindings() {
 		from_type_constructor[i] = internal::gdextension_interface_get_variant_from_type_constructor((GDExtensionVariantType)i);
 		to_type_constructor[i] = internal::gdextension_interface_get_variant_to_type_constructor((GDExtensionVariantType)i);
 	}
+	VariantInternal::init_bindings();
 
 	StringName::init_bindings();
 	String::init_bindings();
@@ -66,6 +68,7 @@ void Variant::init_bindings() {
 	PackedStringArray::init_bindings();
 	PackedVector2Array::init_bindings();
 	PackedVector3Array::init_bindings();
+	PackedVector4Array::init_bindings();
 	PackedColorArray::init_bindings();
 }
 
@@ -248,6 +251,10 @@ Variant::Variant(const PackedColorArray &v) {
 	from_type_constructor[PACKED_COLOR_ARRAY](_native_ptr(), v._native_ptr());
 }
 
+Variant::Variant(const PackedVector4Array &v) {
+	from_type_constructor[PACKED_VECTOR4_ARRAY](_native_ptr(), v._native_ptr());
+}
+
 Variant::~Variant() {
 	internal::gdextension_interface_variant_destroy(_native_ptr());
 }
@@ -268,12 +275,28 @@ Variant::operator int32_t() const {
 	return static_cast<int32_t>(operator int64_t());
 }
 
+Variant::operator int16_t() const {
+	return static_cast<int16_t>(operator int64_t());
+}
+
+Variant::operator int8_t() const {
+	return static_cast<int8_t>(operator int64_t());
+}
+
 Variant::operator uint64_t() const {
 	return static_cast<uint64_t>(operator int64_t());
 }
 
 Variant::operator uint32_t() const {
 	return static_cast<uint32_t>(operator int64_t());
+}
+
+Variant::operator uint16_t() const {
+	return static_cast<uint16_t>(operator int64_t());
+}
+
+Variant::operator uint8_t() const {
+	return static_cast<uint8_t>(operator int64_t());
 }
 
 Variant::operator double() const {
@@ -287,123 +310,131 @@ Variant::operator float() const {
 }
 
 Variant::operator String() const {
-	String result;
-	to_type_constructor[STRING](result._native_ptr(), _native_ptr());
-	return result;
+	return String(this);
 }
 
 Variant::operator Vector2() const {
+	// @todo Avoid initializing result before calling constructor (which will initialize it again)
 	Vector2 result;
 	to_type_constructor[VECTOR2]((GDExtensionTypePtr)&result, _native_ptr());
 	return result;
 }
 
 Variant::operator Vector2i() const {
+	// @todo Avoid initializing result before calling constructor (which will initialize it again)
 	Vector2i result;
 	to_type_constructor[VECTOR2I]((GDExtensionTypePtr)&result, _native_ptr());
 	return result;
 }
 
 Variant::operator Rect2() const {
+	// @todo Avoid initializing result before calling constructor (which will initialize it again)
 	Rect2 result;
 	to_type_constructor[RECT2]((GDExtensionTypePtr)&result, _native_ptr());
 	return result;
 }
 
 Variant::operator Rect2i() const {
+	// @todo Avoid initializing result before calling constructor (which will initialize it again)
 	Rect2i result;
 	to_type_constructor[RECT2I]((GDExtensionTypePtr)&result, _native_ptr());
 	return result;
 }
 
 Variant::operator Vector3() const {
+	// @todo Avoid initializing result before calling constructor (which will initialize it again)
 	Vector3 result;
 	to_type_constructor[VECTOR3]((GDExtensionTypePtr)&result, _native_ptr());
 	return result;
 }
 
 Variant::operator Vector3i() const {
+	// @todo Avoid initializing result before calling constructor (which will initialize it again)
 	Vector3i result;
 	to_type_constructor[VECTOR3I]((GDExtensionTypePtr)&result, _native_ptr());
 	return result;
 }
 
 Variant::operator Transform2D() const {
+	// @todo Avoid initializing result before calling constructor (which will initialize it again)
 	Transform2D result;
 	to_type_constructor[TRANSFORM2D]((GDExtensionTypePtr)&result, _native_ptr());
 	return result;
 }
 
 Variant::operator Vector4() const {
+	// @todo Avoid initializing result before calling constructor (which will initialize it again)
 	Vector4 result;
 	to_type_constructor[VECTOR4]((GDExtensionTypePtr)&result, _native_ptr());
 	return result;
 }
 
 Variant::operator Vector4i() const {
+	// @todo Avoid initializing result before calling constructor (which will initialize it again)
 	Vector4i result;
 	to_type_constructor[VECTOR4I]((GDExtensionTypePtr)&result, _native_ptr());
 	return result;
 }
 
 Variant::operator Plane() const {
+	// @todo Avoid initializing result before calling constructor (which will initialize it again)
 	Plane result;
 	to_type_constructor[PLANE]((GDExtensionTypePtr)&result, _native_ptr());
 	return result;
 }
 
 Variant::operator Quaternion() const {
+	// @todo Avoid initializing result before calling constructor (which will initialize it again)
 	Quaternion result;
 	to_type_constructor[QUATERNION]((GDExtensionTypePtr)&result, _native_ptr());
 	return result;
 }
 
 Variant::operator godot::AABB() const {
+	// @todo Avoid initializing result before calling constructor (which will initialize it again)
 	godot::AABB result;
 	to_type_constructor[AABB]((GDExtensionTypePtr)&result, _native_ptr());
 	return result;
 }
 
 Variant::operator Basis() const {
+	// @todo Avoid initializing result before calling constructor (which will initialize it again)
 	Basis result;
 	to_type_constructor[BASIS]((GDExtensionTypePtr)&result, _native_ptr());
 	return result;
 }
 
 Variant::operator Transform3D() const {
+	// @todo Avoid initializing result before calling constructor (which will initialize it again)
 	Transform3D result;
 	to_type_constructor[TRANSFORM3D]((GDExtensionTypePtr)&result, _native_ptr());
 	return result;
 }
 
 Variant::operator Projection() const {
+	// @todo Avoid initializing result before calling constructor (which will initialize it again)
 	Projection result;
 	to_type_constructor[PROJECTION]((GDExtensionTypePtr)&result, _native_ptr());
 	return result;
 }
 
 Variant::operator Color() const {
+	// @todo Avoid initializing result before calling constructor (which will initialize it again)
 	Color result;
 	to_type_constructor[COLOR]((GDExtensionTypePtr)&result, _native_ptr());
 	return result;
 }
 
 Variant::operator StringName() const {
-	StringName result;
-	to_type_constructor[STRING_NAME](result._native_ptr(), _native_ptr());
-	return result;
+	return StringName(this);
 }
 
 Variant::operator NodePath() const {
-	NodePath result;
-	to_type_constructor[NODE_PATH](result._native_ptr(), _native_ptr());
-	return result;
+	return NodePath(this);
 }
 
 Variant::operator godot::RID() const {
-	godot::RID result;
-	to_type_constructor[RID](result._native_ptr(), _native_ptr());
-	return result;
+	return godot::RID(this);
 }
 
 Variant::operator Object *() const {
@@ -419,93 +450,70 @@ Variant::operator ObjectID() const {
 	if (get_type() == Type::INT) {
 		return ObjectID(operator uint64_t());
 	} else if (get_type() == Type::OBJECT) {
-		Object *obj = operator Object *();
-		if (obj != nullptr) {
-			return ObjectID(obj->get_instance_id());
-		} else {
-			return ObjectID();
-		}
+		return ObjectID(internal::gdextension_interface_variant_get_object_instance_id(_native_ptr()));
 	} else {
 		return ObjectID();
 	}
 }
 
 Variant::operator Callable() const {
-	Callable result;
-	to_type_constructor[CALLABLE](result._native_ptr(), _native_ptr());
-	return result;
+	return Callable(this);
 }
 
 Variant::operator Signal() const {
-	Signal result;
-	to_type_constructor[SIGNAL](result._native_ptr(), _native_ptr());
-	return result;
+	return Signal(this);
 }
 
 Variant::operator Dictionary() const {
-	Dictionary result;
-	to_type_constructor[DICTIONARY](result._native_ptr(), _native_ptr());
-	return result;
+	return Dictionary(this);
 }
 
 Variant::operator Array() const {
-	Array result;
-	to_type_constructor[ARRAY](result._native_ptr(), _native_ptr());
-	return result;
+	return Array(this);
 }
 
 Variant::operator PackedByteArray() const {
-	PackedByteArray result;
-	to_type_constructor[PACKED_BYTE_ARRAY](result._native_ptr(), _native_ptr());
-	return result;
+	return PackedByteArray(this);
 }
 
 Variant::operator PackedInt32Array() const {
-	PackedInt32Array result;
-	to_type_constructor[PACKED_INT32_ARRAY](result._native_ptr(), _native_ptr());
-	return result;
+	return PackedInt32Array(this);
 }
 
 Variant::operator PackedInt64Array() const {
-	PackedInt64Array result;
-	to_type_constructor[PACKED_INT64_ARRAY](result._native_ptr(), _native_ptr());
-	return result;
+	return PackedInt64Array(this);
 }
 
 Variant::operator PackedFloat32Array() const {
-	PackedFloat32Array result;
-	to_type_constructor[PACKED_FLOAT32_ARRAY](result._native_ptr(), _native_ptr());
-	return result;
+	return PackedFloat32Array(this);
 }
 
 Variant::operator PackedFloat64Array() const {
-	PackedFloat64Array result;
-	to_type_constructor[PACKED_FLOAT64_ARRAY](result._native_ptr(), _native_ptr());
-	return result;
+	return PackedFloat64Array(this);
 }
 
 Variant::operator PackedStringArray() const {
-	PackedStringArray result;
-	to_type_constructor[PACKED_STRING_ARRAY](result._native_ptr(), _native_ptr());
-	return result;
+	return PackedStringArray(this);
 }
 
 Variant::operator PackedVector2Array() const {
-	PackedVector2Array result;
-	to_type_constructor[PACKED_VECTOR2_ARRAY](result._native_ptr(), _native_ptr());
-	return result;
+	return PackedVector2Array(this);
 }
 
 Variant::operator PackedVector3Array() const {
-	PackedVector3Array result;
-	to_type_constructor[PACKED_VECTOR3_ARRAY](result._native_ptr(), _native_ptr());
-	return result;
+	return PackedVector3Array(this);
 }
 
 Variant::operator PackedColorArray() const {
-	PackedColorArray result;
-	to_type_constructor[PACKED_COLOR_ARRAY](result._native_ptr(), _native_ptr());
-	return result;
+	return PackedColorArray(this);
+}
+
+Variant::operator PackedVector4Array() const {
+	return PackedVector4Array(this);
+}
+
+Object *Variant::get_validated_object() const {
+	return ObjectDB::get_instance(operator ObjectID());
 }
 
 Variant &Variant::operator=(const Variant &other) {

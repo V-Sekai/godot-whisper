@@ -37,28 +37,15 @@ namespace godot {
 
 real_t Quaternion::angle_to(const Quaternion &p_to) const {
 	real_t d = dot(p_to);
-	return Math::acos(CLAMP(d * d * 2 - 1, -1, 1));
+	// acos does clamping.
+	return Math::acos(d * d * 2 - 1);
 }
 
-// get_euler_xyz returns a vector containing the Euler angles in the format
-// (ax,ay,az), where ax is the angle of rotation around x axis,
-// and similar for other axes.
-// This implementation uses XYZ convention (Z is the first rotation).
-Vector3 Quaternion::get_euler_xyz() const {
-	Basis m(*this);
-	return m.get_euler(EULER_ORDER_XYZ);
-}
-
-// get_euler_yxz returns a vector containing the Euler angles in the format
-// (ax,ay,az), where ax is the angle of rotation around x axis,
-// and similar for other axes.
-// This implementation uses YXZ convention (Z is the first rotation).
-Vector3 Quaternion::get_euler_yxz() const {
+Vector3 Quaternion::get_euler(EulerOrder p_order) const {
 #ifdef MATH_CHECKS
-	ERR_FAIL_COND_V_MSG(!is_normalized(), Vector3(0, 0, 0), "The quaternion must be normalized.");
+	ERR_FAIL_COND_V_MSG(!is_normalized(), Vector3(0, 0, 0), "The quaternion " + operator String() + " must be normalized.");
 #endif
-	Basis m(*this);
-	return m.get_euler(EULER_ORDER_YXZ);
+	return Basis(*this).get_euler(p_order);
 }
 
 void Quaternion::operator*=(const Quaternion &p_q) {
@@ -81,6 +68,10 @@ bool Quaternion::is_equal_approx(const Quaternion &p_quaternion) const {
 	return Math::is_equal_approx(x, p_quaternion.x) && Math::is_equal_approx(y, p_quaternion.y) && Math::is_equal_approx(z, p_quaternion.z) && Math::is_equal_approx(w, p_quaternion.w);
 }
 
+bool Quaternion::is_finite() const {
+	return Math::is_finite(x) && Math::is_finite(y) && Math::is_finite(z) && Math::is_finite(w);
+}
+
 real_t Quaternion::length() const {
 	return Math::sqrt(length_squared());
 }
@@ -99,7 +90,7 @@ bool Quaternion::is_normalized() const {
 
 Quaternion Quaternion::inverse() const {
 #ifdef MATH_CHECKS
-	ERR_FAIL_COND_V_MSG(!is_normalized(), Quaternion(), "The quaternion must be normalized.");
+	ERR_FAIL_COND_V_MSG(!is_normalized(), Quaternion(), "The quaternion " + operator String() + " must be normalized.");
 #endif
 	return Quaternion(-x, -y, -z, w);
 }
@@ -121,10 +112,10 @@ Quaternion Quaternion::exp() const {
 	return Quaternion(src_v, theta);
 }
 
-Quaternion Quaternion::slerp(const Quaternion &p_to, const real_t &p_weight) const {
+Quaternion Quaternion::slerp(const Quaternion &p_to, real_t p_weight) const {
 #ifdef MATH_CHECKS
-	ERR_FAIL_COND_V_MSG(!is_normalized(), Quaternion(), "The start quaternion must be normalized.");
-	ERR_FAIL_COND_V_MSG(!p_to.is_normalized(), Quaternion(), "The end quaternion must be normalized.");
+	ERR_FAIL_COND_V_MSG(!is_normalized(), Quaternion(), "The start quaternion " + operator String() + " must be normalized.");
+	ERR_FAIL_COND_V_MSG(!p_to.is_normalized(), Quaternion(), "The end quaternion " + p_to.operator String() + " must be normalized.");
 #endif
 	Quaternion to1;
 	real_t omega, cosom, sinom, scale0, scale1;
@@ -162,10 +153,10 @@ Quaternion Quaternion::slerp(const Quaternion &p_to, const real_t &p_weight) con
 			scale0 * w + scale1 * to1.w);
 }
 
-Quaternion Quaternion::slerpni(const Quaternion &p_to, const real_t &p_weight) const {
+Quaternion Quaternion::slerpni(const Quaternion &p_to, real_t p_weight) const {
 #ifdef MATH_CHECKS
-	ERR_FAIL_COND_V_MSG(!is_normalized(), Quaternion(), "The start quaternion must be normalized.");
-	ERR_FAIL_COND_V_MSG(!p_to.is_normalized(), Quaternion(), "The end quaternion must be normalized.");
+	ERR_FAIL_COND_V_MSG(!is_normalized(), Quaternion(), "The start quaternion " + operator String() + " must be normalized.");
+	ERR_FAIL_COND_V_MSG(!p_to.is_normalized(), Quaternion(), "The end quaternion " + p_to.operator String() + " must be normalized.");
 #endif
 	const Quaternion &from = *this;
 
@@ -186,10 +177,10 @@ Quaternion Quaternion::slerpni(const Quaternion &p_to, const real_t &p_weight) c
 			invFactor * from.w + newFactor * p_to.w);
 }
 
-Quaternion Quaternion::spherical_cubic_interpolate(const Quaternion &p_b, const Quaternion &p_pre_a, const Quaternion &p_post_b, const real_t &p_weight) const {
+Quaternion Quaternion::spherical_cubic_interpolate(const Quaternion &p_b, const Quaternion &p_pre_a, const Quaternion &p_post_b, real_t p_weight) const {
 #ifdef MATH_CHECKS
-	ERR_FAIL_COND_V_MSG(!is_normalized(), Quaternion(), "The start quaternion must be normalized.");
-	ERR_FAIL_COND_V_MSG(!p_b.is_normalized(), Quaternion(), "The end quaternion must be normalized.");
+	ERR_FAIL_COND_V_MSG(!is_normalized(), Quaternion(), "The start quaternion " + operator String() + " must be normalized.");
+	ERR_FAIL_COND_V_MSG(!p_b.is_normalized(), Quaternion(), "The end quaternion " + p_b.operator String() + " must be normalized.");
 #endif
 	Quaternion from_q = *this;
 	Quaternion pre_q = p_pre_a;
@@ -203,11 +194,11 @@ Quaternion Quaternion::spherical_cubic_interpolate(const Quaternion &p_b, const 
 	post_q = Basis(post_q).get_rotation_quaternion();
 
 	// Flip quaternions to shortest path if necessary.
-	bool flip1 = Math::sign(from_q.dot(pre_q));
+	bool flip1 = std::signbit(from_q.dot(pre_q));
 	pre_q = flip1 ? -pre_q : pre_q;
-	bool flip2 = Math::sign(from_q.dot(to_q));
+	bool flip2 = std::signbit(from_q.dot(to_q));
 	to_q = flip2 ? -to_q : to_q;
-	bool flip3 = flip2 ? to_q.dot(post_q) <= 0 : Math::sign(to_q.dot(post_q));
+	bool flip3 = flip2 ? to_q.dot(post_q) <= 0 : std::signbit(to_q.dot(post_q));
 	post_q = flip3 ? -post_q : post_q;
 
 	// Calc by Expmap in from_q space.
@@ -232,15 +223,15 @@ Quaternion Quaternion::spherical_cubic_interpolate(const Quaternion &p_b, const 
 	ln.z = Math::cubic_interpolate(ln_from.z, ln_to.z, ln_pre.z, ln_post.z, p_weight);
 	Quaternion q2 = to_q * ln.exp();
 
-	// To cancel error made by Expmap ambiguity, do blends.
+	// To cancel error made by Expmap ambiguity, do blending.
 	return q1.slerp(q2, p_weight);
 }
 
-Quaternion Quaternion::spherical_cubic_interpolate_in_time(const Quaternion &p_b, const Quaternion &p_pre_a, const Quaternion &p_post_b, const real_t &p_weight,
-		const real_t &p_b_t, const real_t &p_pre_a_t, const real_t &p_post_b_t) const {
+Quaternion Quaternion::spherical_cubic_interpolate_in_time(const Quaternion &p_b, const Quaternion &p_pre_a, const Quaternion &p_post_b, real_t p_weight,
+		real_t p_b_t, real_t p_pre_a_t, real_t p_post_b_t) const {
 #ifdef MATH_CHECKS
-	ERR_FAIL_COND_V_MSG(!is_normalized(), Quaternion(), "The start quaternion must be normalized.");
-	ERR_FAIL_COND_V_MSG(!p_b.is_normalized(), Quaternion(), "The end quaternion must be normalized.");
+	ERR_FAIL_COND_V_MSG(!is_normalized(), Quaternion(), "The start quaternion " + operator String() + " must be normalized.");
+	ERR_FAIL_COND_V_MSG(!p_b.is_normalized(), Quaternion(), "The end quaternion " + p_b.operator String() + " must be normalized.");
 #endif
 	Quaternion from_q = *this;
 	Quaternion pre_q = p_pre_a;
@@ -254,11 +245,11 @@ Quaternion Quaternion::spherical_cubic_interpolate_in_time(const Quaternion &p_b
 	post_q = Basis(post_q).get_rotation_quaternion();
 
 	// Flip quaternions to shortest path if necessary.
-	bool flip1 = Math::sign(from_q.dot(pre_q));
+	bool flip1 = std::signbit(from_q.dot(pre_q));
 	pre_q = flip1 ? -pre_q : pre_q;
-	bool flip2 = Math::sign(from_q.dot(to_q));
+	bool flip2 = std::signbit(from_q.dot(to_q));
 	to_q = flip2 ? -to_q : to_q;
-	bool flip3 = flip2 ? to_q.dot(post_q) <= 0 : Math::sign(to_q.dot(post_q));
+	bool flip3 = flip2 ? to_q.dot(post_q) <= 0 : std::signbit(to_q.dot(post_q));
 	post_q = flip3 ? -post_q : post_q;
 
 	// Calc by Expmap in from_q space.
@@ -283,7 +274,7 @@ Quaternion Quaternion::spherical_cubic_interpolate_in_time(const Quaternion &p_b
 	ln.z = Math::cubic_interpolate_in_time(ln_from.z, ln_to.z, ln_pre.z, ln_post.z, p_weight, p_b_t, p_pre_a_t, p_post_b_t);
 	Quaternion q2 = to_q * ln.exp();
 
-	// To cancel error made by Expmap ambiguity, do blends.
+	// To cancel error made by Expmap ambiguity, do blending.
 	return q1.slerp(q2, p_weight);
 }
 
@@ -305,7 +296,7 @@ real_t Quaternion::get_angle() const {
 
 Quaternion::Quaternion(const Vector3 &p_axis, real_t p_angle) {
 #ifdef MATH_CHECKS
-	ERR_FAIL_COND_MSG(!p_axis.is_normalized(), "The axis Vector3 must be normalized.");
+	ERR_FAIL_COND_MSG(!p_axis.is_normalized(), "The axis Vector3 " + p_axis.operator String() + " must be normalized.");
 #endif
 	real_t d = p_axis.length();
 	if (d == 0) {
@@ -328,7 +319,7 @@ Quaternion::Quaternion(const Vector3 &p_axis, real_t p_angle) {
 // (ax, ay, az), where ax is the angle of rotation around x axis,
 // and similar for other axes.
 // This implementation uses YXZ convention (Z is the first rotation).
-Quaternion::Quaternion(const Vector3 &p_euler) {
+Quaternion Quaternion::from_euler(const Vector3 &p_euler) {
 	real_t half_a1 = p_euler.y * 0.5f;
 	real_t half_a2 = p_euler.x * 0.5f;
 	real_t half_a3 = p_euler.z * 0.5f;
@@ -344,10 +335,11 @@ Quaternion::Quaternion(const Vector3 &p_euler) {
 	real_t cos_a3 = Math::cos(half_a3);
 	real_t sin_a3 = Math::sin(half_a3);
 
-	x = sin_a1 * cos_a2 * sin_a3 + cos_a1 * sin_a2 * cos_a3;
-	y = sin_a1 * cos_a2 * cos_a3 - cos_a1 * sin_a2 * sin_a3;
-	z = -sin_a1 * sin_a2 * cos_a3 + cos_a1 * cos_a2 * sin_a3;
-	w = sin_a1 * sin_a2 * sin_a3 + cos_a1 * cos_a2 * cos_a3;
+	return Quaternion(
+			sin_a1 * cos_a2 * sin_a3 + cos_a1 * sin_a2 * cos_a3,
+			sin_a1 * cos_a2 * cos_a3 - cos_a1 * sin_a2 * sin_a3,
+			-sin_a1 * sin_a2 * cos_a3 + cos_a1 * cos_a2 * sin_a3,
+			sin_a1 * sin_a2 * sin_a3 + cos_a1 * cos_a2 * cos_a3);
 }
 
 } // namespace godot

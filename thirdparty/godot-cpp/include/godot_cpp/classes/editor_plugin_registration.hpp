@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_EDITOR_PLUGIN_REGISTRATION_HPP
-#define GODOT_EDITOR_PLUGIN_REGISTRATION_HPP
+#pragma once
 
 #include <godot_cpp/templates/vector.hpp>
 
@@ -47,16 +46,14 @@ public:
 	static void remove_plugin_class(const StringName &p_class_name);
 	static void deinitialize(GDExtensionInitializationLevel p_level);
 
-	template <class T>
+	template <typename T>
 	static void add_by_type() {
 		add_plugin_class(T::get_class_static());
 	}
-	template <class T>
+	template <typename T>
 	static void remove_by_type() {
 		remove_plugin_class(T::get_class_static());
 	}
 };
 
 } // namespace godot
-
-#endif // GODOT_EDITOR_PLUGIN_REGISTRATION_HPP

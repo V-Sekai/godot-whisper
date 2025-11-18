@@ -1,21 +1,39 @@
-import os, sys, platform
+import os
+import platform
+import sys
 
-from SCons.Variables import EnumVariable, PathVariable, BoolVariable
-from SCons.Tool import Tool
+from SCons import __version__ as scons_raw_version
+from SCons.Action import Action
 from SCons.Builder import Builder
 from SCons.Errors import UserError
+from SCons.Script import ARGUMENTS
+from SCons.Tool import Tool
+from SCons.Variables import BoolVariable, EnumVariable, PathVariable
+from SCons.Variables.BoolVariable import _text2bool
 
-from binding_generator import scons_generate_bindings, scons_emit_files
+from binding_generator import _generate_bindings, _get_file_list, get_file_list
+from build_profile import generate_trimmed_api
+from doc_source_generator import scons_generate_doc_source
 
 
-def add_sources(sources, dir, extension):
-    for f in os.listdir(dir):
-        if f.endswith("." + extension):
-            sources.append(dir + "/" + f)
+def get_cmdline_bool(option, default):
+    """We use `ARGUMENTS.get()` to check if options were manually overridden on the command line,
+    and SCons' _text2bool helper to convert them to booleans, otherwise they're handled as strings.
+    """
+    cmdline_val = ARGUMENTS.get(option)
+    if cmdline_val is not None:
+        return _text2bool(cmdline_val)
+    else:
+        return default
 
 
 def normalize_path(val, env):
-    return val if os.path.isabs(val) else os.path.join(env.Dir("#").abspath, val)
+    """Normalize a path that was provided by the user on the command line
+    and is thus either an absolute path, or relative to the top level directory (#)
+    where the command was run.
+    """
+    # If val is an absolute path, it will not be joined.
+    return os.path.join(env.Dir("#").abspath, val)
 
 
 def validate_file(key, val, env):
@@ -33,7 +51,125 @@ def validate_parent_dir(key, val, env):
         raise UserError("'%s' is not a directory: %s" % (key, os.path.dirname(val)))
 
 
-platforms = ("linux", "macos", "windows", "android", "ios", "web")
+def get_platform_tools_paths(env):
+    path = env.get("custom_tools", None)
+    tools_path = env.Dir("tools").srcnode().abspath
+    if path is None:
+        return [tools_path]
+    return [normalize_path(path, env), tools_path]
+
+
+def get_custom_platforms(env):
+    path = env.get("custom_tools", None)
+    if path is None:
+        return []
+    platforms = []
+    for x in os.listdir(normalize_path(path, env)):
+        if not x.endswith(".py"):
+            continue
+        platforms.append(x.removesuffix(".py"))
+    return platforms
+
+
+def no_verbose(env):
+    colors = {}
+
+    # Colors are disabled in non-TTY environments such as pipes. This means
+    # that if output is redirected to a file, it will not contain color codes
+    if sys.stdout.isatty():
+        colors["blue"] = "\033[0;94m"
+        colors["bold_blue"] = "\033[1;94m"
+        colors["reset"] = "\033[0m"
+    else:
+        colors["blue"] = ""
+        colors["bold_blue"] = ""
+        colors["reset"] = ""
+
+    # There is a space before "..." to ensure that source file names can be
+    # Ctrl + clicked in the VS Code terminal.
+    compile_source_message = "{}Compiling {}$SOURCE{} ...{}".format(
+        colors["blue"], colors["bold_blue"], colors["blue"], colors["reset"]
+    )
+    java_compile_source_message = "{}Compiling {}$SOURCE{} ...{}".format(
+        colors["blue"], colors["bold_blue"], colors["blue"], colors["reset"]
+    )
+    compile_shared_source_message = "{}Compiling shared {}$SOURCE{} ...{}".format(
+        colors["blue"], colors["bold_blue"], colors["blue"], colors["reset"]
+    )
+    link_program_message = "{}Linking Program {}$TARGET{} ...{}".format(
+        colors["blue"], colors["bold_blue"], colors["blue"], colors["reset"]
+    )
+    link_library_message = "{}Linking Static Library {}$TARGET{} ...{}".format(
+        colors["blue"], colors["bold_blue"], colors["blue"], colors["reset"]
+    )
+    ranlib_library_message = "{}Ranlib Library {}$TARGET{} ...{}".format(
+        colors["blue"], colors["bold_blue"], colors["blue"], colors["reset"]
+    )
+    link_shared_library_message = "{}Linking Shared Library {}$TARGET{} ...{}".format(
+        colors["blue"], colors["bold_blue"], colors["blue"], colors["reset"]
+    )
+    java_library_message = "{}Creating Java Archive {}$TARGET{} ...{}".format(
+        colors["blue"], colors["bold_blue"], colors["blue"], colors["reset"]
+    )
+    compiled_resource_message = "{}Creating Compiled Resource {}$TARGET{} ...{}".format(
+        colors["blue"], colors["bold_blue"], colors["blue"], colors["reset"]
+    )
+    generated_file_message = "{}Generating {}$TARGET{} ...{}".format(
+        colors["blue"], colors["bold_blue"], colors["blue"], colors["reset"]
+    )
+
+    env.Append(CXXCOMSTR=[compile_source_message])
+    env.Append(CCCOMSTR=[compile_source_message])
+    env.Append(SHCCCOMSTR=[compile_shared_source_message])
+    env.Append(SHCXXCOMSTR=[compile_shared_source_message])
+    env.Append(ARCOMSTR=[link_library_message])
+    env.Append(RANLIBCOMSTR=[ranlib_library_message])
+    env.Append(SHLINKCOMSTR=[link_shared_library_message])
+    env.Append(LINKCOMSTR=[link_program_message])
+    env.Append(JARCOMSTR=[java_library_message])
+    env.Append(JAVACCOMSTR=[java_compile_source_message])
+    env.Append(RCCOMSTR=[compiled_resource_message])
+    env.Append(GENCOMSTR=[generated_file_message])
+
+
+def scons_emit_files(target, source, env):
+    profile_filepath = env.get("build_profile", "")
+    if profile_filepath:
+        profile_filepath = normalize_path(profile_filepath, env)
+
+    # Always clean all files
+    env.Clean(target, [env.File(f) for f in get_file_list(str(source[0]), target[0].abspath, True, True)])
+
+    api = generate_trimmed_api(str(source[0]), profile_filepath)
+    files = []
+    for f in _get_file_list(api, target[0].abspath, True, True):
+        file = env.File(f)
+        if profile_filepath:
+            env.Depends(file, profile_filepath)
+        files.append(file)
+    env["godot_cpp_gen_dir"] = target[0].abspath
+    return files, source
+
+
+def scons_generate_bindings(target, source, env):
+    profile_filepath = env.get("build_profile", "")
+    if profile_filepath:
+        profile_filepath = normalize_path(profile_filepath, env)
+
+    api = generate_trimmed_api(str(source[0]), profile_filepath)
+
+    _generate_bindings(
+        api,
+        str(source[0]),
+        env["generate_template_get_node"],
+        "32" if "32" in env["arch"] else "64",
+        env["precision"],
+        env["godot_cpp_gen_dir"],
+    )
+    return None
+
+
+platforms = ["linux", "macos", "windows", "android", "ios", "web"]
 
 # CPU architecture options.
 architecture_array = [
@@ -83,11 +219,24 @@ def options(opts, env):
         raise ValueError("Could not detect platform automatically, please specify with platform=<platform>")
 
     opts.Add(
+        PathVariable(
+            key="custom_tools",
+            help="Path to directory containing custom tools",
+            default=env.get("custom_tools", None),
+            validator=validate_dir,
+        )
+    )
+
+    opts.Update(env)
+
+    custom_platforms = get_custom_platforms(env)
+
+    opts.Add(
         EnumVariable(
             key="platform",
             help="Target platform",
             default=env.get("platform", default_platform),
-            allowed_values=platforms,
+            allowed_values=platforms + custom_platforms,
             ignorecase=2,
         )
     )
@@ -158,6 +307,8 @@ def options(opts, env):
         )
     )
 
+    opts.Add(BoolVariable(key="threads", help="Enable threading support", default=env.get("threads", True)))
+
     # compiledb
     opts.Add(
         BoolVariable(
@@ -176,25 +327,67 @@ def options(opts, env):
     )
 
     opts.Add(
-        BoolVariable(
-            "disable_exceptions",
-            "Force disabling exception handling code",
-            default=env.get("disable_exceptions", False),
+        PathVariable(
+            "build_profile",
+            "Path to a file containing a feature build profile",
+            default=env.get("build_profile", None),
+            validator=validate_file,
         )
     )
 
-    # Add platform options
-    for pl in platforms:
-        tool = Tool(pl, toolpath=["tools"])
+    opts.Add(
+        BoolVariable(
+            key="use_hot_reload",
+            help="Enable the extra accounting required to support hot reload.",
+            default=env.get("use_hot_reload", None),
+        )
+    )
+
+    opts.Add(
+        BoolVariable(
+            "disable_exceptions", "Force disabling exception handling code", default=env.get("disable_exceptions", True)
+        )
+    )
+
+    opts.Add(
+        EnumVariable(
+            key="symbols_visibility",
+            help="Symbols visibility on GNU platforms. Use 'auto' to apply the default value.",
+            default=env.get("symbols_visibility", "hidden"),
+            allowed_values=["auto", "visible", "hidden"],
+        )
+    )
+
+    opts.Add(
+        EnumVariable(
+            "optimize",
+            "The desired optimization flags",
+            "speed_trace",
+            ("none", "custom", "debug", "speed", "speed_trace", "size"),
+        )
+    )
+    opts.Add(
+        EnumVariable(
+            "lto",
+            "Link-time optimization",
+            "none",
+            ("none", "auto", "thin", "full"),
+        )
+    )
+    opts.Add(BoolVariable("debug_symbols", "Build with debugging symbols", True))
+    opts.Add(BoolVariable("dev_build", "Developer build with dev-only debugging code (DEV_ENABLED)", False))
+    opts.Add(BoolVariable("verbose", "Enable verbose output for the compilation", False))
+
+    # Add platform options (custom tools can override platforms)
+    for pl in sorted(set(platforms + custom_platforms)):
+        tool = Tool(pl, toolpath=get_platform_tools_paths(env))
         if hasattr(tool, "options"):
             tool.options(opts)
 
-    # Targets flags tool (optimizations, debug symbols)
-    target_tool = Tool("targets", toolpath=["tools"])
-    target_tool.options(opts)
-
 
 def generate(env):
+    env.scons_version = env._get_major_minor_revision(scons_raw_version)
+
     # Default num_jobs to local cpu count if not user specified.
     # SCons has a peculiarity where user-specified options won't be overridden
     # by SetOption, so we can rely on this to know if we should use our default.
@@ -239,33 +432,74 @@ def generate(env):
 
     print("Building for architecture " + env["arch"] + " on platform " + env["platform"])
 
-    tool = Tool(env["platform"], toolpath=["tools"])
+    # These defaults may be needed by platform tools
+    env.use_hot_reload = env.get("use_hot_reload", env["target"] != "template_release")
+    env.editor_build = env["target"] == "editor"
+    env.dev_build = env["dev_build"]
+    env.debug_features = env["target"] in ["editor", "template_debug"]
+
+    if env.dev_build:
+        opt_level = "none"
+    elif env.debug_features:
+        opt_level = "speed_trace"
+    else:  # Release
+        opt_level = "speed"
+
+    # Allow marking includes as external/system to avoid raising warnings.
+    if env.scons_version < (4, 2):
+        env["_CPPEXTINCFLAGS"] = "${_concat(EXTINCPREFIX, CPPEXTPATH, EXTINCSUFFIX, __env__, RDirs, TARGET, SOURCE)}"
+    else:
+        env["_CPPEXTINCFLAGS"] = (
+            "${_concat(EXTINCPREFIX, CPPEXTPATH, EXTINCSUFFIX, __env__, RDirs, TARGET, SOURCE, affect_signature=False)}"
+        )
+    env["CPPEXTPATH"] = []
+    env["EXTINCPREFIX"] = "-isystem "
+    env["EXTINCSUFFIX"] = ""
+
+    env["optimize"] = ARGUMENTS.get("optimize", opt_level)
+    env["debug_symbols"] = get_cmdline_bool("debug_symbols", env.dev_build)
+
+    tool = Tool(env["platform"], toolpath=get_platform_tools_paths(env))
 
     if tool is None or not tool.exists(env):
         raise ValueError("Required toolchain not found for platform " + env["platform"])
 
     tool.generate(env)
-    target_tool = Tool("targets", toolpath=["tools"])
-    target_tool.generate(env)
 
-    # Disable exception handling. Godot doesn't use exceptions anywhere, and this
-    # saves around 20% of binary size and very significant build time.
-    if env["disable_exceptions"]:
-        if env.get("is_msvc", False):
-            env.Append(CPPDEFINES=[("_HAS_EXCEPTIONS", 0)])
-        else:
-            env.Append(CXXFLAGS=["-fno-exceptions"])
-    elif env.get("is_msvc", False):
-        env.Append(CXXFLAGS=["/EHsc"])
+    if env["threads"]:
+        env.Append(CPPDEFINES=["THREADS_ENABLED"])
 
-    # Require C++17
-    if env.get("is_msvc", False):
-        env.Append(CXXFLAGS=["/std:c++17"])
+    if env.use_hot_reload:
+        env.Append(CPPDEFINES=["HOT_RELOAD_ENABLED"])
+
+    if env.editor_build:
+        env.Append(CPPDEFINES=["TOOLS_ENABLED"])
+
+    # Configuration of build targets:
+    # - Editor or template
+    # - Debug features (DEBUG_ENABLED code)
+    # - Dev only code (DEV_ENABLED code)
+    # - Optimization level
+    # - Debug symbols for crash traces / debuggers
+    # Keep this configuration in sync with SConstruct in upstream Godot.
+    if env.debug_features:
+        # DEBUG_ENABLED enables debugging *features* and debug-only code, which is intended
+        # to give *users* extra debugging information for their game development.
+        env.Append(CPPDEFINES=["DEBUG_ENABLED"])
+
+    if env.dev_build:
+        # DEV_ENABLED enables *engine developer* code which should only be compiled for those
+        # working on the engine itself.
+        env.Append(CPPDEFINES=["DEV_ENABLED"])
     else:
-        env.Append(CXXFLAGS=["-std=c++17"])
+        # Disable assert() for production targets (only used in thirdparty code).
+        env.Append(CPPDEFINES=["NDEBUG"])
 
     if env["precision"] == "double":
         env.Append(CPPDEFINES=["REAL_T_IS_DOUBLE"])
+
+    # Allow detecting when building as a GDExtension.
+    env.Append(CPPDEFINES=["GDEXTENSION"])
 
     # Suffix
     suffix = ".{}.{}".format(env["platform"], env["target"])
@@ -276,6 +510,8 @@ def generate(env):
     suffix += "." + env["arch"]
     if env["ios_simulator"]:
         suffix += ".simulator"
+    if not env["threads"]:
+        suffix += ".nothreads"
 
     env["suffix"] = suffix  # Exposed when included from another project
     env["OBJSUFFIX"] = suffix + env["OBJSUFFIX"]
@@ -284,14 +520,26 @@ def generate(env):
     env.Tool("compilation_db")
     env.Alias("compiledb", env.CompilationDatabase(normalize_path(env["compiledb_file"], env)))
 
+    # Formatting
+    if not env["verbose"]:
+        no_verbose(env)
+
     # Builders
-    env.Append(BUILDERS={"GodotCPPBindings": Builder(action=scons_generate_bindings, emitter=scons_emit_files)})
+    env.Append(
+        BUILDERS={
+            "GodotCPPBindings": Builder(action=Action(scons_generate_bindings, "$GENCOMSTR"), emitter=scons_emit_files),
+            "GodotCPPDocData": Builder(action=scons_generate_doc_source),
+        }
+    )
     env.AddMethod(_godot_cpp, "GodotCPP")
 
 
 def _godot_cpp(env):
-    extension_dir = normalize_path(env.get("gdextension_dir", env.Dir("gdextension").abspath), env)
-    api_file = normalize_path(env.get("custom_api_file", env.File(extension_dir + "/extension_api.json").abspath), env)
+    extension_dir = normalize_path(env.get("gdextension_dir", default=env.Dir("gdextension").srcnode().abspath), env)
+    api_file = normalize_path(
+        env.get("custom_api_file", default=os.path.join(extension_dir, "extension_api.json")), env
+    )
+
     bindings = env.GodotCPPBindings(
         env.Dir("."),
         [
@@ -306,21 +554,29 @@ def _godot_cpp(env):
         env.NoCache(bindings)
 
     # Sources to compile
-    sources = []
-    add_sources(sources, "src", "cpp")
-    add_sources(sources, "src/classes", "cpp")
-    add_sources(sources, "src/core", "cpp")
-    add_sources(sources, "src/variant", "cpp")
-    sources.extend([f for f in bindings if str(f).endswith(".cpp")])
+    sources = [
+        *env.Glob("src/*.cpp"),
+        *env.Glob("src/classes/*.cpp"),
+        *env.Glob("src/core/*.cpp"),
+        *env.Glob("src/variant/*.cpp"),
+        *tuple(f for f in bindings if str(f).endswith(".cpp")),
+    ]
 
     # Includes
-    env.AppendUnique(CPPPATH=[env.Dir(d) for d in [extension_dir, "include", "gen/include"]])
+    env.AppendUnique(
+        CPPPATH=[
+            env.Dir(extension_dir),
+            env.Dir("include").srcnode(),
+            env.Dir("gen/include"),
+        ]
+    )
 
     library = None
     library_name = "libgodot-cpp" + env["suffix"] + env["LIBSUFFIX"]
 
     if env["build_library"]:
         library = env.StaticLibrary(target=env.File("bin/%s" % library_name), source=sources)
+        env.NoCache(library)
         default_args = [library]
 
         # Add compiledb if the option is set

@@ -1,14 +1,20 @@
 import os
 import sys
+
+import common_compiler_flags
 import my_spawn
-from SCons.Script import ARGUMENTS
 
 
 def options(opts):
     opts.Add(
         "android_api_level",
         "Target Android API level",
-        "18" if "32" in ARGUMENTS.get("arch", "arm64") else "21",
+        "24",
+    )
+    opts.Add(
+        "ndk_version",
+        "Fully qualified version of ndk to use for compilation.",
+        "28.1.13356709",
     )
     opts.Add(
         "ANDROID_HOME",
@@ -21,14 +27,9 @@ def exists(env):
     return get_android_ndk_root(env) is not None
 
 
-# This must be kept in sync with the value in https://github.com/godotengine/godot/blob/master/platform/android/detect.py#L58.
-def get_ndk_version():
-    return "23.2.8568313"
-
-
 def get_android_ndk_root(env):
     if env["ANDROID_HOME"]:
-        return env["ANDROID_HOME"] + "/ndk/" + get_ndk_version()
+        return env["ANDROID_HOME"] + "/ndk/" + env["ndk_version"]
     else:
         return os.environ.get("ANDROID_NDK_ROOT")
 
@@ -47,11 +48,9 @@ def generate(env):
         my_spawn.configure(env)
 
     # Validate API level
-    api_level = int(env["android_api_level"])
-    if "64" in env["arch"] and api_level < 21:
-        print("WARN: 64-bit Android architectures require an API level of at least 21; setting android_api_level=21")
-        env["android_api_level"] = "21"
-        api_level = 21
+    if int(env["android_api_level"]) < 24:
+        print("WARNING: minimum supported Android target api is 24. Forcing target api 24.")
+        env["android_api_level"] = "24"
 
     # Setup toolchain
     toolchain = get_android_ndk_root(env) + "/toolchains/llvm/prebuilt/"
@@ -66,6 +65,12 @@ def generate(env):
     elif sys.platform == "darwin":
         toolchain += "darwin-x86_64"
         env.Append(LINKFLAGS=["-shared"])
+
+    if not os.path.exists(toolchain):
+        print("ERROR: Could not find NDK toolchain at " + toolchain + ".")
+        print("Make sure NDK version " + env["ndk_version"] + " is installed.")
+        env.Exit(1)
+
     env.PrependENVPath("PATH", toolchain + "/bin")  # This does nothing half of the time, but we'll put it here anyways
 
     # Get architecture info
@@ -114,3 +119,10 @@ def generate(env):
     env.Append(LINKFLAGS=["--target=" + arch_info["target"] + env["android_api_level"], "-march=" + arch_info["march"]])
 
     env.Append(CPPDEFINES=["ANDROID_ENABLED", "UNIX_ENABLED"])
+
+    # Refer to https://github.com/godotengine/godot/blob/master/platform/android/detect.py
+    # LTO benefits for Android (size, performance) haven't been clearly established yet.
+    if env["lto"] == "auto":
+        env["lto"] = "none"
+
+    common_compiler_flags.generate(env)

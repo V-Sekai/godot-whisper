@@ -1,6 +1,8 @@
 import os
 import sys
 
+import common_compiler_flags
+
 
 def has_osxcross():
     return "OSXCROSS_ROOT" in os.environ
@@ -61,12 +63,11 @@ def generate(env):
         env.Append(CCFLAGS=["-isysroot", env["macos_sdk_path"]])
         env.Append(LINKFLAGS=["-isysroot", env["macos_sdk_path"]])
 
-    env.Append(
-        LINKFLAGS=[
-            "-framework",
-            "Cocoa",
-            "-Wl,-undefined,dynamic_lookup",
-        ]
-    )
-
     env.Append(CPPDEFINES=["MACOS_ENABLED", "UNIX_ENABLED"])
+
+    # Refer to https://github.com/godotengine/godot/blob/master/platform/macos/detect.py
+    # LTO benefits for macOS (size, performance) haven't been clearly established yet.
+    if env["lto"] == "auto":
+        env["lto"] = "none"
+
+    common_compiler_flags.generate(env)

@@ -28,6 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 namespace godot {
 
 // Names from https://en.wikipedia.org/wiki/X11_color_names
@@ -185,7 +187,6 @@ static NamedColor named_colors[] = {
 	{ "WHITE_SMOKE", Color::hex(0xF5F5F5FF) },
 	{ "YELLOW", Color::hex(0xFFFF00FF) },
 	{ "YELLOW_GREEN", Color::hex(0x9ACD32FF) },
-	{ nullptr, Color() },
 };
 
 } // namespace godot

@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_RECT2_HPP
-#define GODOT_RECT2_HPP
+#pragma once
 
 #include <godot_cpp/classes/global_constants.hpp>
 #include <godot_cpp/variant/vector2.hpp>
@@ -40,7 +39,7 @@ class String;
 struct Rect2i;
 struct Transform2D;
 
-struct _NO_DISCARD_ Rect2 {
+struct [[nodiscard]] Rect2 {
 	Point2 position;
 	Size2 size;
 
@@ -53,7 +52,7 @@ struct _NO_DISCARD_ Rect2 {
 
 	_FORCE_INLINE_ Vector2 get_center() const { return position + (size * 0.5f); }
 
-	inline bool intersects(const Rect2 &p_rect, const bool p_include_borders = false) const {
+	inline bool intersects(const Rect2 &p_rect, bool p_include_borders = false) const {
 #ifdef MATH_CHECKS
 		if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {
 			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a Rect2 with a positive size.");
@@ -106,17 +105,17 @@ struct _NO_DISCARD_ Rect2 {
 		}
 		if (p_point.y < position.y) {
 			real_t d = position.y - p_point.y;
-			dist = inside ? d : Math::min(dist, d);
+			dist = inside ? d : MIN(dist, d);
 			inside = false;
 		}
 		if (p_point.x >= (position.x + size.x)) {
 			real_t d = p_point.x - (position.x + size.x);
-			dist = inside ? d : Math::min(dist, d);
+			dist = inside ? d : MIN(dist, d);
 			inside = false;
 		}
 		if (p_point.y >= (position.y + size.y)) {
 			real_t d = p_point.y - (position.y + size.y);
-			dist = inside ? d : Math::min(dist, d);
+			dist = inside ? d : MIN(dist, d);
 			inside = false;
 		}
 
@@ -146,7 +145,7 @@ struct _NO_DISCARD_ Rect2 {
 		return size.x > 0.0f && size.y > 0.0f;
 	}
 
-	// Returns the instersection between two Rect2s or an empty Rect2 if there is no intersection
+	// Returns the intersection between two Rect2s or an empty Rect2 if there is no intersection.
 	inline Rect2 intersection(const Rect2 &p_rect) const {
 		Rect2 new_rect = p_rect;
 
@@ -154,14 +153,12 @@ struct _NO_DISCARD_ Rect2 {
 			return Rect2();
 		}
 
-		new_rect.position.x = Math::max(p_rect.position.x, position.x);
-		new_rect.position.y = Math::max(p_rect.position.y, position.y);
+		new_rect.position = p_rect.position.max(position);
 
 		Point2 p_rect_end = p_rect.position + p_rect.size;
 		Point2 end = position + size;
 
-		new_rect.size.x = Math::min(p_rect_end.x, end.x) - new_rect.position.x;
-		new_rect.size.y = Math::min(p_rect_end.y, end.y) - new_rect.position.y;
+		new_rect.size = p_rect_end.min(end) - new_rect.position;
 
 		return new_rect;
 	}
@@ -174,11 +171,9 @@ struct _NO_DISCARD_ Rect2 {
 #endif
 		Rect2 new_rect;
 
-		new_rect.position.x = Math::min(p_rect.position.x, position.x);
-		new_rect.position.y = Math::min(p_rect.position.y, position.y);
+		new_rect.position = p_rect.position.min(position);
 
-		new_rect.size.x = Math::max(p_rect.position.x + p_rect.size.x, position.x + size.x);
-		new_rect.size.y = Math::max(p_rect.position.y + p_rect.size.y, position.y + size.y);
+		new_rect.size = (p_rect.position + p_rect.size).max(position + size);
 
 		new_rect.size = new_rect.size - new_rect.position; // Make relative again.
 
@@ -209,6 +204,7 @@ struct _NO_DISCARD_ Rect2 {
 	}
 
 	bool is_equal_approx(const Rect2 &p_rect) const;
+	bool is_finite() const;
 
 	bool operator==(const Rect2 &p_rect) const { return position == p_rect.position && size == p_rect.size; }
 	bool operator!=(const Rect2 &p_rect) const { return position != p_rect.position || size != p_rect.size; }
@@ -283,16 +279,22 @@ struct _NO_DISCARD_ Rect2 {
 	}
 
 	_FORCE_INLINE_ Rect2 abs() const {
-		return Rect2(Point2(position.x + Math::min(size.x, (real_t)0), position.y + Math::min(size.y, (real_t)0)), size.abs());
+		return Rect2(position + size.minf(0), size.abs());
 	}
 
-	Vector2 get_support(const Vector2 &p_normal) const {
-		Vector2 half_extents = size * 0.5f;
-		Vector2 ofs = position + half_extents;
-		return Vector2(
-					   (p_normal.x > 0) ? -half_extents.x : half_extents.x,
-					   (p_normal.y > 0) ? -half_extents.y : half_extents.y) +
-				ofs;
+	_FORCE_INLINE_ Rect2 round() const {
+		return Rect2(position.round(), size.round());
+	}
+
+	Vector2 get_support(const Vector2 &p_direction) const {
+		Vector2 support = position;
+		if (p_direction.x > 0.0f) {
+			support.x += size.x;
+		}
+		if (p_direction.y > 0.0f) {
+			support.y += size.y;
+		}
+		return support;
 	}
 
 	_FORCE_INLINE_ bool intersects_filled_polygon(const Vector2 *p_points, int p_point_count) const {
@@ -308,14 +310,14 @@ struct _NO_DISCARD_ Rect2 {
 			i_f = i;
 
 			Vector2 r = (b - a);
-			float l = r.length();
+			const real_t l = r.length();
 			if (l == 0.0f) {
 				continue;
 			}
 
 			// Check inside.
 			Vector2 tg = r.orthogonal();
-			float s = tg.dot(center) - tg.dot(a);
+			const real_t s = tg.dot(center) - tg.dot(a);
 			if (s < 0.0f) {
 				side_plus++;
 			} else {
@@ -331,8 +333,8 @@ struct _NO_DISCARD_ Rect2 {
 			Vector2 t13 = (position - a) * ir;
 			Vector2 t24 = (end - a) * ir;
 
-			float tmin = Math::max(Math::min(t13.x, t24.x), Math::min(t13.y, t24.y));
-			float tmax = Math::min(Math::max(t13.x, t24.x), Math::max(t13.y, t24.y));
+			const real_t tmin = MAX(MIN(t13.x, t24.x), MIN(t13.y, t24.y));
+			const real_t tmax = MIN(MAX(t13.x, t24.x), MAX(t13.y, t24.y));
 
 			// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
 			if (tmax < 0 || tmin > tmax || tmin >= l) {
@@ -372,5 +374,3 @@ struct _NO_DISCARD_ Rect2 {
 };
 
 } // namespace godot
-
-#endif // GODOT_RECT2_HPP

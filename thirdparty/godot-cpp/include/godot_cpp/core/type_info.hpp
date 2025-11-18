@@ -28,9 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_TYPE_INFO_HPP
-#define GODOT_TYPE_INFO_HPP
+#pragma once
 
+#include <godot_cpp/core/method_ptrcall.hpp>
 #include <godot_cpp/core/object.hpp>
 #include <godot_cpp/variant/typed_array.hpp>
 #include <godot_cpp/variant/variant.hpp>
@@ -55,6 +55,16 @@ struct TypesAreSame {
 
 template <typename A>
 struct TypesAreSame<A, A> {
+	static bool const value = true;
+};
+
+template <auto A, auto B>
+struct FunctionsAreSame {
+	static bool const value = false;
+};
+
+template <auto A>
+struct FunctionsAreSame<A, A> {
 	static bool const value = true;
 };
 
@@ -90,7 +100,7 @@ static PropertyInfo make_property_info(Variant::Type p_type, const StringName &p
 // instead of a forward declaration. You can always forward declare 'T' in a header file, and then
 // include the actual declaration of 'T' in the source file where 'GetTypeInfo<T>' is instantiated.
 
-template <class T, typename = void>
+template <typename T, typename = void>
 struct GetTypeInfo;
 
 #define MAKE_TYPE_INFO(m_type, m_var_type)                                                                            \
@@ -138,8 +148,8 @@ MAKE_TYPE_INFO_WITH_META(uint32_t, GDEXTENSION_VARIANT_TYPE_INT, GDEXTENSION_MET
 MAKE_TYPE_INFO_WITH_META(int32_t, GDEXTENSION_VARIANT_TYPE_INT, GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT32)
 MAKE_TYPE_INFO_WITH_META(uint64_t, GDEXTENSION_VARIANT_TYPE_INT, GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT64)
 MAKE_TYPE_INFO_WITH_META(int64_t, GDEXTENSION_VARIANT_TYPE_INT, GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT64)
-MAKE_TYPE_INFO(char16_t, GDEXTENSION_VARIANT_TYPE_INT)
-MAKE_TYPE_INFO(char32_t, GDEXTENSION_VARIANT_TYPE_INT)
+MAKE_TYPE_INFO_WITH_META(char16_t, GDEXTENSION_VARIANT_TYPE_INT, GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_CHAR16)
+MAKE_TYPE_INFO_WITH_META(char32_t, GDEXTENSION_VARIANT_TYPE_INT, GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_CHAR32)
 MAKE_TYPE_INFO_WITH_META(float, GDEXTENSION_VARIANT_TYPE_FLOAT, GDEXTENSION_METHOD_ARGUMENT_METADATA_REAL_IS_FLOAT)
 MAKE_TYPE_INFO_WITH_META(double, GDEXTENSION_VARIANT_TYPE_FLOAT, GDEXTENSION_METHOD_ARGUMENT_METADATA_REAL_IS_DOUBLE)
 
@@ -175,6 +185,7 @@ MAKE_TYPE_INFO(PackedFloat64Array, GDEXTENSION_VARIANT_TYPE_PACKED_FLOAT64_ARRAY
 MAKE_TYPE_INFO(PackedStringArray, GDEXTENSION_VARIANT_TYPE_PACKED_STRING_ARRAY)
 MAKE_TYPE_INFO(PackedVector2Array, GDEXTENSION_VARIANT_TYPE_PACKED_VECTOR2_ARRAY)
 MAKE_TYPE_INFO(PackedVector3Array, GDEXTENSION_VARIANT_TYPE_PACKED_VECTOR3_ARRAY)
+MAKE_TYPE_INFO(PackedVector4Array, GDEXTENSION_VARIANT_TYPE_PACKED_VECTOR4_ARRAY)
 MAKE_TYPE_INFO(PackedColorArray, GDEXTENSION_VARIANT_TYPE_PACKED_COLOR_ARRAY)
 
 // For variant.
@@ -198,8 +209,8 @@ struct GetTypeInfo<const Variant &> {
 
 template <typename T>
 struct GetTypeInfo<T *, typename EnableIf<TypeInherits<Object, T>::value>::type> {
-	static const GDExtensionVariantType VARIANT_TYPE = GDEXTENSION_VARIANT_TYPE_OBJECT;
-	static const GDExtensionClassMethodArgumentMetadata METADATA = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE;
+	static constexpr GDExtensionVariantType VARIANT_TYPE = GDEXTENSION_VARIANT_TYPE_OBJECT;
+	static constexpr GDExtensionClassMethodArgumentMetadata METADATA = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE;
 	static inline PropertyInfo get_class_info() {
 		return make_property_info(Variant::Type::OBJECT, "", PROPERTY_HINT_RESOURCE_TYPE, T::get_class_static());
 	}
@@ -207,8 +218,8 @@ struct GetTypeInfo<T *, typename EnableIf<TypeInherits<Object, T>::value>::type>
 
 template <typename T>
 struct GetTypeInfo<const T *, typename EnableIf<TypeInherits<Object, T>::value>::type> {
-	static const GDExtensionVariantType VARIANT_TYPE = GDEXTENSION_VARIANT_TYPE_OBJECT;
-	static const GDExtensionClassMethodArgumentMetadata METADATA = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE;
+	static constexpr GDExtensionVariantType VARIANT_TYPE = GDEXTENSION_VARIANT_TYPE_OBJECT;
+	static constexpr GDExtensionClassMethodArgumentMetadata METADATA = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE;
 	static inline PropertyInfo get_class_info() {
 		return make_property_info(Variant::Type::OBJECT, "", PROPERTY_HINT_RESOURCE_TYPE, T::get_class_static());
 	}
@@ -226,8 +237,8 @@ inline String enum_qualified_name_to_class_info_name(const String &p_qualified_n
 #define TEMPL_MAKE_ENUM_TYPE_INFO(m_enum, m_impl)                                                                                            \
 	template <>                                                                                                                              \
 	struct GetTypeInfo<m_impl> {                                                                                                             \
-		static const Variant::Type VARIANT_TYPE = Variant::INT;                                                                              \
-		static const GDExtensionClassMethodArgumentMetadata METADATA = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE;                            \
+		static constexpr Variant::Type VARIANT_TYPE = Variant::INT;                                                                          \
+		static constexpr GDExtensionClassMethodArgumentMetadata METADATA = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE;                        \
 		static inline PropertyInfo get_class_info() {                                                                                        \
 			return make_property_info(Variant::Type::INT, "", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_CLASS_IS_ENUM, \
 					enum_qualified_name_to_class_info_name(#m_enum));                                                                        \
@@ -248,14 +259,14 @@ inline StringName _gde_constant_get_enum_name(T param, StringName p_constant) {
 	return GetTypeInfo<T>::get_class_info().class_name;
 }
 
-template <class T>
+template <typename T>
 class BitField {
 	int64_t value = 0;
 
 public:
 	_FORCE_INLINE_ void set_flag(T p_flag) { value |= p_flag; }
 	_FORCE_INLINE_ bool has_flag(T p_flag) const { return value & p_flag; }
-	_FORCE_INLINE_ void clear_flag(T p_flag) { return value &= ~p_flag; }
+	_FORCE_INLINE_ void clear_flag(T p_flag) { value &= ~p_flag; }
 	_FORCE_INLINE_ BitField(int64_t p_value) { value = p_value; }
 	_FORCE_INLINE_ operator int64_t() const { return value; }
 	_FORCE_INLINE_ operator Variant() const { return value; }
@@ -264,8 +275,8 @@ public:
 #define TEMPL_MAKE_BITFIELD_TYPE_INFO(m_enum, m_impl)                                                                                            \
 	template <>                                                                                                                                  \
 	struct GetTypeInfo<m_impl> {                                                                                                                 \
-		static const Variant::Type VARIANT_TYPE = Variant::INT;                                                                                  \
-		static const GDExtensionClassMethodArgumentMetadata METADATA = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE;                                \
+		static constexpr Variant::Type VARIANT_TYPE = Variant::INT;                                                                              \
+		static constexpr GDExtensionClassMethodArgumentMetadata METADATA = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE;                            \
 		static inline PropertyInfo get_class_info() {                                                                                            \
 			return make_property_info(Variant::Type::INT, "", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_CLASS_IS_BITFIELD, \
 					enum_qualified_name_to_class_info_name(#m_enum));                                                                            \
@@ -273,8 +284,8 @@ public:
 	};                                                                                                                                           \
 	template <>                                                                                                                                  \
 	struct GetTypeInfo<BitField<m_impl>> {                                                                                                       \
-		static const Variant::Type VARIANT_TYPE = Variant::INT;                                                                                  \
-		static const GDExtensionClassMethodArgumentMetadata METADATA = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE;                                \
+		static constexpr Variant::Type VARIANT_TYPE = Variant::INT;                                                                              \
+		static constexpr GDExtensionClassMethodArgumentMetadata METADATA = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE;                            \
 		static inline PropertyInfo get_class_info() {                                                                                            \
 			return make_property_info(Variant::Type::INT, "", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_CLASS_IS_BITFIELD, \
 					enum_qualified_name_to_class_info_name(#m_enum));                                                                            \
@@ -295,7 +306,7 @@ inline StringName _gde_constant_get_bitfield_name(T param, StringName p_constant
 	return GetTypeInfo<BitField<T>>::get_class_info().class_name;
 }
 
-template <class T>
+template <typename T>
 struct PtrToArg<TypedArray<T>> {
 	_FORCE_INLINE_ static TypedArray<T> convert(const void *p_ptr) {
 		return TypedArray<T>(*reinterpret_cast<const Array *>(p_ptr));
@@ -306,7 +317,7 @@ struct PtrToArg<TypedArray<T>> {
 	}
 };
 
-template <class T>
+template <typename T>
 struct PtrToArg<const TypedArray<T> &> {
 	typedef Array EncodeT;
 	_FORCE_INLINE_ static TypedArray<T>
@@ -370,11 +381,14 @@ MAKE_TYPED_ARRAY_INFO(Rect2i, Variant::RECT2I)
 MAKE_TYPED_ARRAY_INFO(Vector3, Variant::VECTOR3)
 MAKE_TYPED_ARRAY_INFO(Vector3i, Variant::VECTOR3I)
 MAKE_TYPED_ARRAY_INFO(Transform2D, Variant::TRANSFORM2D)
+MAKE_TYPED_ARRAY_INFO(Vector4, Variant::VECTOR4)
+MAKE_TYPED_ARRAY_INFO(Vector4i, Variant::VECTOR4I)
 MAKE_TYPED_ARRAY_INFO(Plane, Variant::PLANE)
 MAKE_TYPED_ARRAY_INFO(Quaternion, Variant::QUATERNION)
 MAKE_TYPED_ARRAY_INFO(AABB, Variant::AABB)
 MAKE_TYPED_ARRAY_INFO(Basis, Variant::BASIS)
 MAKE_TYPED_ARRAY_INFO(Transform3D, Variant::TRANSFORM3D)
+MAKE_TYPED_ARRAY_INFO(Projection, Variant::PROJECTION)
 MAKE_TYPED_ARRAY_INFO(Color, Variant::COLOR)
 MAKE_TYPED_ARRAY_INFO(StringName, Variant::STRING_NAME)
 MAKE_TYPED_ARRAY_INFO(NodePath, Variant::NODE_PATH)
@@ -383,20 +397,22 @@ MAKE_TYPED_ARRAY_INFO(Callable, Variant::CALLABLE)
 MAKE_TYPED_ARRAY_INFO(Signal, Variant::SIGNAL)
 MAKE_TYPED_ARRAY_INFO(Dictionary, Variant::DICTIONARY)
 MAKE_TYPED_ARRAY_INFO(Array, Variant::ARRAY)
+MAKE_TYPED_ARRAY_INFO(PackedByteArray, Variant::PACKED_BYTE_ARRAY)
+MAKE_TYPED_ARRAY_INFO(PackedInt32Array, Variant::PACKED_INT32_ARRAY)
+MAKE_TYPED_ARRAY_INFO(PackedInt64Array, Variant::PACKED_INT64_ARRAY)
+MAKE_TYPED_ARRAY_INFO(PackedFloat32Array, Variant::PACKED_FLOAT32_ARRAY)
+MAKE_TYPED_ARRAY_INFO(PackedFloat64Array, Variant::PACKED_FLOAT64_ARRAY)
+MAKE_TYPED_ARRAY_INFO(PackedStringArray, Variant::PACKED_STRING_ARRAY)
+MAKE_TYPED_ARRAY_INFO(PackedVector2Array, Variant::PACKED_VECTOR2_ARRAY)
+MAKE_TYPED_ARRAY_INFO(PackedVector3Array, Variant::PACKED_VECTOR3_ARRAY)
+MAKE_TYPED_ARRAY_INFO(PackedVector4Array, Variant::PACKED_VECTOR4_ARRAY)
+MAKE_TYPED_ARRAY_INFO(PackedColorArray, Variant::PACKED_COLOR_ARRAY)
 /*
-MAKE_TYPED_ARRAY_INFO(Vector<uint8_t>, Variant::PACKED_BYTE_ARRAY)
-MAKE_TYPED_ARRAY_INFO(Vector<int32_t>, Variant::PACKED_INT32_ARRAY)
-MAKE_TYPED_ARRAY_INFO(Vector<int64_t>, Variant::PACKED_INT64_ARRAY)
-MAKE_TYPED_ARRAY_INFO(Vector<float>, Variant::PACKED_FLOAT32_ARRAY)
-MAKE_TYPED_ARRAY_INFO(Vector<double>, Variant::PACKED_FLOAT64_ARRAY)
-MAKE_TYPED_ARRAY_INFO(Vector<String>, Variant::PACKED_STRING_ARRAY)
-MAKE_TYPED_ARRAY_INFO(Vector<Vector2>, Variant::PACKED_VECTOR2_ARRAY)
-MAKE_TYPED_ARRAY_INFO(Vector<Vector3>, Variant::PACKED_VECTOR3_ARRAY)
-MAKE_TYPED_ARRAY_INFO(Vector<Color>, Variant::PACKED_COLOR_ARRAY)
+MAKE_TYPED_ARRAY_INFO(IPAddress, Variant::STRING)
 */
+
+#undef MAKE_TYPED_ARRAY_INFO
 
 #define CLASS_INFO(m_type) (GetTypeInfo<m_type *>::get_class_info())
 
 } // namespace godot
-
-#endif // GODOT_TYPE_INFO_HPP

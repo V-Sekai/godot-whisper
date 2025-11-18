@@ -1,14 +1,17 @@
 # godot-cpp
 
-> **Warning**
+> [!WARNING]
 >
 > This repository's `master` branch is only usable with
 > [GDExtension](https://godotengine.org/article/introducing-gd-extensions)
 > from Godot's `master` branch.
 >
 > For users of stable branches, switch to the branch matching your target Godot version:
-> - [`4.0`](https://github.com/godotengine/godot-cpp/tree/4.0)
+> - [`4.4`](https://github.com/godotengine/godot-cpp/tree/4.4)
+> - [`4.3`](https://github.com/godotengine/godot-cpp/tree/4.3)
+> - [`4.2`](https://github.com/godotengine/godot-cpp/tree/4.2)
 > - [`4.1`](https://github.com/godotengine/godot-cpp/tree/4.1)
+> - [`4.0`](https://github.com/godotengine/godot-cpp/tree/4.0)
 >
 > Or check out the Git tag matching your Godot version (e.g. `godot-4.1.1-stable`).
 >
@@ -21,7 +24,7 @@ This repository contains the  *C++ bindings* for the [**Godot Engine**](https://
 - [**Compatibility**](#compatibility)
 - [**Contributing**](#contributing)
 - [**Getting started**](#getting-started)
-- [**Included example**](#included-example)
+- [**Examples and templates**](#examples-and-templates)
 
 ## Versioning
 
@@ -48,18 +51,13 @@ Godot version.**
 
 ## Compatibility
 
-**Warning:** The GDExtension API is brand new in Godot 4.0, and is still
-considered in **beta** stage, despite Godot 4.0 itself being released.
+GDExtensions targeting an earlier version of Godot should work in later minor versions,
+but not vice-versa. For example, a GDExtension targeting Godot 4.2 should work just fine
+in Godot 4.3, but one targeting Godot 4.3 won't work in Godot 4.2.
 
-This applies to both the GDExtension interface header, the API JSON, and this
-first-party `godot-cpp` extension.
-
-Some compatibility breakage is to be expected as GDExtension and `godot-cpp`
-get more used, documented, and critical issues get resolved. See the
-[Godot issue tracker](https://github.com/godotengine/godot/issues?q=is%3Aissue+is%3Aopen+label%3Atopic%3Agdextension)
-and the [godot-cpp issue tracker](https://github.com/godotengine/godot/issues)
-for a list of known issues, and be sure to provide feedback on issues and PRs
-which affect your use of this extension.
+There is one exception to this: extensions targeting Godot 4.0 will _not_ work with
+Godot 4.1 and later.
+See [Updating your GDExtension for 4.1](https://docs.godotengine.org/en/latest/tutorials/migrating/upgrading_to_godot_4.1.html#updating-your-gdextension-for-godot-4-1).
 
 ## Contributing
 
@@ -68,12 +66,14 @@ wish to help out, ensure you have an account on GitHub and create a "fork" of
 this repository. See [Pull request workflow](https://docs.godotengine.org/en/stable/community/contributing/pr_workflow.html)
 for instructions.
 
-Please install clang-format and copy the files in `misc/hooks` into `.git/hooks`
-so formatting is done before your changes are submitted.
+Please install clang-format and the [pre-commit](https://pre-commit.com/) Python framework so formatting is done before your changes are submitted. See the [code style guidelines](https://docs.godotengine.org/en/latest/contributing/development/code_style_guidelines.html#pre-commit-hook) for instructions.
 
 ## Getting started
 
-It's a bit similar to what it was for 3.x but also a bit different.
+You need the same C++ pre-requisites installed that are required for the `godot` repository. Follow the [official build instructions for your target platform](https://docs.godotengine.org/en/latest/contributing/development/compiling/index.html#building-for-target-platforms).
+
+Getting started with GDExtensions is a bit similar to what it was for 3.x but also a bit different.
+
 This new approach is much more akin to how core Godot modules are structured.
 
 Compiling this repository generates a static library to be linked with your shared lib,
@@ -128,7 +128,7 @@ void initialize_example_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-	ClassDB::register_class<Example>();
+	GDREGISTER_CLASS(Example);
 }
 ```
 
@@ -140,4 +140,4 @@ See the [godot-cpp-template](https://github.com/godotengine/godot-cpp-template) 
 generic reusable template.
 
 Or checkout the code for the [Summator example](https://github.com/paddy-exe/GDExtensionSummator)
-as shown in the [official documentation](https://docs.godotengine.org/en/latest/tutorials/scripting/gdextension/gdextension_cpp_example.html).
+as shown in the [official documentation](https://docs.godotengine.org/en/latest/tutorials/scripting/cpp/gdextension_cpp_example.html).

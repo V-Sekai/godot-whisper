@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_MEMORY_HPP
-#define GODOT_MEMORY_HPP
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -40,24 +39,21 @@
 
 #include <type_traits>
 
-#ifndef PAD_ALIGN
-#define PAD_ALIGN 16 //must always be greater than this at much
-#endif
+// p_dummy argument is added to avoid conflicts with the engine functions when both engine and GDExtension are built as a static library on iOS.
+void *operator new(size_t p_size, const char *p_dummy, const char *p_description); ///< operator new that takes a description and uses MemoryStaticPool
+void *operator new(size_t p_size, const char *p_dummy, void *(*p_allocfunc)(size_t p_size)); ///< operator new that takes a description and uses MemoryStaticPool
+void *operator new(size_t p_size, const char *p_dummy, void *p_pointer, size_t check, const char *p_description); ///< operator new that takes a description and uses a pointer to the preallocated memory
 
-void *operator new(size_t p_size, const char *p_description); ///< operator new that takes a description and uses MemoryStaticPool
-void *operator new(size_t p_size, void *(*p_allocfunc)(size_t p_size)); ///< operator new that takes a description and uses MemoryStaticPool
-void *operator new(size_t p_size, void *p_pointer, size_t check, const char *p_description); ///< operator new that takes a description and uses a pointer to the preallocated memory
-
-_ALWAYS_INLINE_ void *operator new(size_t p_size, void *p_pointer, size_t check, const char *p_description) {
+_ALWAYS_INLINE_ void *operator new(size_t p_size, const char *p_dummy, void *p_pointer, size_t check, const char *p_description) {
 	return p_pointer;
 }
 
 #ifdef _MSC_VER
 // When compiling with VC++ 2017, the above declarations of placement new generate many irrelevant warnings (C4291).
 // The purpose of the following definitions is to muffle these warnings, not to provide a usable implementation of placement delete.
-void operator delete(void *p_mem, const char *p_description);
-void operator delete(void *p_mem, void *(*p_allocfunc)(size_t p_size));
-void operator delete(void *p_mem, void *p_pointer, size_t check, const char *p_description);
+void operator delete(void *p_mem, const char *p_dummy, const char *p_description);
+void operator delete(void *p_mem, const char *p_dummy, void *(*p_allocfunc)(size_t p_size));
+void operator delete(void *p_mem, const char *p_dummy, void *p_pointer, size_t check, const char *p_description);
 #endif
 
 namespace godot {
@@ -68,14 +64,29 @@ class Memory {
 	Memory();
 
 public:
+	// Alignment:  ↓ max_align_t        ↓ uint64_t          ↓ max_align_t
+	//             ┌─────────────────┬──┬────────────────┬──┬───────────...
+	//             │ uint64_t        │░░│ uint64_t       │░░│ T[]
+	//             │ alloc size      │░░│ element count  │░░│ data
+	//             └─────────────────┴──┴────────────────┴──┴───────────...
+	// Offset:     ↑ SIZE_OFFSET        ↑ ELEMENT_OFFSET    ↑ DATA_OFFSET
+	// Note: "alloc size" is used and set by the engine and is never accessed or changed for the extension.
+
+	static constexpr size_t SIZE_OFFSET = 0;
+	static constexpr size_t ELEMENT_OFFSET = ((SIZE_OFFSET + sizeof(uint64_t)) % alignof(uint64_t) == 0) ? (SIZE_OFFSET + sizeof(uint64_t)) : ((SIZE_OFFSET + sizeof(uint64_t)) + alignof(uint64_t) - ((SIZE_OFFSET + sizeof(uint64_t)) % alignof(uint64_t)));
+	static constexpr size_t DATA_OFFSET = ((ELEMENT_OFFSET + sizeof(uint64_t)) % alignof(max_align_t) == 0) ? (ELEMENT_OFFSET + sizeof(uint64_t)) : ((ELEMENT_OFFSET + sizeof(uint64_t)) + alignof(max_align_t) - ((ELEMENT_OFFSET + sizeof(uint64_t)) % alignof(max_align_t)));
+
 	static void *alloc_static(size_t p_bytes, bool p_pad_align = false);
 	static void *realloc_static(void *p_memory, size_t p_bytes, bool p_pad_align = false);
 	static void free_static(void *p_ptr, bool p_pad_align = false);
 };
 
+template <typename T, std::enable_if_t<!std::is_base_of<::godot::Wrapped, T>::value, bool> = true>
+_ALWAYS_INLINE_ void _pre_initialize() {}
+
 _ALWAYS_INLINE_ void postinitialize_handler(void *) {}
 
-template <class T>
+template <typename T>
 _ALWAYS_INLINE_ T *_post_initialize(T *p_obj) {
 	postinitialize_handler(p_obj);
 	return p_obj;
@@ -85,34 +96,28 @@ _ALWAYS_INLINE_ T *_post_initialize(T *p_obj) {
 #define memrealloc(m_mem, m_size) ::godot::Memory::realloc_static(m_mem, m_size)
 #define memfree(m_mem) ::godot::Memory::free_static(m_mem)
 
-#define memnew(m_class) ::godot::_post_initialize(new ("") m_class)
+#define memnew(m_class) (::godot::_pre_initialize<std::remove_pointer_t<decltype(new ("", "") m_class)>>(), ::godot::_post_initialize(new ("", "") m_class))
 
-#define memnew_allocator(m_class, m_allocator) ::godot::_post_initialize(new (m_allocator::alloc) m_class)
-#define memnew_placement(m_placement, m_class) ::godot::_post_initialize(new (m_placement, sizeof(m_class), "") m_class)
+#define memnew_allocator(m_class, m_allocator) (::godot::_pre_initialize<std::remove_pointer_t<decltype(new ("", "") m_class)>>(), ::godot::_post_initialize(new ("", m_allocator::alloc) m_class))
+#define memnew_placement(m_placement, m_class) (::godot::_pre_initialize<std::remove_pointer_t<decltype(new ("", "") m_class)>>(), ::godot::_post_initialize(new ("", m_placement, sizeof(m_class), "") m_class))
 
-// Generic comparator used in Map, List, etc.
-template <class T>
-struct Comparator {
-	_ALWAYS_INLINE_ bool operator()(const T &p_a, const T &p_b) const { return (p_a < p_b); }
-};
-
-template <class T>
+template <typename T>
 void memdelete(T *p_class, typename std::enable_if<!std::is_base_of_v<godot::Wrapped, T>>::type * = nullptr) {
-	if (!std::is_trivially_destructible<T>::value) {
+	if constexpr (!std::is_trivially_destructible_v<T>) {
 		p_class->~T();
 	}
 
 	Memory::free_static(p_class);
 }
 
-template <class T, std::enable_if_t<std::is_base_of_v<godot::Wrapped, T>, bool> = true>
+template <typename T, std::enable_if_t<std::is_base_of_v<godot::Wrapped, T>, bool> = true>
 void memdelete(T *p_class) {
 	godot::internal::gdextension_interface_object_destroy(p_class->_owner);
 }
 
-template <class T, class A>
+template <typename T, typename A>
 void memdelete_allocator(T *p_class) {
-	if (!std::is_trivially_destructible<T>::value) {
+	if constexpr (!std::is_trivially_destructible_v<T>) {
 		p_class->~T();
 	}
 
@@ -125,15 +130,19 @@ public:
 	_ALWAYS_INLINE_ static void free(void *p_ptr) { Memory::free_static(p_ptr); }
 };
 
-template <class T>
+template <typename T>
 class DefaultTypedAllocator {
 public:
-	template <class... Args>
+	template <typename... Args>
 	_ALWAYS_INLINE_ T *new_allocation(const Args &&...p_args) { return memnew(T(p_args...)); }
 	_ALWAYS_INLINE_ void delete_allocation(T *p_allocation) { memdelete(p_allocation); }
 };
 
 #define memnew_arr(m_class, m_count) memnew_arr_template<m_class>(m_count)
+
+_FORCE_INLINE_ uint64_t *_get_element_count_ptr(uint8_t *p_ptr) {
+	return (uint64_t *)(p_ptr - Memory::DATA_OFFSET + Memory::ELEMENT_OFFSET);
+}
 
 template <typename T>
 T *memnew_arr_template(size_t p_elements, const char *p_descr = "") {
@@ -144,17 +153,19 @@ T *memnew_arr_template(size_t p_elements, const char *p_descr = "") {
 	same strategy used by std::vector, and the Vector class, so it should be safe.*/
 
 	size_t len = sizeof(T) * p_elements;
-	uint64_t *mem = (uint64_t *)Memory::alloc_static(len, true);
+	uint8_t *mem = (uint8_t *)Memory::alloc_static(len, true);
 	T *failptr = nullptr; // Get rid of a warning.
 	ERR_FAIL_NULL_V(mem, failptr);
-	*(mem - 1) = p_elements;
 
-	if (!std::is_trivially_destructible<T>::value) {
+	uint64_t *_elem_count_ptr = _get_element_count_ptr(mem);
+	*(_elem_count_ptr) = p_elements;
+
+	if constexpr (!std::is_trivially_destructible_v<T>) {
 		T *elems = (T *)mem;
 
 		/* call operator new */
 		for (size_t i = 0; i < p_elements; i++) {
-			new (&elems[i], sizeof(T), p_descr) T;
+			new ("", &elems[i], sizeof(T), p_descr) T;
 		}
 	}
 
@@ -162,11 +173,19 @@ T *memnew_arr_template(size_t p_elements, const char *p_descr = "") {
 }
 
 template <typename T>
-void memdelete_arr(T *p_class) {
-	uint64_t *ptr = (uint64_t *)p_class;
+size_t memarr_len(const T *p_class) {
+	uint8_t *ptr = (uint8_t *)p_class;
+	uint64_t *_elem_count_ptr = _get_element_count_ptr(ptr);
+	return *(_elem_count_ptr);
+}
 
-	if (!std::is_trivially_destructible<T>::value) {
-		uint64_t elem_count = *(ptr - 1);
+template <typename T>
+void memdelete_arr(T *p_class) {
+	uint8_t *ptr = (uint8_t *)p_class;
+
+	if constexpr (!std::is_trivially_destructible_v<T>) {
+		uint64_t *_elem_count_ptr = _get_element_count_ptr(ptr);
+		uint64_t elem_count = *(_elem_count_ptr);
 
 		for (uint64_t i = 0; i < elem_count; i++) {
 			p_class[i].~T();
@@ -190,5 +209,3 @@ struct _GlobalNilClass {
 };
 
 } // namespace godot
-
-#endif // GODOT_MEMORY_HPP

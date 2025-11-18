@@ -8,7 +8,7 @@
 include/gen
 src/gen
 
-# Build configuarion.
+# Build configuration.
 /custom.py
 
 # Misc
@@ -195,3 +195,10 @@ compile_commands.json
 # Python development
 .venv
 venv
+
+# Clion Configuration
+.idea/
+cmake-build*/
+
+# CMake related
+CMakeUserPresets.json

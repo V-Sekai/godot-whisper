@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_RECT2I_HPP
-#define GODOT_RECT2I_HPP
+#pragma once
 
 #include <godot_cpp/classes/global_constants.hpp>
 #include <godot_cpp/variant/vector2i.hpp>
@@ -39,7 +38,7 @@ namespace godot {
 class String;
 struct Rect2;
 
-struct _NO_DISCARD_ Rect2i {
+struct [[nodiscard]] Rect2i {
 	Point2i position;
 	Size2i size;
 
@@ -89,7 +88,7 @@ struct _NO_DISCARD_ Rect2i {
 		return size.x > 0 && size.y > 0;
 	}
 
-	// Returns the instersection between two Rect2is or an empty Rect2i if there is no intersection
+	// Returns the intersection between two Rect2is or an empty Rect2i if there is no intersection.
 	inline Rect2i intersection(const Rect2i &p_rect) const {
 		Rect2i new_rect = p_rect;
 
@@ -97,14 +96,12 @@ struct _NO_DISCARD_ Rect2i {
 			return Rect2i();
 		}
 
-		new_rect.position.x = Math::max(p_rect.position.x, position.x);
-		new_rect.position.y = Math::max(p_rect.position.y, position.y);
+		new_rect.position = p_rect.position.max(position);
 
 		Point2i p_rect_end = p_rect.position + p_rect.size;
 		Point2i end = position + size;
 
-		new_rect.size.x = Math::min(p_rect_end.x, end.x) - new_rect.position.x;
-		new_rect.size.y = Math::min(p_rect_end.y, end.y) - new_rect.position.y;
+		new_rect.size = p_rect_end.min(end) - new_rect.position;
 
 		return new_rect;
 	}
@@ -117,11 +114,9 @@ struct _NO_DISCARD_ Rect2i {
 #endif
 		Rect2i new_rect;
 
-		new_rect.position.x = Math::min(p_rect.position.x, position.x);
-		new_rect.position.y = Math::min(p_rect.position.y, position.y);
+		new_rect.position = p_rect.position.min(position);
 
-		new_rect.size.x = Math::max(p_rect.position.x + p_rect.size.x, position.x + size.x);
-		new_rect.size.y = Math::max(p_rect.position.y + p_rect.size.y, position.y + size.y);
+		new_rect.size = (p_rect.position + p_rect.size).max(position + size);
 
 		new_rect.size = new_rect.size - new_rect.position; // Make relative again.
 
@@ -219,7 +214,7 @@ struct _NO_DISCARD_ Rect2i {
 	}
 
 	_FORCE_INLINE_ Rect2i abs() const {
-		return Rect2i(Point2i(position.x + Math::min(size.x, 0), position.y + Math::min(size.y, 0)), size.abs());
+		return Rect2i(position + size.mini(0), size.abs());
 	}
 
 	_FORCE_INLINE_ void set_end(const Vector2i &p_end) {
@@ -245,5 +240,3 @@ struct _NO_DISCARD_ Rect2i {
 };
 
 } // namespace godot
-
-#endif // GODOT_RECT2I_HPP

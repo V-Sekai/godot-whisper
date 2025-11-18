@@ -100,13 +100,11 @@ bool Plane::intersects_ray(const Vector3 &p_from, const Vector3 &p_dir, Vector3 
 	Vector3 segment = p_dir;
 	real_t den = normal.dot(segment);
 
-	//printf("den is %i\n",den);
 	if (Math::is_zero_approx(den)) {
 		return false;
 	}
 
 	real_t dist = (normal.dot(p_from) - d) / den;
-	//printf("dist is %i\n",dist);
 
 	if (dist > (real_t)CMP_EPSILON) { //this is a ray, before the emitting pos (p_from) doesn't exist
 
@@ -123,13 +121,11 @@ bool Plane::intersects_segment(const Vector3 &p_begin, const Vector3 &p_end, Vec
 	Vector3 segment = p_begin - p_end;
 	real_t den = normal.dot(segment);
 
-	//printf("den is %i\n",den);
 	if (Math::is_zero_approx(den)) {
 		return false;
 	}
 
 	real_t dist = (normal.dot(p_begin) - d) / den;
-	//printf("dist is %i\n",dist);
 
 	if (dist < (real_t)-CMP_EPSILON || dist > (1.0f + (real_t)CMP_EPSILON)) {
 		return false;
@@ -176,6 +172,10 @@ bool Plane::is_equal_approx_any_side(const Plane &p_plane) const {
 
 bool Plane::is_equal_approx(const Plane &p_plane) const {
 	return normal.is_equal_approx(p_plane.normal) && Math::is_equal_approx(d, p_plane.d);
+}
+
+bool Plane::is_finite() const {
+	return normal.is_finite() && Math::is_finite(d);
 }
 
 Plane::operator String() const {
