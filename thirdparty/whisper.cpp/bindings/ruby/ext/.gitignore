@@ -1,9 +1,9 @@
 Makefile
-ggml.c
-ggml.h
-ggml-alloc.c
-ggml-alloc.h
+whisper.so
 whisper.bundle
-whisper.cpp
-whisper.h
-dr_wav.h
+whisper.dll
+*.o
+*.a
+sources/*
+!sources/CMakeGraphVizOptions.cmake
+mkmf.log

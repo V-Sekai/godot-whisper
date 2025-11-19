@@ -31,7 +31,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	if err := context.Process(samples, nil, nil); err != nil {
+	if err := context.Process(samples, nil, nil, nil); err != nil {
 		return err
 	}
 
@@ -51,7 +51,7 @@ func main() {
 In order to build, you need to have the Go compiler installed. You can get it from [here](https://golang.org/dl/). Run the tests with:
 
 ```bash
-git clone https://github.com/ggerganov/whisper.cpp.git
+git clone https://github.com/ggml-org/whisper.cpp.git
 cd whisper.cpp/bindings/go
 make test
 ```
@@ -60,6 +60,12 @@ This will compile a static `libwhisper.a` in a `build` folder, download a model 
 
 ```bash
 make examples
+```
+
+To build using cuda support add `GGML_CUDA=1`:
+
+```bash
+GGML_CUDA=1 make examples
 ```
 
 The examples are placed in the `build` directory. Once built, you can download all the models with the following command:
@@ -92,7 +98,7 @@ The API Documentation:
 
 Getting help:
 
-  * Follow the discussion for the go bindings [here](https://github.com/ggerganov/whisper.cpp/discussions/312)
+  * Follow the discussion for the go bindings [here](https://github.com/ggml-org/whisper.cpp/discussions/312)
 
 ## License
 

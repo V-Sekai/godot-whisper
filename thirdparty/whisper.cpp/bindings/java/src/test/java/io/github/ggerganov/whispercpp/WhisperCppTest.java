@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import io.github.ggerganov.whispercpp.bean.WhisperSegment;
 import io.github.ggerganov.whispercpp.params.CBool;
+import io.github.ggerganov.whispercpp.params.WhisperContextParams;
 import io.github.ggerganov.whispercpp.params.WhisperFullParams;
 import io.github.ggerganov.whispercpp.params.WhisperSamplingStrategy;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,7 +26,9 @@ class WhisperCppTest {
         //String modelName = "../../models/ggml-tiny.bin";
         String modelName = "../../models/ggml-tiny.en.bin";
         try {
-            whisper.initContext(modelName);
+            WhisperContextParams.ByValue contextParams = whisper.getContextDefaultParams();
+            contextParams.useFlashAttn(false);  // Disable flash attention
+            whisper.initContext(modelName, contextParams);
             //whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY);
             //whisper.getJavaDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_BEAM_SEARCH);
             modelInitialised = true;
@@ -76,7 +79,7 @@ class WhisperCppTest {
         float[] floats = new float[b.length / 2];
 
         //WhisperFullParams params = whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY);
-        WhisperFullParams params = whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_BEAM_SEARCH);
+        WhisperFullParams.ByValue params = whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_BEAM_SEARCH);
         params.setProgressCallback((ctx, state, progress, user_data) -> System.out.println("progress: " + progress));
         params.print_progress = CBool.FALSE;
         //params.initial_prompt = "and so my fellow Americans um, like";
@@ -118,7 +121,7 @@ class WhisperCppTest {
         float[] floats = new float[b.length / 2];
 
         //WhisperFullParams params = whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY);
-        WhisperFullParams params = whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_BEAM_SEARCH);
+        WhisperFullParams.ByValue params = whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_BEAM_SEARCH);
         params.setProgressCallback((ctx, state, progress, user_data) -> System.out.println("progress: " + progress));
         params.print_progress = CBool.FALSE;
         //params.initial_prompt = "and so my fellow Americans um, like";

@@ -19,7 +19,7 @@ env.Append(
 )
 
 env.Prepend(CPPPATH=["thirdparty", "include"])
-env.Append(CPPPATH=["src/"])
+env.Append(CPPPATH=["src/", "thirdparty/whisper.cpp/ggml/include"])
 env.Append(CPPDEFINES=['WHISPER_SHARED', 'GGML_SHARED'])
 sources = [Glob("src/*.cpp")]
 

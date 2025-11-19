@@ -71,14 +71,13 @@ func (context *context) Language() string {
 	return whisper.Whisper_lang_str(context.params.Language())
 }
 
+func (context *context) DetectedLanguage() string {
+	return whisper.Whisper_lang_str(context.model.ctx.Whisper_full_lang_id())
+}
+
 // Set translate flag
 func (context *context) SetTranslate(v bool) {
 	context.params.SetTranslate(v)
-}
-
-// Set speedup flag
-func (context *context) SetSpeedup(v bool) {
-	context.params.SetSpeedup(v)
 }
 
 func (context *context) SetSplitOnWord(v bool) {
@@ -130,6 +129,37 @@ func (context *context) SetAudioCtx(n uint) {
 	context.params.SetAudioCtx(int(n))
 }
 
+// Set maximum number of text context tokens to store
+func (context *context) SetMaxContext(n int) {
+	context.params.SetMaxContext(n)
+}
+
+// Set Beam Size
+func (context *context) SetBeamSize(n int) {
+	context.params.SetBeamSize(n)
+}
+
+// Set Entropy threshold
+func (context *context) SetEntropyThold(t float32) {
+	context.params.SetEntropyThold(t)
+}
+
+// Set Temperature
+func (context *context) SetTemperature(t float32) {
+	context.params.SetTemperature(t)
+}
+
+// Set the fallback temperature incrementation
+// Pass -1.0 to disable this feature
+func (context *context) SetTemperatureFallback(t float32) {
+	context.params.SetTemperatureFallback(t)
+}
+
+// Set initial prompt
+func (context *context) SetInitialPrompt(prompt string) {
+	context.params.SetInitialPrompt(prompt)
+}
+
 // ResetTimings resets the mode timings. Should be called before processing
 func (context *context) ResetTimings() {
 	context.model.ctx.Whisper_reset_timings()
@@ -163,6 +193,7 @@ func (context *context) WhisperLangAutoDetect(offset_ms int, n_threads int) ([]f
 // Process new sample data and return any errors
 func (context *context) Process(
 	data []float32,
+	callEncoderBegin EncoderBeginCallback,
 	callNewSegment SegmentCallback,
 	callProgress ProgressCallback,
 ) error {
@@ -177,7 +208,20 @@ func (context *context) Process(
 	// We don't do parallel processing at the moment
 	processors := 0
 	if processors > 1 {
-		if err := context.model.ctx.Whisper_full_parallel(context.params, data, processors, nil, func(new int) {
+		if err := context.model.ctx.Whisper_full_parallel(context.params, data, processors, callEncoderBegin,
+			func(new int) {
+				if callNewSegment != nil {
+					num_segments := context.model.ctx.Whisper_full_n_segments()
+					s0 := num_segments - new
+					for i := s0; i < num_segments; i++ {
+						callNewSegment(toSegment(context.model.ctx, i))
+					}
+				}
+			}); err != nil {
+			return err
+		}
+	} else if err := context.model.ctx.Whisper_full(context.params, data, callEncoderBegin,
+		func(new int) {
 			if callNewSegment != nil {
 				num_segments := context.model.ctx.Whisper_full_n_segments()
 				s0 := num_segments - new
@@ -185,22 +229,11 @@ func (context *context) Process(
 					callNewSegment(toSegment(context.model.ctx, i))
 				}
 			}
-		}); err != nil {
-			return err
-		}
-	} else if err := context.model.ctx.Whisper_full(context.params, data, nil, func(new int) {
-		if callNewSegment != nil {
-			num_segments := context.model.ctx.Whisper_full_n_segments()
-			s0 := num_segments - new
-			for i := s0; i < num_segments; i++ {
-				callNewSegment(toSegment(context.model.ctx, i))
+		}, func(progress int) {
+			if callProgress != nil {
+				callProgress(progress)
 			}
-		}
-	}, func(progress int) {
-		if callProgress != nil {
-			callProgress(progress)
-		}
-	}); err != nil {
+		}); err != nil {
 		return err
 	}
 

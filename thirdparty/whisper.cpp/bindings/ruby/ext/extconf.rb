@@ -1,29 +1,22 @@
-require 'mkmf'
-system("cp #{File.join(File.dirname(__FILE__),'..','..','..','whisper.cpp')} .")
-system("cp #{File.join(File.dirname(__FILE__),'..','..','..','whisper.h')} .")
-system("cp #{File.join(File.dirname(__FILE__),'..','..','..','ggml.h')} .")
-system("cp #{File.join(File.dirname(__FILE__),'..','..','..','ggml.c')} .")
-system("cp #{File.join(File.dirname(__FILE__),'..','..','..','ggml-impl.h')} .")
-system("cp #{File.join(File.dirname(__FILE__),'..','..','..','ggml-alloc.h')} .")
-system("cp #{File.join(File.dirname(__FILE__),'..','..','..','ggml-alloc.c')} .")
-system("cp #{File.join(File.dirname(__FILE__),'..','..','..','ggml-backend-impl.h')} .")
-system("cp #{File.join(File.dirname(__FILE__),'..','..','..','ggml-backend.h')} .")
-system("cp #{File.join(File.dirname(__FILE__),'..','..','..','ggml-backend.c')} .")
-system("cp #{File.join(File.dirname(__FILE__),'..','..','..','ggml-quants.h')} .")
-system("cp #{File.join(File.dirname(__FILE__),'..','..','..','ggml-quants.c')} .")
-system("cp #{File.join(File.dirname(__FILE__),'..','..','..','examples','dr_wav.h')} .")
+require "mkmf"
+require_relative "options"
+require_relative "dependencies"
 
+cmake = find_executable("cmake") || abort
+options = Options.new(cmake)
+have_library("gomp") rescue nil
+libs = Dependencies.new(cmake, options)
 
-# need to use c++ compiler flags
-$CXXFLAGS << ' -std=c++11'
-# Set to true when building binary gems
-if enable_config('static-stdlib', false)
-  $LDFLAGS << ' -static-libgcc -static-libstdc++'
+$INCFLAGS << " -Isources/include -Isources/ggml/include -Isources/examples"
+$LOCAL_LIBS << " #{libs}"
+$cleanfiles << " build #{libs}"
+
+create_makefile "whisper" do |conf|
+  conf << <<~EOF
+    $(TARGET_SO): #{libs}
+    #{libs}: cmake-targets
+    cmake-targets:
+    #{"\t"}#{cmake} -S sources -B build -D BUILD_SHARED_LIBS=OFF -D CMAKE_ARCHIVE_OUTPUT_DIRECTORY=#{__dir__} -D CMAKE_POSITION_INDEPENDENT_CODE=ON #{options}
+    #{"\t"}#{cmake} --build build --config Release --target common whisper
+  EOF
 end
-
-if enable_config('march-tune-native', false)
-  $CFLAGS << ' -march=native -mtune=native'
-  $CXXFLAGS << ' -march=native -mtune=native'
-end
-
-create_makefile('whisper')

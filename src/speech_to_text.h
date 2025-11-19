@@ -13,7 +13,7 @@
 #include <godot_cpp/variant/callable.hpp>
 
 #include <libsamplerate/src/samplerate.h>
-#include <whisper.cpp/whisper.h>
+#include <whisper.cpp/include/whisper.h>
 #include <godot_cpp/classes/project_settings.hpp>
 
 #include <atomic>

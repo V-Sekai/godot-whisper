@@ -1,28 +1,29 @@
 *.o
 *.a
+*.d
 .cache/
 .coreml/
 .test/
+.venv/
 .vs/
 .vscode/
 .DS_Store
+.vimspector.json
+/CMakeSettings.json
+/talk-llama.dSYM/
 
 build/
-build-coreml/
-build-em/
-build-debug/
-build-release/
-build-rwdi/
-build-static/
-build-cublas/
-build-no-accel/
-build-sanitize-addr/
-build-sanitize-thread/
+build-*/
+build_*/
+tmp/
 
 # SPM
 .build/
 .swiftpm
 *.metallib
+
+ggml-metal-embed.metal
+ggml-metal-embed.metal.tmp
 
 /main
 /stream
@@ -50,6 +51,8 @@ extra/bench-gg.txt
 models/*.mlmodel
 models/*.mlmodelc
 models/*.mlpackage
+models/*-encoder-openvino.xml
+models/*-encoder-openvino-cache/
 bindings/java/.gradle/
 bindings/java/.idea/
 .idea/
@@ -59,3 +62,5 @@ cmake-build-debug/
 .cxx/
 .gradle/
 local.properties
+.log
+.exe
