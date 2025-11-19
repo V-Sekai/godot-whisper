@@ -318,6 +318,8 @@ const char *SpeechToText::_language_to_code(Language language) {
 			return "su";
 		case Cantonese:
 			return "yue";
+		default:
+			return "en"; // Default to English if unknown language
 	}
 }
 

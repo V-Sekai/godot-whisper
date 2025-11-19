@@ -29,8 +29,8 @@ sources.extend([
     Glob("thirdparty/whisper.cpp/whisper.cpp"),
 ])
 
-# Disable 32 bit narrowing error.
-if env["platform"] != "windows":
+# Disable 32 bit narrowing error (Clang-specific flag)
+if env["platform"] == "macos" or env["platform"] == "ios":
     env.Append(CCFLAGS=["-Wno-c++11-narrowing"])
 
 if env["platform"] == "macos" or env["platform"] == "ios":
@@ -54,8 +54,17 @@ if env["platform"] == "macos" or env["platform"] == "ios":
     sources.extend([
         Glob("thirdparty/whisper.cpp/ggml-metal.m"),
     ])
+elif env["platform"] == "web":
+    # Web platform doesn't support OpenCL/CLBlast, use CPU-only backend
+    pass
 else:
-    # CBlast and OpenCL only on non apple platform
+    # CLBlast and OpenCL only on non-apple, non-web platforms
+    # Enable exceptions for CLBlast library which uses C++ exceptions
+    # Windows uses MSVC which requires /EHsc instead of -fexceptions
+    if env["platform"] == "windows":
+        env.Append(CCFLAGS=["/EHsc"])
+    else:
+        env.Append(CCFLAGS=["-fexceptions"])
     sources.extend([
         "thirdparty/whisper.cpp/ggml-opencl.cpp",
     ])
