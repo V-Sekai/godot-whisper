@@ -45,6 +45,11 @@ void whisper_callback(enum ggml_log_level level, const char *text, void *user_da
 		case GGML_LOG_LEVEL_DEBUG: {
 			UtilityFunctions::print(text);
 		} break;
+		case GGML_LOG_LEVEL_NONE:
+		case GGML_LOG_LEVEL_CONT:
+		default:
+			// Ignore these log levels
+			break;
 	}
 }
 
